@@ -10,6 +10,7 @@ import {
   Chip,
   Button,
 } from '@mui/material';
+import toast from 'react-hot-toast';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -141,7 +142,11 @@ const DashboardPage: React.FC = () => {
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Финансовая динамика
           </Typography>
-          <Button size="small" variant="outlined">
+          <Button 
+            size="small" 
+            variant="outlined"
+            onClick={() => toast.info('Функция "Подробнее" будет реализована позже')}
+          >
             Подробнее
           </Button>
         </Box>
@@ -236,7 +241,11 @@ const DashboardPage: React.FC = () => {
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Текущие задачи
           </Typography>
-          <Button size="small" variant="outlined">
+          <Button 
+            size="small" 
+            variant="outlined"
+            onClick={() => toast.info('Функция "Все задачи" будет реализована позже')}
+          >
             Все задачи
           </Button>
         </Box>
@@ -341,6 +350,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<AddIcon />}
+              onClick={() => toast.info('Функция "Новый проект" будет реализована позже')}
               sx={{ mb: 1 }}
             >
               Новый проект
@@ -362,6 +372,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<SecurityIcon />}
+              onClick={() => toast.info('Функция "Инцидент ТБ" будет реализована позже')}
               sx={{ mb: 1 }}
             >
               Инцидент ТБ
@@ -372,6 +383,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<InventoryIcon />}
+              onClick={() => toast.info('Функция "Инвентарь" будет реализована позже')}
               sx={{ mb: 1 }}
             >
               Инвентарь

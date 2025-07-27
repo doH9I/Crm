@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   Box,
   Drawer,
@@ -15,6 +16,7 @@ import {
   useMediaQuery,
   Tooltip,
   Fade,
+  IconButton,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -35,6 +37,7 @@ const DashboardLayout: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const location = useLocation();
+  const navigate = useNavigate();
   
   const { user, logout } = useAuthStore();
   const { toggleSidebar } = useAppStore();
@@ -82,9 +85,20 @@ const DashboardLayout: React.FC = () => {
     setNotificationAnchor(null);
   };
 
+  const handleProfile = () => {
+    navigate('/profile');
+    handleAccountMenuClose();
+  };
+
+  const handleSettings = () => {
+    navigate('/settings');
+    handleAccountMenuClose();
+  };
+
   const handleLogout = () => {
     logout();
     handleAccountMenuClose();
+    toast.success('Вы успешно вышли из системы');
   };
 
   const handleDrawerToggle = () => {
@@ -114,9 +128,15 @@ const DashboardLayout: React.FC = () => {
         }}
       >
         <Toolbar sx={{ pr: '24px' }}>
-          <button type="button" aria-label="toggle drawer" onClick={handleDrawerToggle} style={{ marginRight: '36px' }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="toggle drawer"
+            onClick={handleDrawerToggle}
+            sx={{ mr: '36px' }}
+          >
             <MenuIcon />
-          </button>
+          </IconButton>
 
           <Typography
             component="h1"
@@ -134,23 +154,22 @@ const DashboardLayout: React.FC = () => {
 
           {/* Уведомления */}
           <Tooltip title="Уведомления">
-            <button
-              type="button"
+            <IconButton
+              color="inherit"
               onClick={handleNotificationOpen}
-              style={{ marginRight: '8px' }}
+              sx={{ mr: 1 }}
             >
               <Badge badgeContent={3} color="error">
-                <NotificationsIcon sx={{ color: theme.palette.text.primary }} />
+                <NotificationsIcon />
               </Badge>
-            </button>
+            </IconButton>
           </Tooltip>
 
           {/* Меню профиля */}
           <Tooltip title="Профиль">
-            <button
-              type="button"
+            <IconButton
               onClick={handleAccountMenuOpen}
-              style={{ marginLeft: 8 }}
+              sx={{ ml: 1 }}
             >
               <Avatar
                 sx={{
@@ -162,7 +181,7 @@ const DashboardLayout: React.FC = () => {
               >
                 {user?.name?.charAt(0) || 'A'}
               </Avatar>
-            </button>
+            </IconButton>
           </Tooltip>
         </Toolbar>
       </AppBar>
@@ -235,13 +254,12 @@ const DashboardLayout: React.FC = () => {
           </Box>
           
           {!isMobile && (
-            <button
-              type="button"
+            <IconButton
               onClick={handleDrawerToggle}
-              style={{ color: 'white', zIndex: 1 }}
+              sx={{ color: 'white', zIndex: 1 }}
             >
               <ChevronLeftIcon />
-            </button>
+            </IconButton>
           )}
         </Toolbar>
 
@@ -374,11 +392,11 @@ const DashboardLayout: React.FC = () => {
           )}
         </Box>
         
-        <MenuItem onClick={handleAccountMenuClose} sx={{ py: 1.5 }}>
+        <MenuItem onClick={handleProfile} sx={{ py: 1.5 }}>
           <AccountCircleIcon sx={{ mr: 2, color: 'primary.main' }} />
           Мой профиль
         </MenuItem>
-        <MenuItem onClick={handleAccountMenuClose} sx={{ py: 1.5 }}>
+        <MenuItem onClick={handleSettings} sx={{ py: 1.5 }}>
           <SettingsIcon sx={{ mr: 2, color: 'text.secondary' }} />
           Настройки
         </MenuItem>
