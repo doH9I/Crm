@@ -1,0 +1,996 @@
+import { create } from 'zustand';
+import { persist, devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import {
+  User,
+  Project,
+  Material,
+  Tool,
+  DashboardStats,
+  Notification,
+  AppSettings,
+  Supplier,
+  SafetyIncident,
+  Training,
+  Invoice,
+  QualityCheck,
+  WeatherForecast,
+  Equipment,
+  Subcontractor,
+  CalendarEvent,
+  Report,
+  Template,
+  Integration,
+  Backup,
+  ProjectTask,
+  TimeEntry,
+  Budget,
+  Client,
+  MaterialOrder,
+  Contract,
+} from '../types';
+
+// Интерфейс для состояния аутентификации
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  updateProfile: (updates: Partial<User>) => void;
+}
+
+// Интерфейс для состояния проектов
+interface ProjectState {
+  projects: Project[];
+  tasks: ProjectTask[];
+  loading: boolean;
+  selectedProject: Project | null;
+  fetchProjects: () => Promise<void>;
+  fetchProjectTasks: (projectId: string) => Promise<void>;
+  createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  selectProject: (project: Project) => void;
+  createTask: (task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTask: (id: string, updates: Partial<ProjectTask>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+}
+
+// Интерфейс для состояния материалов и склада
+interface MaterialState {
+  materials: Material[];
+  suppliers: Supplier[];
+  orders: MaterialOrder[];
+  loading: boolean;
+  fetchMaterials: () => Promise<void>;
+  fetchSuppliers: () => Promise<void>;
+  fetchOrders: () => Promise<void>;
+  createMaterial: (material: Omit<Material, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateMaterial: (id: string, updates: Partial<Material>) => Promise<void>;
+  deleteMaterial: (id: string) => Promise<void>;
+  createSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  createOrder: (order: Omit<MaterialOrder, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateOrderStatus: (id: string, status: string) => Promise<void>;
+}
+
+// Интерфейс для состояния инструментов и оборудования
+interface ToolState {
+  tools: Tool[];
+  equipment: Equipment[];
+  loading: boolean;
+  fetchTools: () => Promise<void>;
+  fetchEquipment: () => Promise<void>;
+  createTool: (tool: Omit<Tool, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTool: (id: string, updates: Partial<Tool>) => Promise<void>;
+  deleteTool: (id: string) => Promise<void>;
+  createEquipment: (equipment: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateEquipment: (id: string, updates: Partial<Equipment>) => Promise<void>;
+  assignTool: (toolId: string, userId: string) => Promise<void>;
+  returnTool: (toolId: string) => Promise<void>;
+}
+
+// Интерфейс для состояния HR и сотрудников
+interface HRState {
+  employees: User[];
+  timeEntries: TimeEntry[];
+  trainings: Training[];
+  loading: boolean;
+  fetchEmployees: () => Promise<void>;
+  fetchTimeEntries: () => Promise<void>;
+  fetchTrainings: () => Promise<void>;
+  createEmployee: (employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateEmployee: (id: string, updates: Partial<User>) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>;
+  createTimeEntry: (entry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  approveTimeEntry: (id: string) => Promise<void>;
+  rejectTimeEntry: (id: string, reason: string) => Promise<void>;
+  createTraining: (training: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  enrollInTraining: (trainingId: string, userId: string) => Promise<void>;
+}
+
+// Интерфейс для состояния финансов
+interface FinanceState {
+  invoices: Invoice[];
+  budgets: Budget[];
+  contracts: Contract[];
+  loading: boolean;
+  fetchInvoices: () => Promise<void>;
+  fetchBudgets: () => Promise<void>;
+  fetchContracts: () => Promise<void>;
+  createInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateInvoiceStatus: (id: string, status: string) => Promise<void>;
+  createBudget: (budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
+  createContract: (contract: Omit<Contract, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+}
+
+// Интерфейс для состояния клиентов
+interface ClientState {
+  clients: Client[];
+  loading: boolean;
+  fetchClients: () => Promise<void>;
+  createClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+}
+
+// Интерфейс для состояния безопасности
+interface SafetyState {
+  incidents: SafetyIncident[];
+  loading: boolean;
+  fetchIncidents: () => Promise<void>;
+  createIncident: (incident: Omit<SafetyIncident, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateIncident: (id: string, updates: Partial<SafetyIncident>) => Promise<void>;
+  resolveIncident: (id: string, resolution: string) => Promise<void>;
+}
+
+// Интерфейс для состояния качества
+interface QualityState {
+  checks: QualityCheck[];
+  loading: boolean;
+  fetchQualityChecks: () => Promise<void>;
+  createQualityCheck: (check: Omit<QualityCheck, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateQualityCheck: (id: string, updates: Partial<QualityCheck>) => Promise<void>;
+}
+
+// Интерфейс для состояния календаря
+interface CalendarState {
+  events: CalendarEvent[];
+  loading: boolean;
+  fetchEvents: () => Promise<void>;
+  createEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateEvent: (id: string, updates: Partial<CalendarEvent>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+}
+
+// Интерфейс для состояния отчетов
+interface ReportState {
+  reports: Report[];
+  templates: Template[];
+  loading: boolean;
+  fetchReports: () => Promise<void>;
+  fetchTemplates: () => Promise<void>;
+  generateReport: (reportId: string, parameters: Record<string, any>) => Promise<void>;
+  createTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTemplate: (id: string, updates: Partial<Template>) => Promise<void>;
+}
+
+// Интерфейс для состояния интеграций
+interface IntegrationState {
+  integrations: Integration[];
+  backups: Backup[];
+  loading: boolean;
+  fetchIntegrations: () => Promise<void>;
+  fetchBackups: () => Promise<void>;
+  enableIntegration: (type: string, config: Record<string, any>) => Promise<void>;
+  disableIntegration: (id: string) => Promise<void>;
+  syncIntegration: (id: string) => Promise<void>;
+  createBackup: (name: string, type: 'manual' | 'automatic') => Promise<void>;
+  restoreBackup: (id: string) => Promise<void>;
+}
+
+// Интерфейс для состояния дашборда
+interface DashboardState {
+  stats: DashboardStats | null;
+  loading: boolean;
+  weather: WeatherForecast | null;
+  fetchStats: () => Promise<void>;
+  fetchWeather: (location: string) => Promise<void>;
+}
+
+// Интерфейс для состояния уведомлений
+interface NotificationState {
+  notifications: Notification[];
+  unreadCount: number;
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  deleteNotification: (id: string) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt' | 'updatedAt'>) => void;
+}
+
+// Интерфейс для общего состояния приложения
+interface AppState {
+  settings: AppSettings;
+  theme: 'light' | 'dark' | 'auto';
+  sidebar: {
+    isOpen: boolean;
+    isPinned: boolean;
+  };
+  updateSettings: (settings: Partial<AppSettings>) => void;
+  toggleTheme: () => void;
+  toggleSidebar: () => void;
+  pinSidebar: (pinned: boolean) => void;
+}
+
+// Заглушки данных для демонстрации
+const mockUser: User = {
+  id: '1',
+  email: 'admin@construction-crm.ru',
+  name: 'Администратор',
+  phone: '+7 (999) 123-45-67',
+  role: 'admin' as any,
+  avatar: '',
+  isActive: true,
+  salary: 80000,
+  hireDate: new Date('2020-01-01'),
+  department: 'Управление',
+  skills: ['Управление проектами', 'Планирование', 'Контроль качества'],
+  lastLogin: new Date(),
+  createdAt: new Date('2020-01-01'),
+  updatedAt: new Date()
+};
+
+const mockStats: DashboardStats = {
+  totalProjects: 25,
+  activeProjects: 8,
+  completedProjects: 15,
+  totalRevenue: 12500000,
+  monthlyRevenue: 2100000,
+  totalExpenses: 8900000,
+  monthlyExpenses: 1450000,
+  profit: 3600000,
+  employeeCount: 24,
+  activeEmployees: 22,
+  materialCount: 156,
+  lowStockMaterials: 12,
+  toolCount: 89,
+  brokenTools: 3
+};
+
+const defaultSettings: AppSettings = {
+  companyName: 'СтройКомпани ООО',
+  currency: 'RUB',
+  timezone: 'Europe/Moscow',
+  language: 'ru',
+  theme: 'light',
+  notifications: {
+    email: true,
+    push: true,
+    lowStock: true,
+    projectDeadlines: true,
+    maintenanceReminders: true
+  }
+};
+
+// Store для аутентификации
+export const useAuthStore = create<AuthState>()(
+  devtools(
+    persist(
+      immer((set, get) => ({
+        user: null,
+        isAuthenticated: false,
+        login: async (email: string, password: string) => {
+          // Симуляция логики аутентификации
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          if (email === 'admin@construction-crm.ru' && password === 'admin123') {
+            const user: User = {
+              id: '1',
+              email,
+              name: 'Администратор',
+              role: 'admin' as any,
+              avatar: '',
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            
+            set(state => {
+              state.user = user;
+              state.isAuthenticated = true;
+            });
+            return true;
+          }
+          return false;
+        },
+        logout: () => {
+          set(state => {
+            state.user = null;
+            state.isAuthenticated = false;
+          });
+        },
+        updateProfile: (updates: Partial<User>) => {
+          set(state => {
+            if (state.user) {
+              Object.assign(state.user, updates);
+            }
+          });
+        },
+      })),
+      { name: 'auth-store' }
+    )
+  )
+);
+
+// Store для проектов
+export const useProjectStore = create<ProjectState>()(
+  devtools(
+    immer((set, get) => ({
+      projects: [],
+      tasks: [],
+      loading: false,
+      selectedProject: null,
+      fetchProjects: async () => {
+        set(state => { state.loading = true; });
+        try {
+          // Симуляция API запроса
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const mockProjects: Project[] = [
+            {
+              id: '1',
+              name: 'Жилой комплекс "Солнечный"',
+              description: 'Строительство жилого комплекса из 3 домов',
+              client: 'ООО "Инвест Строй"',
+              clientContact: 'Иванов И.И.',
+              clientPhone: '+7 (999) 123-45-67',
+              clientEmail: 'ivanov@investstroy.ru',
+              address: 'г. Москва, ул. Солнечная, 15',
+              status: 'in_progress' as any,
+              type: 'residential' as any,
+              startDate: new Date('2024-01-15'),
+              endDate: new Date('2024-12-15'),
+              plannedEndDate: new Date('2024-12-01'),
+              budget: 50000000,
+              spentAmount: 25000000,
+              approvedBudget: 52000000,
+              contingencyFund: 2000000,
+              managerId: '1',
+              architectId: '2',
+              engineerId: '3',
+              teamMembers: ['1', '2', '3', '4', '5'],
+              progress: 50,
+              priority: 'high',
+              notes: 'Проект идет по плану',
+              riskLevel: 'medium',
+              weatherSensitive: true,
+              safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+          
+          set(state => {
+            state.projects = mockProjects;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
+      },
+      fetchProjectTasks: async (projectId: string) => {
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          // Здесь будет загрузка задач проекта
+          set(state => { state.loading = false; });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
+      },
+      createProject: async (project) => {
+        const newProject: Project = {
+          ...project,
+          id: Date.now().toString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        set(state => {
+          state.projects.push(newProject);
+        });
+      },
+      updateProject: async (id, updates) => {
+        set(state => {
+          const index = state.projects.findIndex(p => p.id === id);
+          if (index !== -1) {
+            Object.assign(state.projects[index], updates, { updatedAt: new Date() });
+          }
+        });
+      },
+      deleteProject: async (id) => {
+        set(state => {
+          state.projects = state.projects.filter(p => p.id !== id);
+        });
+      },
+      selectProject: (project) => {
+        set(state => {
+          state.selectedProject = project;
+        });
+      },
+      createTask: async (task) => {
+        const newTask: ProjectTask = {
+          ...task,
+          id: Date.now().toString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        set(state => {
+          state.tasks.push(newTask);
+        });
+      },
+      updateTask: async (id, updates) => {
+        set(state => {
+          const index = state.tasks.findIndex(t => t.id === id);
+          if (index !== -1) {
+            Object.assign(state.tasks[index], updates, { updatedAt: new Date() });
+          }
+        });
+      },
+      deleteTask: async (id) => {
+        set(state => {
+          state.tasks = state.tasks.filter(t => t.id !== id);
+        });
+      },
+    }))
+  )
+);
+
+// Store для материалов
+export const useMaterialStore = create<MaterialState>()(
+  devtools(
+    immer((set, get) => ({
+      materials: [],
+      suppliers: [],
+      orders: [],
+      loading: false,
+      fetchMaterials: async () => {
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const mockMaterials: Material[] = [
+            {
+              id: '1',
+              name: 'Цемент М400',
+              description: 'Портландцемент марки 400',
+              category: 'Сухие смеси',
+              subcategory: 'Цемент',
+              sku: 'CEM-M400-50',
+              unit: 'мешок',
+              currentStock: 150,
+              reservedStock: 20,
+              availableStock: 130,
+              minStock: 50,
+              maxStock: 300,
+              reorderPoint: 60,
+              unitPrice: 350,
+              avgPrice: 345,
+              lastPurchasePrice: 350,
+              supplier: 'ООО Цементторг',
+              location: 'Склад А',
+              zone: 'А1',
+              shelf: 'А1-01',
+              isActive: true,
+              isHazardous: false,
+              weight: 50,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+          
+          set(state => {
+            state.materials = mockMaterials;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
+      },
+      fetchSuppliers: async () => {
+        // Реализация загрузки поставщиков
+      },
+      fetchOrders: async () => {
+        // Реализация загрузки заказов
+      },
+      createMaterial: async (material) => {
+        const newMaterial: Material = {
+          ...material,
+          id: Date.now().toString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        set(state => {
+          state.materials.push(newMaterial);
+        });
+      },
+      updateMaterial: async (id, updates) => {
+        set(state => {
+          const index = state.materials.findIndex(m => m.id === id);
+          if (index !== -1) {
+            Object.assign(state.materials[index], updates, { updatedAt: new Date() });
+          }
+        });
+      },
+      deleteMaterial: async (id) => {
+        set(state => {
+          state.materials = state.materials.filter(m => m.id !== id);
+        });
+      },
+      createSupplier: async (supplier) => {
+        // Реализация создания поставщика
+      },
+      createOrder: async (order) => {
+        // Реализация создания заказа
+      },
+      updateOrderStatus: async (id, status) => {
+        // Реализация обновления статуса заказа
+      },
+    }))
+  )
+);
+
+// Store для инструментов
+export const useToolStore = create<ToolState>()(
+  devtools(
+    immer((set, get) => ({
+      tools: [],
+      equipment: [],
+      loading: false,
+      fetchTools: async () => {
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const mockTools: Tool[] = [
+            {
+              id: '1',
+              name: 'Дрель ударная Makita HP2050',
+              category: 'Электроинструмент',
+              subcategory: 'Дрели',
+              brand: 'Makita',
+              model: 'HP2050',
+              inventoryNumber: 'TOOL-001',
+              condition: 'good' as any,
+              status: 'available' as any,
+              purchaseDate: new Date('2023-01-15'),
+              purchasePrice: 15000,
+              currentValue: 12000,
+              location: 'Инструментальная',
+              zone: 'И-1',
+              maintenanceInterval: 180,
+              usageHours: 120,
+              isActive: true,
+              notes: 'Состояние хорошее',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+          
+          set(state => {
+            state.tools = mockTools;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
+      },
+      fetchEquipment: async () => {
+        // Реализация загрузки оборудования
+      },
+      createTool: async (tool) => {
+        const newTool: Tool = {
+          ...tool,
+          id: Date.now().toString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        set(state => {
+          state.tools.push(newTool);
+        });
+      },
+      updateTool: async (id, updates) => {
+        set(state => {
+          const index = state.tools.findIndex(t => t.id === id);
+          if (index !== -1) {
+            Object.assign(state.tools[index], updates, { updatedAt: new Date() });
+          }
+        });
+      },
+      deleteTool: async (id) => {
+        set(state => {
+          state.tools = state.tools.filter(t => t.id !== id);
+        });
+      },
+      createEquipment: async (equipment) => {
+        // Реализация создания оборудования
+      },
+      updateEquipment: async (id, updates) => {
+        // Реализация обновления оборудования
+      },
+      assignTool: async (toolId, userId) => {
+        set(state => {
+          const tool = state.tools.find(t => t.id === toolId);
+          if (tool) {
+            tool.assignedTo = userId;
+            tool.status = 'in_use' as any;
+            tool.updatedAt = new Date();
+          }
+        });
+      },
+      returnTool: async (toolId) => {
+        set(state => {
+          const tool = state.tools.find(t => t.id === toolId);
+          if (tool) {
+            tool.assignedTo = undefined;
+            tool.status = 'available' as any;
+            tool.updatedAt = new Date();
+          }
+        });
+      },
+    }))
+  )
+);
+
+// Store для дашборда
+export const useDashboardStore = create<DashboardState>()(
+  devtools(
+    immer((set, get) => ({
+      stats: null,
+      loading: false,
+      weather: null,
+      fetchStats: async () => {
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const mockStats: DashboardStats = {
+            totalProjects: 12,
+            activeProjects: 8,
+            completedProjects: 4,
+            onHoldProjects: 0,
+            totalRevenue: 120000000,
+            monthlyRevenue: 8500000,
+            totalExpenses: 95000000,
+            monthlyExpenses: 6200000,
+            profit: 25000000,
+            profitMargin: 20.8,
+            employeeCount: 45,
+            activeEmployees: 43,
+            materialCount: 1250,
+            lowStockMaterials: 8,
+            toolCount: 180,
+            brokenTools: 3,
+            toolsInMaintenance: 5,
+            pendingInvoices: 12,
+            overdueInvoices: 2,
+            cashFlow: 2300000,
+            projectsOnSchedule: 6,
+            projectsDelayed: 2,
+            averageProjectDuration: 8.5,
+            clientSatisfactionScore: 4.7,
+            safetyIncidentsThisMonth: 1,
+            qualityScore: 92,
+            utilizationRate: 85,
+          };
+          
+          set(state => {
+            state.stats = mockStats;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
+      },
+      fetchWeather: async (location: string) => {
+        try {
+          const mockWeather: WeatherForecast = {
+            id: '1',
+            location,
+            date: new Date(),
+            temperature: { min: -2, max: 5 },
+            humidity: 65,
+            windSpeed: 8,
+            precipitation: 20,
+            condition: 'cloudy',
+            visibility: 10,
+            uvIndex: 2,
+            workRecommendation: 'good',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          set(state => {
+            state.weather = mockWeather;
+          });
+        } catch (error) {
+          console.error('Failed to fetch weather:', error);
+        }
+      },
+    }))
+  )
+);
+
+// Store для уведомлений
+export const useNotificationStore = create<NotificationState>()(
+  devtools(
+    immer((set, get) => ({
+      notifications: [],
+      unreadCount: 0,
+      fetchNotifications: async () => {
+        // Симуляция загрузки уведомлений
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const mockNotifications: Notification[] = [
+          {
+            id: '1',
+            userId: '1',
+            title: 'Низкий запас материалов',
+            message: 'Цемент М400 заканчивается на складе',
+            type: 'warning' as any,
+            category: 'inventory',
+            isRead: false,
+            priority: 'medium',
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          },
+          {
+            id: '2',
+            userId: '1',
+            title: 'Задача завершена',
+            message: 'Завершена задача "Подготовка котлована" в проекте "Солнечный"',
+            type: 'success' as any,
+            category: 'project',
+            isRead: false,
+            priority: 'low',
+            createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+            updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+          },
+        ];
+        
+        set(state => {
+          state.notifications = mockNotifications;
+          state.unreadCount = mockNotifications.filter(n => !n.isRead).length;
+        });
+      },
+      markAsRead: (id: string) => {
+        set(state => {
+          const notification = state.notifications.find(n => n.id === id);
+          if (notification && !notification.isRead) {
+            notification.isRead = true;
+            state.unreadCount = Math.max(0, state.unreadCount - 1);
+          }
+        });
+      },
+      markAllAsRead: () => {
+        set(state => {
+          state.notifications.forEach(n => n.isRead = true);
+          state.unreadCount = 0;
+        });
+      },
+      deleteNotification: (id: string) => {
+        set(state => {
+          const index = state.notifications.findIndex(n => n.id === id);
+          if (index !== -1) {
+            const notification = state.notifications[index];
+            if (!notification.isRead) {
+              state.unreadCount = Math.max(0, state.unreadCount - 1);
+            }
+            state.notifications.splice(index, 1);
+          }
+        });
+      },
+      addNotification: (notification) => {
+        const newNotification: Notification = {
+          ...notification,
+          id: Date.now().toString(),
+          isRead: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        set(state => {
+          state.notifications.unshift(newNotification);
+          state.unreadCount += 1;
+        });
+      },
+    }))
+  )
+);
+
+// Store для общего состояния приложения
+export const useAppStore = create<AppState>()(
+  devtools(
+    persist(
+      immer((set, get) => ({
+        settings: {
+          companyName: 'СтройТех Про',
+          companyLogo: '',
+          companyAddress: 'г. Москва, ул. Строительная, 25',
+          companyPhone: '+7 (495) 123-45-67',
+          companyEmail: 'info@stroyteh.ru',
+          companyWebsite: 'https://stroyteh.ru',
+          inn: '7701234567',
+          kpp: '770101001',
+          currency: 'RUB',
+          timezone: 'Europe/Moscow',
+          language: 'ru',
+          dateFormat: 'DD.MM.YYYY',
+          theme: 'light',
+          workingHours: {
+            start: '08:00',
+            end: '18:00',
+            lunchStart: '12:00',
+            lunchEnd: '13:00',
+          },
+          workingDays: [1, 2, 3, 4, 5],
+          notifications: {
+            email: true,
+            push: true,
+            sms: false,
+            lowStock: true,
+            projectDeadlines: true,
+            maintenanceReminders: true,
+            safetyAlerts: true,
+            qualityIssues: true,
+            budgetOverruns: true,
+            overdueInvoices: true,
+          },
+          security: {
+            passwordPolicy: {
+              minLength: 8,
+              requireUppercase: true,
+              requireLowercase: true,
+              requireNumbers: true,
+              requireSpecialChars: false,
+            },
+            sessionTimeout: 480,
+            twoFactorEnabled: false,
+          },
+          integrations: {
+            maps: true,
+            weather: true,
+            accounting: false,
+            banking: false,
+            email: true,
+            sms: false,
+          },
+          backups: {
+            autoBackup: true,
+            frequency: 'daily',
+            retention: 30,
+          },
+        },
+        theme: 'light',
+        sidebar: {
+          isOpen: true,
+          isPinned: true,
+        },
+        updateSettings: (updates) => {
+          set(state => {
+            Object.assign(state.settings, updates);
+          });
+        },
+        toggleTheme: () => {
+          set(state => {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            state.settings.theme = state.theme;
+          });
+        },
+        toggleSidebar: () => {
+          set(state => {
+            state.sidebar.isOpen = !state.sidebar.isOpen;
+          });
+        },
+        pinSidebar: (pinned) => {
+          set(state => {
+            state.sidebar.isPinned = pinned;
+          });
+        },
+      })),
+      { name: 'app-store' }
+    )
+  )
+);
+
+// Дополнительные stores для других модулей
+export const useHRStore = create<HRState>()(devtools(immer(() => ({
+  employees: [],
+  timeEntries: [],
+  trainings: [],
+  loading: false,
+  fetchEmployees: async () => {},
+  fetchTimeEntries: async () => {},
+  fetchTrainings: async () => {},
+  createEmployee: async () => {},
+  updateEmployee: async () => {},
+  deleteEmployee: async () => {},
+  createTimeEntry: async () => {},
+  approveTimeEntry: async () => {},
+  rejectTimeEntry: async () => {},
+  createTraining: async () => {},
+  enrollInTraining: async () => {},
+}))));
+
+export const useFinanceStore = create<FinanceState>()(devtools(immer(() => ({
+  invoices: [],
+  budgets: [],
+  contracts: [],
+  loading: false,
+  fetchInvoices: async () => {},
+  fetchBudgets: async () => {},
+  fetchContracts: async () => {},
+  createInvoice: async () => {},
+  updateInvoiceStatus: async () => {},
+  createBudget: async () => {},
+  updateBudget: async () => {},
+  createContract: async () => {},
+}))));
+
+export const useClientStore = create<ClientState>()(devtools(immer(() => ({
+  clients: [],
+  loading: false,
+  fetchClients: async () => {},
+  createClient: async () => {},
+  updateClient: async () => {},
+  deleteClient: async () => {},
+}))));
+
+export const useSafetyStore = create<SafetyState>()(devtools(immer(() => ({
+  incidents: [],
+  loading: false,
+  fetchIncidents: async () => {},
+  createIncident: async () => {},
+  updateIncident: async () => {},
+  resolveIncident: async () => {},
+}))));
+
+export const useQualityStore = create<QualityState>()(devtools(immer(() => ({
+  checks: [],
+  loading: false,
+  fetchQualityChecks: async () => {},
+  createQualityCheck: async () => {},
+  updateQualityCheck: async () => {},
+}))));
+
+export const useCalendarStore = create<CalendarState>()(devtools(immer(() => ({
+  events: [],
+  loading: false,
+  fetchEvents: async () => {},
+  createEvent: async () => {},
+  updateEvent: async () => {},
+  deleteEvent: async () => {},
+}))));
+
+export const useReportStore = create<ReportState>()(devtools(immer(() => ({
+  reports: [],
+  templates: [],
+  loading: false,
+  fetchReports: async () => {},
+  fetchTemplates: async () => {},
+  generateReport: async () => {},
+  createTemplate: async () => {},
+  updateTemplate: async () => {},
+}))));
+
+export const useIntegrationStore = create<IntegrationState>()(devtools(immer(() => ({
+  integrations: [],
+  backups: [],
+  loading: false,
+  fetchIntegrations: async () => {},
+  fetchBackups: async () => {},
+  enableIntegration: async () => {},
+  disableIntegration: async () => {},
+  syncIntegration: async () => {},
+  createBackup: async () => {},
+  restoreBackup: async () => {},
+}))));
