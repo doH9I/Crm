@@ -22,6 +22,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Divider from '@mui/material/Divider';
 import { useState } from 'react';
+import { DashboardPage } from './components/dashboard/DashboardPage';
 
 const theme = createTheme({
   palette: {
@@ -105,7 +106,7 @@ function App() {
           </Drawer>
           <Box component="main" sx={{ flexGrow: 1, p: { xs: 1, sm: 3 }, mt: 8, transition: 'all 0.2s' }}>
             <Routes>
-              <Route path="/dashboard" element={<Placeholder title="Дашборд" />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/users" element={<Placeholder title="Сотрудники" />} />
               <Route path="/projects" element={<Placeholder title="Проекты" />} />
               <Route path="/warehouse" element={<Placeholder title="Склад" />} />
