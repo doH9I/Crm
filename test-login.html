@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест входа в систему</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-test { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Тест системы входа Construction CRM</h1>
+    
+    <div class="test-section">
+        <h2>Тестовые аккаунты:</h2>
+        <div id="users-list">
+            <div><strong>Администратор:</strong> admin@construction-crm.ru / admin123</div>
+            <div><strong>Менеджер:</strong> manager@construction-crm.ru / manager123</div>
+            <div><strong>Мастер:</strong> foreman@construction-crm.ru / foreman123</div>
+            <div><strong>Бухгалтер:</strong> accountant@construction-crm.ru / accountant123</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Быстрые тесты:</h2>
+        <button class="btn-test" onclick="testUser('admin@construction-crm.ru', 'admin123')">
+            Тест Администратора
+        </button>
+        <button class="btn-test" onclick="testUser('manager@construction-crm.ru', 'manager123')">
+            Тест Менеджера
+        </button>
+        <button class="btn-test" onclick="testUser('wrong@email.com', 'wrong')">
+            Тест неверных данных
+        </button>
+    </div>
+
+    <div class="test-section">
+        <h2>Ручной тест:</h2>
+        <input type="email" id="email" placeholder="Email" style="width: 200px; padding: 8px; margin: 5px;">
+        <input type="password" id="password" placeholder="Пароль" style="width: 200px; padding: 8px; margin: 5px;">
+        <button class="btn-test" onclick="testManual()">Проверить вход</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h2>Результаты тестов:</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // Эмуляция логики входа из store
+        const users = [
+            {
+                id: '1',
+                email: 'admin@construction-crm.ru',
+                password: 'admin123',
+                name: 'Главный Администратор',
+                role: 'admin',
+                permissions: ['*']
+            },
+            {
+                id: '2',
+                email: 'manager@construction-crm.ru',
+                password: 'manager123',
+                name: 'Менеджер Проектов',
+                role: 'manager',
+                permissions: ['projects', 'estimates', 'employees', 'reports']
+            },
+            {
+                id: '3',
+                email: 'foreman@construction-crm.ru',
+                password: 'foreman123',
+                name: 'Мастер Строительства',
+                role: 'foreman',
+                permissions: ['projects', 'materials', 'tools', 'employees']
+            },
+            {
+                id: '4',
+                email: 'accountant@construction-crm.ru',
+                password: 'accountant123',
+                name: 'Главный Бухгалтер',
+                role: 'accountant',
+                permissions: ['finances', 'estimates', 'reports']
+            }
+        ];
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.style.padding = '5px';
+            entry.style.margin = '2px 0';
+            entry.style.borderRadius = '3px';
+            
+            if (type === 'success') {
+                entry.style.background = '#d4edda';
+                entry.innerHTML = `[${timestamp}] ✅ ${message}`;
+            } else if (type === 'error') {
+                entry.style.background = '#f8d7da';
+                entry.innerHTML = `[${timestamp}] ❌ ${message}`;
+            } else {
+                entry.style.background = '#e2e3e5';
+                entry.innerHTML = `[${timestamp}] ℹ️ ${message}`;
+            }
+            
+            logDiv.appendChild(entry);
+            entry.scrollIntoView();
+        }
+
+        async function testLogin(email, password) {
+            log(`Попытка входа: ${email}`);
+            
+            // Симуляция задержки
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const foundUser = users.find(u => u.email === email && u.password === password);
+            
+            if (foundUser) {
+                log(`Вход успешен! Пользователь: ${foundUser.name} (${foundUser.role})`, 'success');
+                log(`Права доступа: ${foundUser.permissions.join(', ')}`, 'info');
+                return true;
+            } else {
+                log(`Неверные учетные данные для: ${email}`, 'error');
+                return false;
+            }
+        }
+
+        async function testUser(email, password) {
+            await testLogin(email, password);
+        }
+
+        async function testManual() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                log('Введите email и пароль', 'error');
+                return;
+            }
+            
+            await testLogin(email, password);
+        }
+
+        // Автотест при загрузке
+        window.onload = function() {
+            log('Тестовая страница загружена', 'info');
+            log(`Всего пользователей в системе: ${users.length}`, 'info');
+        };
+    </script>
+</body>
+</html>

@@ -44,7 +44,8 @@ export interface User extends BaseEntity {
   position?: string;
   contractType?: 'permanent' | 'temporary' | 'contractor';
   workSchedule?: WorkSchedule;
-  permissions?: Permission[];
+  permissions?: string[]; // Простые строки для модулей доступа
+  rolePermissions?: Permission[]; // Детализированные разрешения
 }
 
 // Сертификации и квалификации

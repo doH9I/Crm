@@ -3,6 +3,7 @@ import { persist, devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import {
   User,
+  UserRole,
   Project,
   Material,
   Tool,
@@ -329,7 +330,14 @@ export const useAuthStore = create<AuthState>()(
           });
         },
       })),
-      { name: 'auth-store' }
+      { 
+        name: 'auth-store',
+        // Исключаем функции из сохранения
+        partialize: (state) => ({
+          user: state.user,
+          isAuthenticated: state.isAuthenticated,
+        }),
+      }
     )
   )
 );
