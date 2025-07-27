@@ -10,6 +10,7 @@ import {
   Chip,
   Button,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   TrendingUp as TrendingUpIcon,
@@ -45,6 +46,7 @@ import QRCodeScanner from '../components/Advanced/QRCodeScanner';
 const DashboardPage: React.FC = () => {
   const { stats, loading, fetchStats } = useDashboardStore();
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStats();
@@ -350,7 +352,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<AddIcon />}
-              onClick={() => toast.info('Функция "Новый проект" будет реализована позже')}
+              onClick={() => navigate('/projects')}
               sx={{ mb: 1 }}
             >
               Новый проект
@@ -372,7 +374,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<SecurityIcon />}
-              onClick={() => toast.info('Функция "Инцидент ТБ" будет реализована позже')}
+              onClick={() => navigate('/safety')}
               sx={{ mb: 1 }}
             >
               Инцидент ТБ
@@ -383,7 +385,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<InventoryIcon />}
-              onClick={() => toast.info('Функция "Инвентарь" будет реализована позже')}
+              onClick={() => navigate('/materials')}
               sx={{ mb: 1 }}
             >
               Инвентарь

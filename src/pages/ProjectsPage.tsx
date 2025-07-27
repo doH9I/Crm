@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -61,10 +62,25 @@ interface ProjectFormData {
 const ProjectsPage: React.FC = () => {
   const { projects, loading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
   const { user } = useAuthStore();
+  const [searchParams] = useSearchParams();
   
   const [openDialog, setOpenDialog] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Фильтр проектов по статусу из URL
+  const statusFilter = searchParams.get('status');
+  const filteredProjects = statusFilter 
+    ? projects.filter(project => {
+        if (statusFilter === 'active') {
+          return project.status === 'in_progress';
+        }
+        if (statusFilter === 'planning') {
+          return project.status === 'planning';
+        }
+        return true;
+      })
+    : projects;
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ProjectFormData>();
 
@@ -206,7 +222,9 @@ const ProjectsPage: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление проектами
+          {statusFilter === 'active' ? 'Активные проекты' : 
+           statusFilter === 'planning' ? 'Проекты в планировании' : 
+           'Управление проектами'}
         </Typography>
         <Button
           variant="contained"
@@ -218,7 +236,7 @@ const ProjectsPage: React.FC = () => {
         </Button>
       </Box>
 
-      {projects.length === 0 && !loading ? (
+      {filteredProjects.length === 0 && !loading ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
             <ProjectIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -249,7 +267,7 @@ const ProjectsPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <TableRow key={project.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

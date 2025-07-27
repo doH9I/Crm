@@ -17,6 +17,8 @@ import CalendarPage from './pages/CalendarPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
+import SuppliersPage from './pages/SuppliersPage';
+import ClientsPage from './pages/ClientsPage';
 
 // Компонент для защищенных маршрутов
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -136,6 +138,26 @@ const App: React.FC = () => {
             element={
               <ProtectedRouteWithPermissions requiredPermission={MODULES.EMPLOYEES}>
                 <EmployeesPage />
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+          
+          {/* Поставщики */}
+          <Route 
+            path="suppliers" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.MATERIALS}>
+                <SuppliersPage />
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+          
+          {/* Заказчики */}
+          <Route 
+            path="clients" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.PROJECTS}>
+                <ClientsPage />
               </ProtectedRouteWithPermissions>
             } 
           />
