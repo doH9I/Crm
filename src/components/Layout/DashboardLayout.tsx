@@ -103,8 +103,8 @@ const DashboardLayout: React.FC = () => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          ...(false && !isMobile && {
-            marginLeft: DRAWER_WIDTH,
+          ...(isMobile && {
+            marginLeft: 0,
             width: `calc(100% - ${DRAWER_WIDTH}px)`,
             transition: theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
@@ -136,9 +136,8 @@ const DashboardLayout: React.FC = () => {
           <Tooltip title="Уведомления">
             <button
               type="button"
-              color="inherit"
               onClick={handleNotificationOpen}
-              sx={{ mr: 1 }}
+              style={{ marginRight: '8px' }}
             >
               <Badge badgeContent={3} color="error">
                 <NotificationsIcon sx={{ color: theme.palette.text.primary }} />
@@ -150,10 +149,8 @@ const DashboardLayout: React.FC = () => {
           <Tooltip title="Профиль">
             <button
               type="button"
-              edge="end"
-              color="inherit"
               onClick={handleAccountMenuOpen}
-              sx={{ ml: 1 }}
+              style={{ marginLeft: 8 }}
             >
               <Avatar
                 sx={{
@@ -241,13 +238,7 @@ const DashboardLayout: React.FC = () => {
             <button
               type="button"
               onClick={handleDrawerToggle}
-              sx={{ 
-                color: 'white',
-                zIndex: 1,
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                },
-              }}
+              style={{ color: 'white', zIndex: 1 }}
             >
               <ChevronLeftIcon />
             </button>
@@ -308,7 +299,7 @@ const DashboardLayout: React.FC = () => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          ...(false && !isMobile && {
+          ...(isMobile && {
             marginLeft: 0,
             transition: theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,

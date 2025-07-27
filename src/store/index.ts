@@ -351,7 +351,7 @@ export const useProjectStore = create<ProjectState>()(
       },
       updateProject: async (id, updates) => {
         set(state => {
-          const index = state.projects.findIndex(p => p.id === id);
+          const index = state.projects.findIndex((p: Project) => p.id === id);
           if (index !== -1) {
             Object.assign(state.projects[index], updates, { updatedAt: new Date() });
           }
@@ -359,7 +359,7 @@ export const useProjectStore = create<ProjectState>()(
       },
       deleteProject: async (id) => {
         set(state => {
-          state.projects = state.projects.filter(p => p.id !== id);
+          state.projects = state.projects.filter((p: Project) => p.id !== id);
         });
       },
       selectProject: (project) => {
@@ -381,7 +381,7 @@ export const useProjectStore = create<ProjectState>()(
       },
       updateTask: async (id, updates) => {
         set(state => {
-          const index = state.tasks.findIndex(t => t.id === id);
+          const index = state.tasks.findIndex((t: ProjectTask) => t.id === id);
           if (index !== -1) {
             Object.assign(state.tasks[index], updates, { updatedAt: new Date() });
           }
@@ -389,7 +389,7 @@ export const useProjectStore = create<ProjectState>()(
       },
       deleteTask: async (id) => {
         set(state => {
-          state.tasks = state.tasks.filter(t => t.id !== id);
+          state.tasks = state.tasks.filter((t: ProjectTask) => t.id !== id);
         });
       },
     }))
@@ -466,7 +466,7 @@ export const useMaterialStore = create<MaterialState>()(
       },
       updateMaterial: async (id, updates) => {
         set(state => {
-          const index = state.materials.findIndex(m => m.id === id);
+          const index = state.materials.findIndex((m: Material) => m.id === id);
           if (index !== -1) {
             Object.assign(state.materials[index], updates, { updatedAt: new Date() });
           }
@@ -474,7 +474,7 @@ export const useMaterialStore = create<MaterialState>()(
       },
       deleteMaterial: async (id) => {
         set(state => {
-          state.materials = state.materials.filter(m => m.id !== id);
+          state.materials = state.materials.filter((m: Material) => m.id !== id);
         });
       },
       createSupplier: async (supplier) => {
@@ -551,7 +551,7 @@ export const useToolStore = create<ToolState>()(
       },
       updateTool: async (id, updates) => {
         set(state => {
-          const index = state.tools.findIndex(t => t.id === id);
+          const index = state.tools.findIndex((t: Tool) => t.id === id);
           if (index !== -1) {
             Object.assign(state.tools[index], updates, { updatedAt: new Date() });
           }
@@ -559,7 +559,7 @@ export const useToolStore = create<ToolState>()(
       },
       deleteTool: async (id) => {
         set(state => {
-          state.tools = state.tools.filter(t => t.id !== id);
+          state.tools = state.tools.filter((t: Tool) => t.id !== id);
         });
       },
       createEquipment: async (equipment) => {
@@ -570,7 +570,7 @@ export const useToolStore = create<ToolState>()(
       },
       assignTool: async (toolId, userId) => {
         set(state => {
-          const tool = state.tools.find(t => t.id === toolId);
+          const tool = state.tools.find((t: Tool) => t.id === toolId);
           if (tool) {
             tool.assignedTo = userId;
             tool.status = 'in_use' as any;
@@ -580,7 +580,7 @@ export const useToolStore = create<ToolState>()(
       },
       returnTool: async (toolId) => {
         set(state => {
-          const tool = state.tools.find(t => t.id === toolId);
+          const tool = state.tools.find((t: Tool) => t.id === toolId);
           if (tool) {
             tool.assignedTo = undefined;
             tool.status = 'available' as any;
@@ -713,7 +713,7 @@ export const useNotificationStore = create<NotificationState>()(
       },
       markAsRead: (id: string) => {
         set(state => {
-          const notification = state.notifications.find(n => n.id === id);
+          const notification = state.notifications.find((n: Notification) => n.id === id);
           if (notification && !notification.isRead) {
             notification.isRead = true;
             state.unreadCount = Math.max(0, state.unreadCount - 1);
@@ -722,13 +722,13 @@ export const useNotificationStore = create<NotificationState>()(
       },
       markAllAsRead: () => {
         set(state => {
-          state.notifications.forEach(n => n.isRead = true);
+          state.notifications.forEach((n: Notification) => n.isRead = true);
           state.unreadCount = 0;
         });
       },
       deleteNotification: (id: string) => {
         set(state => {
-          const index = state.notifications.findIndex(n => n.id === id);
+          const index = state.notifications.findIndex((n: Notification) => n.id === id);
           if (index !== -1) {
             const notification = state.notifications[index];
             if (!notification.isRead) {
