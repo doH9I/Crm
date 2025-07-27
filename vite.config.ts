@@ -37,12 +37,19 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          mui: ['@mui/material', '@mui/icons-material', '@mui/x-data-grid'],
-          charts: ['recharts', 'chart.js', 'react-chartjs-2']
+          mui: ['@mui/material', '@mui/icons-material', '@mui/x-data-grid', '@mui/x-date-pickers', '@mui/x-charts'],
+          charts: ['recharts', 'chart.js', 'react-chartjs-2'],
+          router: ['react-router-dom'],
+          query: ['@tanstack/react-query', '@tanstack/react-table'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
+          utils: ['date-fns', 'axios', 'clsx', 'tailwind-merge'],
+          pdf: ['jspdf', 'jspdf-autotable', 'react-pdf'],
+          excel: ['xlsx', 'file-saver']
         }
       }
     }

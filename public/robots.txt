@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Block access to admin or private sections if any
+Disallow: /admin/
+Disallow: /.env
+Disallow: /node_modules/
+
+Sitemap: https://yoursite.netlify.app/sitemap.xml
