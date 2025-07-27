@@ -8,6 +8,7 @@ import axios from 'axios';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { ImportExcelButton } from '../common/ImportExcelButton';
 
 export const WarehousePage: React.FC = () => {
   const [tab, setTab] = useState(0);
@@ -67,6 +68,17 @@ export const WarehousePage: React.FC = () => {
         <Box>
           <Tooltip title="Экспорт в Excel"><IconButton onClick={exportExcel}><FileDownloadIcon /></IconButton></Tooltip>
           <Tooltip title="Экспорт в PDF"><IconButton onClick={exportPDF}><FileDownloadIcon color="secondary" /></IconButton></Tooltip>
+          {tab === 1 && (
+            <ImportExcelButton
+              label="Импорт из Excel"
+              onImport={async (file) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                await axios.post('/api/warehouse/materials/import_excel/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                window.location.reload();
+              }}
+            />
+          )}
           <Button variant="contained" startIcon={<AddIcon />} sx={{ ml: 2 }}>Добавить</Button>
         </Box>
       </Box>
