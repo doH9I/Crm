@@ -40,7 +40,7 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   
   const { user, logout } = useAuthStore();
-  const { toggleSidebar } = useAppStore();
+  const { sidebar, toggleSidebar } = useAppStore();
   
   const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
@@ -189,7 +189,7 @@ const DashboardLayout: React.FC = () => {
       {/* Sidebar */}
       <Drawer
         variant={isMobile ? 'temporary' : 'persistent'}
-        open={false}
+        open={isMobile ? sidebar.isOpen : sidebar.isOpen || !sidebar.isPinned}
         onClose={handleDrawerToggle}
         sx={{
           width: DRAWER_WIDTH,

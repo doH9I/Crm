@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRouteWithPermissions from './components/ProtectedRoute';
 import { MODULES } from './hooks/usePermissions';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/Layout/DashboardLayout';
@@ -78,9 +78,9 @@ const App: React.FC = () => {
           <Route 
             path="dashboard" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.DASHBOARD}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.DASHBOARD}>
                 <DashboardPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -88,17 +88,17 @@ const App: React.FC = () => {
           <Route 
             path="projects" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.PROJECTS}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.PROJECTS}>
                 <ProjectsPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           <Route 
             path="projects/:id" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.PROJECTS}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.PROJECTS}>
                 <ProjectDetailPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -106,9 +106,9 @@ const App: React.FC = () => {
           <Route 
             path="estimates" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.ESTIMATES}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.ESTIMATES}>
                 <EstimatesPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -116,17 +116,17 @@ const App: React.FC = () => {
           <Route 
             path="materials" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.MATERIALS}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.MATERIALS}>
                 <MaterialsPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           <Route 
             path="tools" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.TOOLS}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.TOOLS}>
                 <ToolsPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -134,9 +134,9 @@ const App: React.FC = () => {
           <Route 
             path="employees" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.EMPLOYEES}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.EMPLOYEES}>
                 <EmployeesPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -144,9 +144,9 @@ const App: React.FC = () => {
           <Route 
             path="finances" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.FINANCES}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.FINANCES}>
                 <FinancesPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -154,9 +154,9 @@ const App: React.FC = () => {
           <Route 
             path="calendar" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.CALENDAR}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.CALENDAR}>
                 <CalendarPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -164,9 +164,9 @@ const App: React.FC = () => {
           <Route 
             path="reports" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.REPORTS}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.REPORTS}>
                 <ReportsPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           
@@ -174,17 +174,17 @@ const App: React.FC = () => {
           <Route 
             path="settings" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.SETTINGS}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.SETTINGS}>
                 <SettingsPage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
           <Route 
             path="profile" 
             element={
-              <ProtectedRoute requiredPermission={MODULES.PROFILE}>
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.PROFILE}>
                 <ProfilePage />
-              </ProtectedRoute>
+              </ProtectedRouteWithPermissions>
             } 
           />
         </Route>
