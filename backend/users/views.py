@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import pandas as pd
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from analytics.utils import audit_log_action
 
 # Create your views here.
 
@@ -15,6 +16,18 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        audit_log_action(self.request.user, 'create', instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        audit_log_action(self.request.user, 'update', instance)
+
+    def perform_destroy(self, instance):
+        audit_log_action(self.request.user, 'delete', instance)
+        instance.delete()
 
     @action(detail=False, methods=['post'], url_path='import_excel')
     def import_excel(self, request):

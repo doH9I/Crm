@@ -18,6 +18,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Divider from '@mui/material/Divider';
@@ -27,6 +28,7 @@ import { DashboardPage } from './components/dashboard/DashboardPage';
 import { ProjectsPage } from './components/projects/ProjectsPage';
 import { WarehousePage } from './components/warehouse/WarehousePage';
 import { AnalyticsPage } from './components/analytics/AnalyticsPage';
+import { AuditLogPage } from './components/analytics/AuditLogPage';
 
 const theme = createTheme({
   palette: {
@@ -58,6 +60,7 @@ const menu = [
   { text: 'Проекты', icon: <AssignmentIcon />, path: '/projects' },
   { text: 'Склад', icon: <WarehouseIcon />, path: '/warehouse' },
   { text: 'Аналитика', icon: <BarChartIcon />, path: '/analytics' },
+  { text: 'История действий', icon: <HistoryIcon />, path: '/auditlog' },
   { text: 'Профиль', icon: <AccountCircleIcon />, path: '/profile' },
   { text: 'Настройки', icon: <SettingsIcon />, path: '/settings' },
 ];
@@ -115,6 +118,7 @@ function App() {
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/warehouse" element={<WarehousePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/auditlog" element={<AuditLogPage />} />
               <Route path="/profile" element={<Placeholder title="Профиль" />} />
               <Route path="/settings" element={<Placeholder title="Настройки" />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
