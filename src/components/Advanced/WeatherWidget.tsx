@@ -161,16 +161,15 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     }
   };
 
-  const getWorkRecommendationIcon = (recommendation: string) => {
+  const getWorkRecommendationIcon = (recommendation: string): React.ReactElement => {
     switch (recommendation) {
-      case 'ideal':
       case 'good':
         return <CheckIcon fontSize="small" />;
       case 'limited':
       case 'not_recommended':
         return <WarningIcon fontSize="small" />;
       default:
-        return null;
+        return <span />;
     }
   };
 

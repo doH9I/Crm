@@ -15,7 +15,6 @@ import {
   InputAdornment,
   IconButton,
   Alert,
-  LinearProgress,
   Fade,
   Slide,
 } from '@mui/material';
@@ -25,7 +24,6 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Business as BusinessIcon,
-  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../store';
 
@@ -45,7 +43,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuthStore();
+  const { login } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -135,16 +133,14 @@ const LoginPage: React.FC = () => {
             }}
           >
             {/* Прогресс загрузки */}
-            {isLoading && (
-              <LinearProgress
-                sx={{
-                  height: 4,
-                  '& .MuiLinearProgress-bar': {
-                    background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
-                  },
-                }}
-              />
-            )}
+            {/* <LinearProgress
+              sx={{
+                height: 4,
+                '& .MuiLinearProgress-bar': {
+                  background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
+                },
+              }}
+            /> */}
 
             <CardContent sx={{ padding: 6 }}>
               {/* Логотип и заголовок */}
@@ -203,7 +199,7 @@ const LoginPage: React.FC = () => {
                         border: '1px solid rgba(25, 118, 210, 0.2)',
                       }}
                     >
-                      <DashboardIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+                      {/* <DashboardIcon sx={{ fontSize: 20, color: 'primary.main' }} /> */}
                       <Typography variant="body2" color="primary.main" fontWeight={500}>
                         Вход в систему
                       </Typography>
@@ -259,7 +255,7 @@ const LoginPage: React.FC = () => {
                     type="email"
                     error={!!errors.email}
                     helperText={errors.email?.message}
-                    disabled={isLoading}
+                    disabled={false}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -283,7 +279,7 @@ const LoginPage: React.FC = () => {
                     type={showPassword ? 'text' : 'password'}
                     error={!!errors.password}
                     helperText={errors.password?.message}
-                    disabled={isLoading}
+                    disabled={false}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -295,7 +291,7 @@ const LoginPage: React.FC = () => {
                           <IconButton
                             onClick={togglePasswordVisibility}
                             edge="end"
-                            disabled={isLoading}
+                            disabled={false}
                           >
                             {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                           </IconButton>
@@ -315,7 +311,7 @@ const LoginPage: React.FC = () => {
                   fullWidth
                   variant="contained"
                   size="large"
-                  disabled={isLoading}
+                  disabled={false}
                   sx={{
                     py: 1.5,
                     borderRadius: 2,
@@ -334,7 +330,7 @@ const LoginPage: React.FC = () => {
                     transition: 'all 0.3s ease',
                   }}
                 >
-                  {isLoading ? 'Вход в систему...' : 'Войти в систему'}
+                  {'Войти в систему'}
                 </Button>
               </Box>
 

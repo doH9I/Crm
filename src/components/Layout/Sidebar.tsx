@@ -20,14 +20,13 @@ import {
   Build as ToolIcon,
   People as EmployeeIcon,
   AccountBalance as FinanceIcon,
-  Calendar as CalendarIcon,
+  DateRange as CalendarIcon,
   Assessment as ReportIcon,
   Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 
 interface NavigationItem {

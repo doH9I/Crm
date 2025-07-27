@@ -20,31 +20,12 @@ import {
   Grid,
   LinearProgress,
   Tooltip,
-  Menu,
   Badge,
-  Divider,
-  Autocomplete,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  FilterList as FilterIcon,
-  MoreVert as MoreIcon,
-  Schedule as ScheduleIcon,
-  Person as PersonIcon,
-  AttachMoney as MoneyIcon,
-  Warning as WarningIcon,
-  CheckCircle as CompletedIcon,
-  PlayArrow as StartIcon,
-  Pause as PauseIcon,
-  Build as ToolIcon,
-  Inventory as MaterialIcon,
-  Assignment as TaskIcon,
-  Analytics as AnalyticsIcon,
-  ViewKanban as KanbanIcon,
-  ViewList as ListIcon,
-} from '@mui/icons-material';
+import { AttachMoney as MoneyIcon } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ProjectTask, TaskStatus, WorkType, User } from '../../types';
+import { FilterList as FilterIcon, List as ListIcon, ViewKanban as KanbanIcon, Add as AddIcon } from '@mui/icons-material';
 
 interface TaskManagerProps {
   projectId: string;
@@ -260,7 +241,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
       [WorkType.FINISHING]: 'Отделка',
       [WorkType.OTHER]: 'Другое',
     };
-    return types[workType] || workType;
+    return types[workType as keyof typeof types] || workType;
   };
 
   const getWorkTypeColor = (workType: WorkType): string => {
@@ -273,7 +254,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
       [WorkType.FINISHING]: '#AB47BC',
       [WorkType.OTHER]: '#78909C',
     };
-    return colors[workType] || '#757575';
+    return colors[workType as keyof typeof colors] || '#757575';
   };
 
   const getPriorityColor = (priority: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
@@ -361,7 +342,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                   {task.name}
                 </Typography>
                 <IconButton size="small" sx={{ p: 0.5 }}>
-                  <MoreIcon fontSize="small" />
+                  {/* <MoreIcon fontSize="small" /> */}
                 </IconButton>
               </Box>
 
@@ -444,12 +425,12 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                   {task.endDate && (
                     <Tooltip title={`Срок: ${new Date(task.endDate).toLocaleDateString('ru')}`}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <ScheduleIcon 
+                        {/* <ScheduleIcon 
                           sx={{ 
                             fontSize: 16, 
                             color: isOverdue ? 'error.main' : 'text.secondary' 
                           }} 
-                        />
+                        /> */}
                         <Typography 
                           variant="caption" 
                           sx={{ 
@@ -480,9 +461,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                   )}
                   
                   {isOverdue && (
-                    <Tooltip title="Просрочена">
-                      <WarningIcon sx={{ fontSize: 16, color: 'error.main' }} />
-                    </Tooltip>
+                    <Tooltip title="Просрочена"><span>!</span></Tooltip>
                   )}
                 </Box>
               </Box>
@@ -518,7 +497,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
       {/* Заголовок и фильтры */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <TaskIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          {/* <TaskIcon sx={{ fontSize: 32, color: 'primary.main' }} /> */}
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             Управление задачами
           </Typography>
@@ -577,7 +556,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                     В работе
                   </Typography>
                 </Box>
-                <StartIcon sx={{ fontSize: 32, opacity: 0.8 }} />
+                {/* <StartIcon sx={{ fontSize: 32, opacity: 0.8 }} /> */}
               </Box>
             </CardContent>
           </Card>
@@ -595,7 +574,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                     Завершено
                   </Typography>
                 </Box>
-                <CompletedIcon sx={{ fontSize: 32, opacity: 0.8 }} />
+                {/* <CompletedIcon sx={{ fontSize: 32, opacity: 0.8 }} /> */}
               </Box>
             </CardContent>
           </Card>
@@ -613,7 +592,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                     Просрочено
                   </Typography>
                 </Box>
-                <WarningIcon sx={{ fontSize: 32, opacity: 0.8 }} />
+                {/* <WarningIcon sx={{ fontSize: 32, opacity: 0.8 }} /> */}
               </Box>
             </CardContent>
           </Card>
@@ -631,7 +610,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
                     Общий прогресс
                   </Typography>
                 </Box>
-                <AnalyticsIcon sx={{ fontSize: 32, opacity: 0.8 }} />
+                {/* <AnalyticsIcon sx={{ fontSize: 32, opacity: 0.8 }} /> */}
               </Box>
             </CardContent>
           </Card>

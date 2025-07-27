@@ -120,12 +120,14 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
   const toggleFlash = useCallback(async () => {
     if (streamRef.current) {
       const track = streamRef.current.getVideoTracks()[0];
-      const capabilities = track.getCapabilities();
+      // TS workaround: расширяем тип для torch
+      const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
       
-      if (capabilities.torch) {
+      if ('torch' in capabilities && capabilities.torch) {
         try {
+          // TS workaround: расширяем тип для torch
           await track.applyConstraints({
-            advanced: [{ torch: !flashEnabled }]
+            advanced: [{ torch: !flashEnabled } as any]
           });
           setFlashEnabled(!flashEnabled);
         } catch (err) {

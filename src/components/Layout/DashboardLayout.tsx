@@ -7,7 +7,6 @@ import {
   Toolbar,
   Typography,
   Divider,
-  IconButton,
   Avatar,
   Menu,
   MenuItem,
@@ -24,7 +23,6 @@ import {
   AccountCircle as AccountCircleIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Dashboard as DashboardIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useAuthStore, useAppStore } from '../../store';
@@ -39,7 +37,7 @@ const DashboardLayout: React.FC = () => {
   const location = useLocation();
   
   const { user, logout } = useAuthStore();
-  const { sidebarOpen, toggleSidebar } = useAppStore();
+  const { toggleSidebar } = useAppStore();
   
   const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
@@ -105,7 +103,7 @@ const DashboardLayout: React.FC = () => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          ...(sidebarOpen && !isMobile && {
+          ...(false && !isMobile && {
             marginLeft: DRAWER_WIDTH,
             width: `calc(100% - ${DRAWER_WIDTH}px)`,
             transition: theme.transitions.create(['width', 'margin'], {
@@ -116,18 +114,9 @@ const DashboardLayout: React.FC = () => {
         }}
       >
         <Toolbar sx={{ pr: '24px' }}>
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="toggle drawer"
-            onClick={handleDrawerToggle}
-            sx={{
-              marginRight: '36px',
-              ...(sidebarOpen && !isMobile && { display: 'none' }),
-            }}
-          >
+          <button type="button" aria-label="toggle drawer" onClick={handleDrawerToggle} style={{ marginRight: '36px' }}>
             <MenuIcon />
-          </IconButton>
+          </button>
 
           <Typography
             component="h1"
@@ -145,7 +134,8 @@ const DashboardLayout: React.FC = () => {
 
           {/* Уведомления */}
           <Tooltip title="Уведомления">
-            <IconButton
+            <button
+              type="button"
               color="inherit"
               onClick={handleNotificationOpen}
               sx={{ mr: 1 }}
@@ -153,12 +143,13 @@ const DashboardLayout: React.FC = () => {
               <Badge badgeContent={3} color="error">
                 <NotificationsIcon sx={{ color: theme.palette.text.primary }} />
               </Badge>
-            </IconButton>
+            </button>
           </Tooltip>
 
           {/* Меню профиля */}
           <Tooltip title="Профиль">
-            <IconButton
+            <button
+              type="button"
               edge="end"
               color="inherit"
               onClick={handleAccountMenuOpen}
@@ -174,7 +165,7 @@ const DashboardLayout: React.FC = () => {
               >
                 {user?.name?.charAt(0) || 'A'}
               </Avatar>
-            </IconButton>
+            </button>
           </Tooltip>
         </Toolbar>
       </AppBar>
@@ -182,7 +173,7 @@ const DashboardLayout: React.FC = () => {
       {/* Sidebar */}
       <Drawer
         variant={isMobile ? 'temporary' : 'persistent'}
-        open={sidebarOpen}
+        open={false}
         onClose={handleDrawerToggle}
         sx={{
           width: DRAWER_WIDTH,
@@ -247,7 +238,8 @@ const DashboardLayout: React.FC = () => {
           </Box>
           
           {!isMobile && (
-            <IconButton
+            <button
+              type="button"
               onClick={handleDrawerToggle}
               sx={{ 
                 color: 'white',
@@ -258,7 +250,7 @@ const DashboardLayout: React.FC = () => {
               }}
             >
               <ChevronLeftIcon />
-            </IconButton>
+            </button>
           )}
         </Toolbar>
 
@@ -316,7 +308,7 @@ const DashboardLayout: React.FC = () => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          ...(sidebarOpen && !isMobile && {
+          ...(false && !isMobile && {
             marginLeft: 0,
             transition: theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,

@@ -8,7 +8,6 @@ import {
   LinearProgress,
   Avatar,
   Chip,
-  IconButton,
   Button,
 } from '@mui/material';
 import {
@@ -22,7 +21,6 @@ import {
   Security as SecurityIcon,
   Add as AddIcon,
   QrCodeScanner as QrScannerIcon,
-  WbSunny as WeatherIcon,
 } from '@mui/icons-material';
 import {
   Area,
@@ -39,7 +37,7 @@ import {
 } from 'recharts';
 
 import { useDashboardStore } from '../store';
-import { formatCurrency, generateColors } from '../utils';
+import { formatCurrency } from '../utils';
 import WeatherWidget from '../components/Advanced/WeatherWidget';
 import QRCodeScanner from '../components/Advanced/QRCodeScanner';
 

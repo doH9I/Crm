@@ -16,7 +16,6 @@ import {
   QualityCheck,
   WeatherForecast,
   Equipment,
-  Subcontractor,
   CalendarEvent,
   Report,
   Template,
@@ -223,56 +222,6 @@ interface AppState {
   pinSidebar: (pinned: boolean) => void;
 }
 
-// Заглушки данных для демонстрации
-const mockUser: User = {
-  id: '1',
-  email: 'admin@construction-crm.ru',
-  name: 'Администратор',
-  phone: '+7 (999) 123-45-67',
-  role: 'admin' as any,
-  avatar: '',
-  isActive: true,
-  salary: 80000,
-  hireDate: new Date('2020-01-01'),
-  department: 'Управление',
-  skills: ['Управление проектами', 'Планирование', 'Контроль качества'],
-  lastLogin: new Date(),
-  createdAt: new Date('2020-01-01'),
-  updatedAt: new Date()
-};
-
-const mockStats: DashboardStats = {
-  totalProjects: 25,
-  activeProjects: 8,
-  completedProjects: 15,
-  totalRevenue: 12500000,
-  monthlyRevenue: 2100000,
-  totalExpenses: 8900000,
-  monthlyExpenses: 1450000,
-  profit: 3600000,
-  employeeCount: 24,
-  activeEmployees: 22,
-  materialCount: 156,
-  lowStockMaterials: 12,
-  toolCount: 89,
-  brokenTools: 3
-};
-
-const defaultSettings: AppSettings = {
-  companyName: 'СтройКомпани ООО',
-  currency: 'RUB',
-  timezone: 'Europe/Moscow',
-  language: 'ru',
-  theme: 'light',
-  notifications: {
-    email: true,
-    push: true,
-    lowStock: true,
-    projectDeadlines: true,
-    maintenanceReminders: true
-  }
-};
-
 // Store для аутентификации
 export const useAuthStore = create<AuthState>()(
   devtools(
@@ -329,7 +278,7 @@ export const useProjectStore = create<ProjectState>()(
     immer((set, get) => ({
       projects: [],
       tasks: [],
-      loading: false,
+      loading: false as boolean,
       selectedProject: null,
       fetchProjects: async () => {
         set(state => { state.loading = true; });
@@ -454,7 +403,7 @@ export const useMaterialStore = create<MaterialState>()(
       materials: [],
       suppliers: [],
       orders: [],
-      loading: false,
+      loading: false as boolean,
       fetchMaterials: async () => {
         set(state => { state.loading = true; });
         try {
@@ -547,7 +496,7 @@ export const useToolStore = create<ToolState>()(
     immer((set, get) => ({
       tools: [],
       equipment: [],
-      loading: false,
+      loading: false as boolean,
       fetchTools: async () => {
         set(state => { state.loading = true; });
         try {
@@ -648,7 +597,7 @@ export const useDashboardStore = create<DashboardState>()(
   devtools(
     immer((set, get) => ({
       stats: null,
-      loading: false,
+      loading: false as boolean,
       weather: null,
       fetchStats: async () => {
         set(state => { state.loading = true; });
@@ -904,93 +853,93 @@ export const useAppStore = create<AppState>()(
 
 // Дополнительные stores для других модулей
 export const useHRStore = create<HRState>()(devtools(immer(() => ({
-  employees: [],
-  timeEntries: [],
-  trainings: [],
-  loading: false,
+  employees: [] as User[],
+  timeEntries: [] as TimeEntry[],
+  trainings: [] as Training[],
+  loading: false as boolean,
   fetchEmployees: async () => {},
   fetchTimeEntries: async () => {},
   fetchTrainings: async () => {},
-  createEmployee: async () => {},
-  updateEmployee: async () => {},
-  deleteEmployee: async () => {},
-  createTimeEntry: async () => {},
-  approveTimeEntry: async () => {},
-  rejectTimeEntry: async () => {},
-  createTraining: async () => {},
-  enrollInTraining: async () => {},
+  createEmployee: async (_employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateEmployee: async (_id: string, _updates: Partial<User>) => {},
+  deleteEmployee: async (_id: string) => {},
+  createTimeEntry: async (_entry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  approveTimeEntry: async (_id: string) => {},
+  rejectTimeEntry: async (_id: string, _reason: string) => {},
+  createTraining: async (_training: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  enrollInTraining: async (_trainingId: string, _userId: string) => {},
 }))));
 
 export const useFinanceStore = create<FinanceState>()(devtools(immer(() => ({
-  invoices: [],
-  budgets: [],
-  contracts: [],
-  loading: false,
+  invoices: [] as Invoice[],
+  budgets: [] as Budget[],
+  contracts: [] as Contract[],
+  loading: false as boolean,
   fetchInvoices: async () => {},
   fetchBudgets: async () => {},
   fetchContracts: async () => {},
-  createInvoice: async () => {},
-  updateInvoiceStatus: async () => {},
-  createBudget: async () => {},
-  updateBudget: async () => {},
-  createContract: async () => {},
+  createInvoice: async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateInvoiceStatus: async (id: string, status: string) => {},
+  createBudget: async (budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateBudget: async (id: string, updates: Partial<Budget>) => {},
+  createContract: async (contract: Omit<Contract, 'id' | 'createdAt' | 'updatedAt'>) => {},
 }))));
 
 export const useClientStore = create<ClientState>()(devtools(immer(() => ({
-  clients: [],
-  loading: false,
+  clients: [] as Client[],
+  loading: false as boolean,
   fetchClients: async () => {},
-  createClient: async () => {},
-  updateClient: async () => {},
-  deleteClient: async () => {},
+  createClient: async (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateClient: async (id: string, updates: Partial<Client>) => {},
+  deleteClient: async (id: string) => {},
 }))));
 
 export const useSafetyStore = create<SafetyState>()(devtools(immer(() => ({
-  incidents: [],
-  loading: false,
+  incidents: [] as SafetyIncident[],
+  loading: false as boolean,
   fetchIncidents: async () => {},
-  createIncident: async () => {},
-  updateIncident: async () => {},
-  resolveIncident: async () => {},
+  createIncident: async (incident: Omit<SafetyIncident, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateIncident: async (id: string, updates: Partial<SafetyIncident>) => {},
+  resolveIncident: async (id: string, resolution: string) => {},
 }))));
 
 export const useQualityStore = create<QualityState>()(devtools(immer(() => ({
-  checks: [],
-  loading: false,
+  checks: [] as QualityCheck[],
+  loading: false as boolean,
   fetchQualityChecks: async () => {},
-  createQualityCheck: async () => {},
-  updateQualityCheck: async () => {},
+  createQualityCheck: async (check: Omit<QualityCheck, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateQualityCheck: async (id: string, updates: Partial<QualityCheck>) => {},
 }))));
 
 export const useCalendarStore = create<CalendarState>()(devtools(immer(() => ({
-  events: [],
-  loading: false,
+  events: [] as CalendarEvent[],
+  loading: false as boolean,
   fetchEvents: async () => {},
-  createEvent: async () => {},
-  updateEvent: async () => {},
-  deleteEvent: async () => {},
+  createEvent: async (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateEvent: async (id: string, updates: Partial<CalendarEvent>) => {},
+  deleteEvent: async (id: string) => {},
 }))));
 
 export const useReportStore = create<ReportState>()(devtools(immer(() => ({
-  reports: [],
-  templates: [],
-  loading: false,
+  reports: [] as Report[],
+  templates: [] as Template[],
+  loading: false as boolean,
   fetchReports: async () => {},
   fetchTemplates: async () => {},
-  generateReport: async () => {},
-  createTemplate: async () => {},
-  updateTemplate: async () => {},
+  generateReport: async (reportId: string, parameters: Record<string, any>) => {},
+  createTemplate: async (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => {},
+  updateTemplate: async (id: string, updates: Partial<Template>) => {},
 }))));
 
 export const useIntegrationStore = create<IntegrationState>()(devtools(immer(() => ({
-  integrations: [],
-  backups: [],
-  loading: false,
+  integrations: [] as Integration[],
+  backups: [] as Backup[],
+  loading: false as boolean,
   fetchIntegrations: async () => {},
   fetchBackups: async () => {},
-  enableIntegration: async () => {},
-  disableIntegration: async () => {},
-  syncIntegration: async () => {},
-  createBackup: async () => {},
-  restoreBackup: async () => {},
+  enableIntegration: async (type: string, config: Record<string, any>) => {},
+  disableIntegration: async (id: string) => {},
+  syncIntegration: async (id: string) => {},
+  createBackup: async (name: string, type: 'manual' | 'automatic') => {},
+  restoreBackup: async (id: string) => {},
 }))));
