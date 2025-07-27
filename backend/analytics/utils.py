@@ -1,5 +1,6 @@
 from .models import AuditLog
 from django.contrib.contenttypes.models import ContentType
+from .models import Notification
 
 def audit_log_action(user, action, instance, changes=None, extra=None):
     AuditLog.objects.create(
@@ -11,3 +12,6 @@ def audit_log_action(user, action, instance, changes=None, extra=None):
         changes=changes,
         extra=extra,
     )
+
+def create_notification(user, title, message, level='info', link=''):
+    Notification.objects.create(user=user, title=title, message=message, level=level, link=link)

@@ -29,6 +29,7 @@ import { ProjectsPage } from './components/projects/ProjectsPage';
 import { WarehousePage } from './components/warehouse/WarehousePage';
 import { AnalyticsPage } from './components/analytics/AnalyticsPage';
 import { AuditLogPage } from './components/analytics/AuditLogPage';
+import { NotificationsBell } from './components/common/NotificationsBell';
 
 const theme = createTheme({
   palette: {
@@ -82,9 +83,10 @@ function App() {
               <IconButton color="inherit" edge="start" onClick={() => setOpen(!open)} sx={{ mr: 2 }}>
                 <MenuIcon />
               </IconButton>
-              <Typography variant="h6" noWrap component="div">
+              <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
                 CRM Строительная компания
               </Typography>
+              <NotificationsBell />
             </Toolbar>
           </AppBar>
           <Drawer

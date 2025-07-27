@@ -42,3 +42,19 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.get_action_display()} {self.object_type} {self.object_repr} ({self.timestamp})"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+    level = models.CharField(max_length=20, default='info')  # info, warning, error, success
+    link = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.user})"

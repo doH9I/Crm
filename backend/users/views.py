@@ -9,6 +9,7 @@ from rest_framework import status
 import pandas as pd
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from analytics.utils import audit_log_action
+from analytics.utils import create_notification
 
 # Create your views here.
 
@@ -20,6 +21,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         instance = serializer.save()
         audit_log_action(self.request.user, 'create', instance)
+        create_notification(self.request.user, 'Добавлен сотрудник', f'Пользователь {instance.username} добавлен', 'success', link=f'/users/{instance.id}')
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -27,6 +29,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         audit_log_action(self.request.user, 'delete', instance)
+        create_notification(self.request.user, 'Удалён сотрудник', f'Пользователь {instance.username} удалён', 'warning', link='/users')
         instance.delete()
 
     @action(detail=False, methods=['post'], url_path='import_excel')
