@@ -58,3 +58,19 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.user})"
+
+
+class Comment(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    project = models.ForeignKey('projects.Project', null=True, blank=True, on_delete=models.CASCADE, related_name='comments')
+    material = models.ForeignKey('warehouse.Material', null=True, blank=True, on_delete=models.CASCADE, related_name='comments')
+    # Можно добавить другие связи (например, Estimate, Tool, WorkType)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user}: {self.content[:30]}..."
