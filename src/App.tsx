@@ -20,6 +20,9 @@ import ProfilePage from './pages/ProfilePage';
 import SuppliersPage from './pages/SuppliersPage';
 import ClientsPage from './pages/ClientsPage';
 
+// Добавляем импорт для страницы подрядчиков
+const ContractorsPage = React.lazy(() => import('./pages/ContractorsPage'));
+
 // Компонент для защищенных маршрутов
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -206,6 +209,18 @@ const App: React.FC = () => {
             element={
               <ProtectedRouteWithPermissions requiredPermission={MODULES.PROFILE}>
                 <ProfilePage />
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+
+          {/* Подрядчики */}
+          <Route 
+            path="contractors" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.PROJECTS}>
+                <React.Suspense fallback={<div>Загрузка...</div>}>
+                  <ContractorsPage />
+                </React.Suspense>
               </ProtectedRouteWithPermissions>
             } 
           />

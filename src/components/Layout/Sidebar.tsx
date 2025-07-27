@@ -26,6 +26,7 @@ import {
   Settings as SettingsIcon,
   LocalShipping as SupplierIcon,
   PersonAdd as ClientIcon,
+  Business as BusinessIcon,
   ExpandLess,
   ExpandMore,
   Folder as FolderIcon,
@@ -140,6 +141,15 @@ const navigationItems: NavigationItem[] = [
     icon: <ClientIcon />,
     badge: 15,
     badgeColor: 'primary',
+    permission: MODULES.PROJECTS,
+  },
+  {
+    id: 'contractors',
+    label: 'Подрядчики',
+    path: '/contractors',
+    icon: <BusinessIcon />,
+    badge: 8,
+    badgeColor: 'secondary',
     permission: MODULES.PROJECTS,
   },
   {
