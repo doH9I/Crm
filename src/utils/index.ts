@@ -1,355 +1,271 @@
-import { format, parseISO, isValid, differenceInDays, addDays, startOfMonth, endOfMonth } from 'date-fns';
-import { ru } from 'date-fns/locale';
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { clsx, type ClassValue } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Объединение классов Tailwind
+// Утилита для объединения классов
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 // Форматирование валюты
-export const formatCurrency = (amount: number, currency = 'RUB'): string => {
+export function formatCurrency(amount: number, currency = 'RUB'): string {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(amount);
-};
+}
 
 // Форматирование чисел
-export const formatNumber = (value: number, decimals = 0): string => {
-  return new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-};
+export function formatNumber(num: number): string {
+  return new Intl.NumberFormat('ru-RU').format(num);
+}
 
 // Форматирование процентов
-export const formatPercent = (value: number, decimals = 1): string => {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'percent',
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value / 100);
-};
+export function formatPercent(value: number, decimals = 1): string {
+  return `${value.toFixed(decimals)}%`;
+}
 
-// Работа с датами
-export const formatDate = (date: Date | string, pattern = 'dd.MM.yyyy'): string => {
-  try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    if (!isValid(dateObj)) return '';
-    return format(dateObj, pattern, { locale: ru });
-  } catch {
-    return '';
-  }
-};
+// Форматирование даты
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('ru-RU');
+}
 
-export const formatDateTime = (date: Date | string): string => {
-  return formatDate(date, 'dd.MM.yyyy HH:mm');
-};
+// Форматирование даты и времени
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleString('ru-RU');
+}
 
-export const formatRelativeDate = (date: Date | string): string => {
-  try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    if (!isValid(dateObj)) return '';
-    
-    const now = new Date();
-    const days = differenceInDays(now, dateObj);
-    
-    if (days === 0) return 'Сегодня';
-    if (days === 1) return 'Вчера';
-    if (days === -1) return 'Завтра';
-    if (days > 0 && days <= 7) return `${days} дн. назад`;
-    if (days < 0 && days >= -7) return `Через ${Math.abs(days)} дн.`;
-    
-    return formatDate(dateObj);
-  } catch {
-    return '';
-  }
-};
-
-// Вычисление периодов
-export const getDateRange = (period: 'today' | 'week' | 'month' | 'quarter' | 'year') => {
+// Относительное время
+export function formatRelativeDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days} дн. назад`;
+  if (hours > 0) return `${hours} ч. назад`;
+  if (minutes > 0) return `${minutes} мин. назад`;
+  return 'только что';
+}
+
+// Получение диапазона дат
+export function getDateRange(period: 'week' | 'month' | 'quarter' | 'year'): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date();
   
   switch (period) {
-    case 'today':
-      return { from: now, to: now };
     case 'week':
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay() + 1);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      return { from: weekStart, to: weekEnd };
+      start.setDate(now.getDate() - 7);
+      break;
     case 'month':
-      return { from: startOfMonth(now), to: endOfMonth(now) };
+      start.setMonth(now.getMonth() - 1);
+      break;
     case 'quarter':
-      const quarter = Math.floor(now.getMonth() / 3);
-      const quarterStart = new Date(now.getFullYear(), quarter * 3, 1);
-      const quarterEnd = new Date(now.getFullYear(), quarter * 3 + 3, 0);
-      return { from: quarterStart, to: quarterEnd };
+      start.setMonth(now.getMonth() - 3);
+      break;
     case 'year':
-      return { 
-        from: new Date(now.getFullYear(), 0, 1), 
-        to: new Date(now.getFullYear(), 11, 31) 
-      };
-    default:
-      return { from: now, to: now };
+      start.setFullYear(now.getFullYear() - 1);
+      break;
   }
-};
+  
+  return { start, end: now };
+}
 
 // Генерация цветов для графиков
-export const generateColors = (count: number): string[] => {
+export function generateColors(count: number): string[] {
   const baseColors = [
-    '#1976d2', '#42a5f5', '#64b5f6', '#90caf9',
-    '#10b981', '#34d399', '#6ee7b7', '#a7f3d0',
-    '#f59e0b', '#fbbf24', '#fcd34d', '#fde68a',
-    '#ef4444', '#f87171', '#fca5a5', '#fecaca',
-    '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe'
+    '#1976d2', '#388e3c', '#f57c00', '#7b1fa2',
+    '#c2185b', '#00796b', '#5c6bc0', '#ff5722',
+    '#607d8b', '#795548', '#9c27b0', '#e91e63'
   ];
   
   if (count <= baseColors.length) {
     return baseColors.slice(0, count);
   }
   
-  // Генерируем дополнительные цвета
+  // Генерация дополнительных цветов
   const colors = [...baseColors];
   for (let i = baseColors.length; i < count; i++) {
-    const hue = (i * 137.508) % 360; // Золотой угол для равномерного распределения
+    const hue = (i * 137.508) % 360; // Золотое сечение для равномерного распределения
     colors.push(`hsl(${hue}, 70%, 50%)`);
   }
   
   return colors;
-};
+}
 
-// Валидация
-export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+// Валидация email
+export function validateEmail(email: string): boolean {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
 
-export const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^(\+7|8)?[\s\-]?\(?[489][0-9]{2}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
-  return phoneRegex.test(phone.replace(/\s/g, ''));
-};
+// Валидация телефона
+export function validatePhone(phone: string): boolean {
+  const re = /^(\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$/;
+  return re.test(phone);
+}
 
-export const validateInn = (inn: string): boolean => {
+// Валидация ИНН
+export function validateInn(inn: string): boolean {
   if (!/^\d{10}$|^\d{12}$/.test(inn)) return false;
   
-  const checkDigit = (inn: string, coefficients: number[]): number => {
-    return coefficients.reduce((sum, coeff, index) => 
-      sum + coeff * parseInt(inn[index]), 0) % 11 % 10;
+  const checkDigit = (inn: string, coefficients: number[]) => {
+    let sum = 0;
+    for (let i = 0; i < coefficients.length; i++) {
+      sum += parseInt(inn[i]) * coefficients[i];
+    }
+    return sum % 11 % 10;
   };
   
   if (inn.length === 10) {
-    return checkDigit(inn, [2, 4, 10, 3, 5, 9, 4, 6, 8]) === parseInt(inn[9]);
+    const coefficients = [2, 4, 10, 3, 5, 9, 4, 6, 8];
+    return checkDigit(inn, coefficients) === parseInt(inn[9]);
   } else {
-    return checkDigit(inn, [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]) === parseInt(inn[10]) &&
-           checkDigit(inn, [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]) === parseInt(inn[11]);
+    const coefficients1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
+    const coefficients2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8];
+    return checkDigit(inn, coefficients1) === parseInt(inn[10]) &&
+           checkDigit(inn, coefficients2) === parseInt(inn[11]);
   }
-};
+}
 
-// Функции экспорта
-export const exportToExcel = (data: any[], filename = 'export.xlsx', sheetName = 'Data') => {
+// Экспорт в Excel
+export async function exportToExcel(data: any[], filename: string): Promise<void> {
   try {
+    const XLSX = await import('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    
-    // Настройка ширины колонок
-    const maxWidth = data.reduce((w, r) => Math.max(w, Object.keys(r).length), 10);
-    worksheet['!cols'] = Array(maxWidth).fill({ width: 15 });
-    
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, filename);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
   } catch (error) {
     console.error('Ошибка экспорта в Excel:', error);
-    throw new Error('Ошибка при экспорте в Excel');
+    throw new Error('Не удалось экспортировать в Excel');
   }
-};
+}
 
-export const exportToPDF = (data: any[], filename = 'export.pdf', title = 'Отчет') => {
+// Экспорт в PDF
+export async function exportToPDF(content: string, filename: string): Promise<void> {
   try {
-    const pdf = new jsPDF();
-    
-    // Добавляем русский шрифт (базовый)
-    pdf.setFont('helvetica');
-    pdf.setFontSize(16);
-    pdf.text(title, 20, 20);
-    
-    if (data.length === 0) {
-      pdf.setFontSize(12);
-      pdf.text('Нет данных для отображения', 20, 40);
-    } else {
-      const headers = Object.keys(data[0]);
-      const rows = data.map(item => headers.map(header => String(item[header] || '')));
-      
-      (pdf as any).autoTable({
-        head: [headers],
-        body: rows,
-        startY: 30,
-        styles: {
-          font: 'helvetica',
-          fontSize: 8,
-          cellPadding: 3,
-        },
-        headStyles: {
-          fillColor: [25, 118, 210],
-          textColor: 255,
-          fontStyle: 'bold',
-        },
-        alternateRowStyles: {
-          fillColor: [240, 247, 255],
-        },
-        margin: { top: 30 },
-      });
-    }
-    
-    pdf.save(filename);
+    const jsPDF = await import('jspdf');
+    const doc = new jsPDF.default();
+    doc.text(content, 20, 20);
+    doc.save(`${filename}.pdf`);
   } catch (error) {
     console.error('Ошибка экспорта в PDF:', error);
-    throw new Error('Ошибка при экспорте в PDF');
+    throw new Error('Не удалось экспортировать в PDF');
   }
-};
+}
 
-// Работа с файлами
-export const readFileAsText = (file: File): Promise<string> => {
+// Чтение файла как текст
+export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => resolve(e.target?.result as string);
     reader.onerror = () => reject(new Error('Ошибка чтения файла'));
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsText(file);
   });
-};
+}
 
-export const readFileAsDataURL = (file: File): Promise<string> => {
+// Чтение файла как DataURL
+export function readFileAsDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => resolve(e.target?.result as string);
     reader.onerror = () => reject(new Error('Ошибка чтения файла'));
     reader.readAsDataURL(file);
   });
-};
+}
 
-// Генерация уникальных ID
-export const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-};
+// Генерация уникального ID
+export function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
-// Функции для работы с процентами и прогрессом
-export const calculateProgress = (completed: number, total: number): number => {
+// Расчет прогресса
+export function calculateProgress(current: number, total: number): number {
   if (total === 0) return 0;
-  return Math.round((completed / total) * 100);
-};
+  return Math.min(Math.max((current / total) * 100, 0), 100);
+}
 
-export const getProgressColor = (progress: number): string => {
-  if (progress >= 80) return 'success';
-  if (progress >= 50) return 'warning';
-  return 'error';
-};
+// Получение цвета прогресса
+export function getProgressColor(progress: number): string {
+  if (progress >= 80) return '#4caf50'; // зеленый
+  if (progress >= 60) return '#ff9800'; // оранжевый
+  if (progress >= 40) return '#2196f3'; // синий
+  return '#f44336'; // красный
+}
 
-// Работа со статусами
-export const getStatusColor = (status: string): string => {
-  const statusColors: Record<string, string> = {
-    // Проекты
-    planning: 'info',
-    in_progress: 'primary',
-    on_hold: 'warning',
-    completed: 'success',
-    cancelled: 'error',
-    
-    // Задачи
-    not_started: 'secondary',
-    blocked: 'error',
-    
-    // Инструменты
-    new: 'success',
-    good: 'success',
-    fair: 'warning',
-    poor: 'error',
-    broken: 'error',
-    
-    // Общие
-    active: 'success',
-    inactive: 'secondary',
-    pending: 'warning',
+// Получение цвета статуса
+export function getStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    active: '#4caf50',
+    inactive: '#f44336',
+    pending: '#ff9800',
+    completed: '#4caf50',
+    cancelled: '#f44336',
+    in_progress: '#2196f3',
+    on_hold: '#ff9800',
   };
-  
-  return statusColors[status] || 'secondary';
-};
+  return colors[status] || '#757575';
+}
 
-export const getStatusText = (status: string): string => {
-  const statusTexts: Record<string, string> = {
-    // Проекты
-    planning: 'Планирование',
-    in_progress: 'В работе',
-    on_hold: 'Приостановлен',
+// Получение текста статуса
+export function getStatusText(status: string): string {
+  const texts: Record<string, string> = {
+    active: 'Активный',
+    inactive: 'Неактивный',
+    pending: 'Ожидает',
     completed: 'Завершен',
     cancelled: 'Отменен',
-    
-    // Задачи
-    not_started: 'Не начато',
-    blocked: 'Заблокировано',
-    
-    // Инструменты
-    new: 'Новый',
-    good: 'Хорошее',
-    fair: 'Удовлетворительное',
-    poor: 'Плохое',
-    broken: 'Сломан',
-    
-    // Общие
-    active: 'Активен',
-    inactive: 'Неактивен',
-    pending: 'Ожидание',
+    in_progress: 'В работе',
+    on_hold: 'Приостановлен',
   };
-  
-  return statusTexts[status] || status;
-};
+  return texts[status] || status;
+}
 
-// Функции для работы с уведомлениями
-export const showNotification = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-  // В реальном приложении здесь будет интеграция с библиотекой уведомлений
-  console.log(`[${type.toUpperCase()}] ${message}`);
-};
+// Показ уведомления
+export function showNotification(title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
+  // В реальном приложении здесь была бы интеграция с toast библиотекой
+  console.log(`[${type.toUpperCase()}] ${title}: ${message}`);
+}
 
 // Debounce функция
-export const debounce = <T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
   
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
-};
+}
 
-// Функция для создания задержки
-export const delay = (ms: number): Promise<void> => {
+// Задержка
+export function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-};
+}
 
-// Функции для работы с локальным хранилищем
+// Локальное хранилище
 export const storage = {
-  get: <T>(key: string, defaultValue?: T): T | null => {
+  get<T>(key: string, defaultValue?: T): T | null {
     try {
       const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue || null;
+      if (item === null) return defaultValue || null;
+      return JSON.parse(item);
     } catch {
       return defaultValue || null;
     }
   },
   
-  set: <T>(key: string, value: T): void => {
+  set<T>(key: string, value: T): void {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -357,7 +273,7 @@ export const storage = {
     }
   },
   
-  remove: (key: string): void => {
+  remove(key: string): void {
     try {
       localStorage.removeItem(key);
     } catch (error) {
@@ -365,7 +281,7 @@ export const storage = {
     }
   },
   
-  clear: (): void => {
+  clear(): void {
     try {
       localStorage.clear();
     } catch (error) {
@@ -374,17 +290,18 @@ export const storage = {
   }
 };
 
-// Функции для работы с массивами
-export const groupBy = <T>(array: T[], key: keyof T): Record<string, T[]> => {
+// Группировка массива
+export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
   return array.reduce((groups, item) => {
     const group = String(item[key]);
     groups[group] = groups[group] || [];
     groups[group].push(item);
     return groups;
   }, {} as Record<string, T[]>);
-};
+}
 
-export const sortBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' = 'asc'): T[] => {
+// Сортировка массива
+export function sortBy<T>(array: T[], key: keyof T, direction: 'asc' | 'desc' = 'asc'): T[] {
   return [...array].sort((a, b) => {
     const aVal = a[key];
     const bVal = b[key];
@@ -393,16 +310,17 @@ export const sortBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' = 
     if (aVal > bVal) return direction === 'asc' ? 1 : -1;
     return 0;
   });
-};
+}
 
-// Функция для поиска по тексту
-export const searchInText = (text: string, query: string): boolean => {
+// Поиск в тексте
+export function searchInText(text: string, query: string): boolean {
   return text.toLowerCase().includes(query.toLowerCase());
-};
+}
 
-export const highlightText = (text: string, query: string): string => {
+// Подсветка текста
+export function highlightText(text: string, query: string): string {
   if (!query) return text;
   
   const regex = new RegExp(`(${query})`, 'gi');
   return text.replace(regex, '<mark>$1</mark>');
-};
+}

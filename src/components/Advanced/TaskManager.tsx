@@ -20,24 +20,17 @@ import {
   Grid,
   LinearProgress,
   Tooltip,
-  Menu,
   Badge,
-  Divider,
-  Autocomplete,
 } from '@mui/material';
 import {
   Add as AddIcon,
   FilterList as FilterIcon,
   MoreVert as MoreIcon,
   Schedule as ScheduleIcon,
-  Person as PersonIcon,
   AttachMoney as MoneyIcon,
   Warning as WarningIcon,
   CheckCircle as CompletedIcon,
   PlayArrow as StartIcon,
-  Pause as PauseIcon,
-  Build as ToolIcon,
-  Inventory as MaterialIcon,
   Assignment as TaskIcon,
   Analytics as AnalyticsIcon,
   ViewKanban as KanbanIcon,
@@ -222,7 +215,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ projectId }) => {
     };
 
     fetchData();
-  }, [projectId]);
+  }, [projectId, mockTasks, mockUsers]);
 
   // Колонки канбан-доски
   const kanbanColumns = [

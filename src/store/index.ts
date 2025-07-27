@@ -16,7 +16,6 @@ import {
   QualityCheck,
   WeatherForecast,
   Equipment,
-  Subcontractor,
   CalendarEvent,
   Report,
   Template,
@@ -277,7 +276,7 @@ const defaultSettings: AppSettings = {
 export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      immer((set) => ({
         user: null,
         isAuthenticated: false,
         login: async (email: string, password: string) => {
@@ -326,7 +325,7 @@ export const useAuthStore = create<AuthState>()(
 // Store для проектов
 export const useProjectStore = create<ProjectState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       projects: [],
       tasks: [],
       loading: false,
@@ -378,7 +377,7 @@ export const useProjectStore = create<ProjectState>()(
           set(state => { state.loading = false; });
         }
       },
-      fetchProjectTasks: async (projectId: string) => {
+      fetchProjectTasks: async () => {
         set(state => { state.loading = true; });
         try {
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -450,7 +449,7 @@ export const useProjectStore = create<ProjectState>()(
 // Store для материалов
 export const useMaterialStore = create<MaterialState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       materials: [],
       suppliers: [],
       orders: [],
@@ -528,13 +527,13 @@ export const useMaterialStore = create<MaterialState>()(
           state.materials = state.materials.filter(m => m.id !== id);
         });
       },
-      createSupplier: async (supplier) => {
+      createSupplier: async () => {
         // Реализация создания поставщика
       },
-      createOrder: async (order) => {
+      createOrder: async () => {
         // Реализация создания заказа
       },
-      updateOrderStatus: async (id, status) => {
+      updateOrderStatus: async () => {
         // Реализация обновления статуса заказа
       },
     }))
@@ -544,7 +543,7 @@ export const useMaterialStore = create<MaterialState>()(
 // Store для инструментов
 export const useToolStore = create<ToolState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       tools: [],
       equipment: [],
       loading: false,
@@ -613,10 +612,10 @@ export const useToolStore = create<ToolState>()(
           state.tools = state.tools.filter(t => t.id !== id);
         });
       },
-      createEquipment: async (equipment) => {
+      createEquipment: async () => {
         // Реализация создания оборудования
       },
-      updateEquipment: async (id, updates) => {
+      updateEquipment: async () => {
         // Реализация обновления оборудования
       },
       assignTool: async (toolId, userId) => {
@@ -646,7 +645,7 @@ export const useToolStore = create<ToolState>()(
 // Store для дашборда
 export const useDashboardStore = create<DashboardState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       stats: null,
       loading: false,
       weather: null,
@@ -724,7 +723,7 @@ export const useDashboardStore = create<DashboardState>()(
 // Store для уведомлений
 export const useNotificationStore = create<NotificationState>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       notifications: [],
       unreadCount: 0,
       fetchNotifications: async () => {
@@ -811,7 +810,7 @@ export const useNotificationStore = create<NotificationState>()(
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      immer((set) => ({
         settings: {
           companyName: 'СтройТех Про',
           companyLogo: '',

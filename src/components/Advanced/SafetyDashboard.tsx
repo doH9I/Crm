@@ -33,7 +33,7 @@ import {
   TrendingUp as TrendIcon,
   TrendingDown as DownTrendIcon,
   Add as AddIcon,
-} from '@mui/material-icon';
+} from '@mui/icons-material';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, LineChart, Line } from 'recharts';
 import { SafetyIncident, Training } from '../../types';
 
