@@ -11,6 +11,8 @@ from .serializers import NotificationSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from .models import Comment
+from .serializers import CommentSerializer
 
 # Create your views here.
 
@@ -41,3 +43,23 @@ class NotificationViewSet(viewsets.ModelViewSet):
         notification.read = True
         notification.save()
         return Response({'status': 'read'})
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['content', 'user__username']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        project = self.request.query_params.get('project')
+        material = self.request.query_params.get('material')
+        if project:
+            qs = qs.filter(project=project)
+        if material:
+            qs = qs.filter(material=material)
+        return qs.filter(parent=None)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
