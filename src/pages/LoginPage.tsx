@@ -237,11 +237,20 @@ const LoginPage: React.FC = () => {
                 }}
               >
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
-                  Демо доступ:
+                  Демо-аккаунты для входа:
                 </Typography>
-                <Typography variant="body2">
-                  Email: admin@construction-crm.ru<br />
-                  Пароль: admin123
+                <Typography variant="body2" sx={{ fontSize: '0.85rem', lineHeight: 1.4 }}>
+                  <strong>Администратор (полный доступ):</strong><br />
+                  admin@construction-crm.ru / admin123<br /><br />
+                  
+                  <strong>Менеджер проектов:</strong><br />
+                  manager@construction-crm.ru / manager123<br /><br />
+                  
+                  <strong>Мастер:</strong><br />
+                  foreman@construction-crm.ru / foreman123<br /><br />
+                  
+                  <strong>Бухгалтер:</strong><br />
+                  accountant@construction-crm.ru / accountant123
                 </Typography>
               </Alert>
 

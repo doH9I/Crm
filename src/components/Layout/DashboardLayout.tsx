@@ -355,6 +355,25 @@ const DashboardLayout: React.FC = () => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
+        {/* Информация о пользователе */}
+        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            {user?.name || 'Пользователь'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {user?.role === 'admin' ? 'Администратор' :
+             user?.role === 'manager' ? 'Менеджер проектов' :
+             user?.role === 'foreman' ? 'Мастер' :
+             user?.role === 'accountant' ? 'Бухгалтер' :
+             user?.role || 'Роль не определена'}
+          </Typography>
+          {user?.department && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              {user.department}
+            </Typography>
+          )}
+        </Box>
+        
         <MenuItem onClick={handleAccountMenuClose} sx={{ py: 1.5 }}>
           <AccountCircleIcon sx={{ mr: 2, color: 'primary.main' }} />
           Мой профиль

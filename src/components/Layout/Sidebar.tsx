@@ -12,6 +12,7 @@ import {
   Chip,
   Collapse,
 } from '@mui/material';
+import { usePermissions, MODULES } from '../../hooks/usePermissions';
 import {
   Dashboard as DashboardIcon,
   Business as ProjectIcon,
@@ -37,6 +38,7 @@ interface NavigationItem {
   badge?: string | number;
   badgeColor?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
   children?: NavigationItem[];
+  permission?: string; // Какой модуль нужен для доступа
 }
 
 const navigationItems: NavigationItem[] = [
@@ -45,6 +47,7 @@ const navigationItems: NavigationItem[] = [
     label: 'Главная панель',
     path: '/dashboard',
     icon: <DashboardIcon />,
+    permission: MODULES.DASHBOARD,
   },
   {
     id: 'projects',
@@ -53,6 +56,7 @@ const navigationItems: NavigationItem[] = [
     icon: <ProjectIcon />,
     badge: 8,
     badgeColor: 'primary',
+    permission: MODULES.PROJECTS,
     children: [
       {
         id: 'active-projects',
@@ -61,6 +65,7 @@ const navigationItems: NavigationItem[] = [
         icon: <TrendingUpIcon />,
         badge: 5,
         badgeColor: 'success',
+        permission: MODULES.PROJECTS,
       },
       {
         id: 'planning-projects',
@@ -69,6 +74,7 @@ const navigationItems: NavigationItem[] = [
         icon: <FolderIcon />,
         badge: 3,
         badgeColor: 'warning',
+        permission: MODULES.PROJECTS,
       },
     ],
   },
@@ -79,6 +85,7 @@ const navigationItems: NavigationItem[] = [
     icon: <EstimateIcon />,
     badge: 12,
     badgeColor: 'info',
+    permission: MODULES.ESTIMATES,
   },
   {
     id: 'warehouse',
@@ -93,6 +100,7 @@ const navigationItems: NavigationItem[] = [
         icon: <MaterialIcon />,
         badge: 156,
         badgeColor: 'primary',
+        permission: MODULES.MATERIALS,
       },
       {
         id: 'tools',
@@ -101,6 +109,7 @@ const navigationItems: NavigationItem[] = [
         icon: <ToolIcon />,
         badge: '!',
         badgeColor: 'warning',
+        permission: MODULES.TOOLS,
       },
     ],
   },
@@ -111,36 +120,42 @@ const navigationItems: NavigationItem[] = [
     icon: <EmployeeIcon />,
     badge: 24,
     badgeColor: 'success',
+    permission: MODULES.EMPLOYEES,
   },
   {
     id: 'finances',
     label: 'Финансы',
     path: '/finances',
     icon: <FinanceIcon />,
+    permission: MODULES.FINANCES,
   },
   {
     id: 'calendar',
     label: 'Календарь',
     path: '/calendar',
     icon: <CalendarIcon />,
+    permission: MODULES.CALENDAR,
   },
   {
     id: 'reports',
     label: 'Отчеты',
     path: '/reports',
     icon: <ReportIcon />,
+    permission: MODULES.REPORTS,
   },
   {
     id: 'settings',
     label: 'Настройки',
     path: '/settings',
     icon: <SettingsIcon />,
+    permission: MODULES.SETTINGS,
   },
 ];
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { canAccess, isAdmin, user } = usePermissions();
   const [openSections, setOpenSections] = React.useState<string[]>(['projects', 'warehouse']);
 
   const handleNavigation = (path: string) => {
@@ -167,6 +182,43 @@ const Sidebar: React.FC = () => {
     
     // Для остальных страниц - начало пути
     return location.pathname.startsWith(path);
+  };
+
+  // Фильтрация элементов навигации на основе прав доступа
+  const filterNavigationItems = (items: NavigationItem[]): NavigationItem[] => {
+    return items.filter(item => {
+      // Если нет ограничений по правам или пользователь админ
+      if (!item.permission || isAdmin()) {
+        // Фильтруем дочерние элементы
+        if (item.children) {
+          const filteredChildren = filterNavigationItems(item.children);
+          return {
+            ...item,
+            children: filteredChildren
+          };
+        }
+        return true;
+      }
+      
+      // Проверяем права доступа
+      const hasAccess = canAccess(item.permission);
+      
+      if (hasAccess && item.children) {
+        const filteredChildren = filterNavigationItems(item.children);
+        // Показываем родительский элемент, если у него есть доступные дочерние элементы
+        return filteredChildren.length > 0;
+      }
+      
+      return hasAccess;
+    }).map(item => {
+      if (item.children) {
+        return {
+          ...item,
+          children: filterNavigationItems(item.children)
+        };
+      }
+      return item;
+    });
   };
 
   const renderNavigationItem = (item: NavigationItem, depth = 0) => {
@@ -333,7 +385,7 @@ const Sidebar: React.FC = () => {
         </Typography>
         
         <List>
-          {navigationItems.map(item => renderNavigationItem(item))}
+          {filterNavigationItems(navigationItems).map(item => renderNavigationItem(item))}
         </List>
       </Box>
 

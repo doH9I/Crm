@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store';
+import ProtectedRoute from './components/ProtectedRoute';
+import { MODULES } from './hooks/usePermissions';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/Layout/DashboardLayout';
 import DashboardPage from './pages/DashboardPage';
@@ -73,34 +75,118 @@ const App: React.FC = () => {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
+          <Route 
+            path="dashboard" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.DASHBOARD}>
+                <DashboardPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Проекты */}
-          <Route path="projects" element={<ProjectsPage />} />
-          <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route 
+            path="projects" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.PROJECTS}>
+                <ProjectsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="projects/:id" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.PROJECTS}>
+                <ProjectDetailPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Сметы */}
-          <Route path="estimates" element={<EstimatesPage />} />
+          <Route 
+            path="estimates" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.ESTIMATES}>
+                <EstimatesPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Склад */}
-          <Route path="materials" element={<MaterialsPage />} />
-          <Route path="tools" element={<ToolsPage />} />
+          <Route 
+            path="materials" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.MATERIALS}>
+                <MaterialsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="tools" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.TOOLS}>
+                <ToolsPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Персонал */}
-          <Route path="employees" element={<EmployeesPage />} />
+          <Route 
+            path="employees" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.EMPLOYEES}>
+                <EmployeesPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Финансы */}
-          <Route path="finances" element={<FinancesPage />} />
+          <Route 
+            path="finances" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.FINANCES}>
+                <FinancesPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Календарь */}
-          <Route path="calendar" element={<CalendarPage />} />
+          <Route 
+            path="calendar" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.CALENDAR}>
+                <CalendarPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Отчеты */}
-          <Route path="reports" element={<ReportsPage />} />
+          <Route 
+            path="reports" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.REPORTS}>
+                <ReportsPage />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Настройки и профиль */}
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="profile" element={<ProfilePage />} />
+          <Route 
+            path="settings" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.SETTINGS}>
+                <SettingsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="profile" 
+            element={
+              <ProtectedRoute requiredPermission={MODULES.PROFILE}>
+                <ProfilePage />
+              </ProtectedRoute>
+            } 
+          />
         </Route>
 
         {/* Обработка несуществующих маршрутов */}

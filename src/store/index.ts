@@ -233,14 +233,76 @@ export const useAuthStore = create<AuthState>()(
           // Симуляция логики аутентификации
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          if (email === 'admin@construction-crm.ru' && password === 'admin123') {
-            const user: User = {
+          // Предустановленные пользователи системы
+          const users = [
+            {
               id: '1',
-              email,
-              name: 'Администратор',
-              role: 'admin' as any,
+              email: 'admin@construction-crm.ru',
+              password: 'admin123',
+              name: 'Главный Администратор',
+              role: UserRole.ADMIN,
               avatar: '',
               isActive: true,
+              permissions: ['*'], // Полный доступ ко всем разделам
+              department: 'Управление',
+              position: 'Системный администратор',
+              phone: '+7 (999) 123-45-67',
+            },
+            {
+              id: '2',
+              email: 'manager@construction-crm.ru',
+              password: 'manager123',
+              name: 'Менеджер Проектов',
+              role: UserRole.MANAGER,
+              avatar: '',
+              isActive: true,
+              permissions: ['projects', 'estimates', 'employees', 'reports'],
+              department: 'Управление проектами',
+              position: 'Старший менеджер проектов',
+              phone: '+7 (999) 234-56-78',
+            },
+            {
+              id: '3',
+              email: 'foreman@construction-crm.ru',
+              password: 'foreman123',
+              name: 'Мастер Строительства',
+              role: UserRole.FOREMAN,
+              avatar: '',
+              isActive: true,
+              permissions: ['projects', 'materials', 'tools', 'employees'],
+              department: 'Производство',
+              position: 'Прораб',
+              phone: '+7 (999) 345-67-89',
+            },
+            {
+              id: '4',
+              email: 'accountant@construction-crm.ru',
+              password: 'accountant123',
+              name: 'Главный Бухгалтер',
+              role: UserRole.ACCOUNTANT,
+              avatar: '',
+              isActive: true,
+              permissions: ['finances', 'estimates', 'reports'],
+              department: 'Финансы',
+              position: 'Главный бухгалтер',
+              phone: '+7 (999) 456-78-90',
+            }
+          ];
+          
+          const foundUser = users.find(u => u.email === email && u.password === password);
+          
+          if (foundUser) {
+            const user: User = {
+              id: foundUser.id,
+              email: foundUser.email,
+              name: foundUser.name,
+              role: foundUser.role,
+              avatar: foundUser.avatar,
+              isActive: foundUser.isActive,
+              permissions: foundUser.permissions,
+              department: foundUser.department,
+              position: foundUser.position,
+              phone: foundUser.phone,
               createdAt: new Date(),
               updatedAt: new Date(),
             };
