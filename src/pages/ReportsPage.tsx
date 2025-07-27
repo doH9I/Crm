@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  Button,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,62 +23,27 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid,
-  Chip,
-  IconButton,
-  Tooltip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  Divider,
-  Alert,
-  Badge,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  LinearProgress,
+  Button,
   Tabs,
   Tab,
-  AccordionSummary,
-  AccordionDetails,
-  Accordion,
+  LinearProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Assessment as ReportIcon,
-  GetApp as DownloadIcon,
-  PictureAsPdf as PdfIcon,
-  GridOn as ExcelIcon,
-  Print as PrintIcon,
-  Share as ShareIcon,
-  Schedule as ScheduleIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  BarChart as ChartIcon,
-  PieChart as PieChartIcon,
-  AttachMoney as MoneyIcon,
-  Build as ProjectIcon,
-  People as PeopleIcon,
-  Inventory as InventoryIcon,
-  Timeline as TimelineIcon,
-  ExpandMore as ExpandMoreIcon,
-  DateRange as DateRangeIcon,
-  FilterList as FilterIcon,
   Visibility as ViewIcon,
+  GetApp as DownloadIcon,
+  Assessment as ReportIcon,
+  BarChart as ChartIcon,
+  TrendingUp as TrendingUpIcon,
+  Business as BusinessIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Report, Template } from '../types';
+import { Report } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -98,7 +72,7 @@ const reportTypes = [
     id: 'financial',
     name: 'Финансовые отчеты',
     description: 'Доходы, расходы, прибыль, бюджеты',
-    icon: <MoneyIcon />,
+    icon: <BusinessIcon />,
     color: '#4caf50',
     subtypes: [
       { id: 'profit_loss', name: 'Отчет о прибылях и убытках' },
@@ -111,7 +85,7 @@ const reportTypes = [
     id: 'project',
     name: 'Отчеты по проектам',
     description: 'Прогресс, задачи, ресурсы',
-    icon: <ProjectIcon />,
+    icon: <ReportIcon />,
     color: '#2196f3',
     subtypes: [
       { id: 'project_progress', name: 'Прогресс проектов' },
@@ -124,7 +98,7 @@ const reportTypes = [
     id: 'hr',
     name: 'Кадровые отчеты',
     description: 'Сотрудники, время, зарплата',
-    icon: <PeopleIcon />,
+    icon: <ReportIcon />,
     color: '#ff9800',
     subtypes: [
       { id: 'attendance', name: 'Табель учета рабочего времени' },
@@ -137,7 +111,7 @@ const reportTypes = [
     id: 'inventory',
     name: 'Складские отчеты',
     description: 'Материалы, инструменты, поставки',
-    icon: <InventoryIcon />,
+    icon: <ReportIcon />,
     color: '#9c27b0',
     subtypes: [
       { id: 'stock_levels', name: 'Остатки на складе' },
@@ -199,18 +173,19 @@ const mockReports: Report[] = [
 ];
 
 const ReportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  // State
+  const [selectedTab, setSelectedTab] = useState(0);
   const [reports, setReports] = useState<Report[]>(mockReports);
-  const [openReportDialog, setOpenReportDialog] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [selectedReportType, setSelectedReportType] = useState('');
+  const [selectedReportType, setSelectedReportType] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
 
-  const { control, handleSubmit, reset, watch } = useForm<Report>();
+  const { control, handleSubmit, reset, formState, watch } = useForm<Report>();
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setSelectedTab(newValue);
   };
 
   const handleCreateReport = async (data: Report) => {
@@ -225,7 +200,7 @@ const ReportsPage: React.FC = () => {
       };
       
       setReports(prev => [...prev, newReport]);
-      setOpenReportDialog(false);
+      setOpenDialog(false);
       reset();
       toast.success('Отчет успешно создан');
     } catch (error) {
@@ -274,15 +249,27 @@ const ReportsPage: React.FC = () => {
     }
   };
 
-  const openReportDialog = (report?: Report) => {
+  const handleReportDialog = (report?: Report) => {
     if (report) {
       setSelectedReport(report);
       reset(report);
     } else {
       setSelectedReport(null);
-      reset();
+      reset({
+        name: '',
+        type: 'financial',
+        description: '',
+        format: 'pdf',
+        schedule: {
+          frequency: undefined,
+          time: '09:00',
+        },
+        recipients: [],
+        parameters: {},
+        isActive: true,
+      } as any);
     }
-    setOpenReportDialog(true);
+    setOpenDialog(true);
   };
 
   const getReportTypeInfo = (type: string) => {
@@ -339,7 +326,7 @@ const ReportsPage: React.FC = () => {
           <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
-                <ScheduleIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+                <ReportIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
                 <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
                   {stats.scheduledReports}
                 </Typography>
@@ -386,7 +373,7 @@ const ReportsPage: React.FC = () => {
                   }}
                   onClick={() => {
                     setSelectedReportType(type.id);
-                    setActiveTab(1);
+                    setSelectedTab(1);
                   }}
                 >
                   <CardContent>
@@ -402,11 +389,11 @@ const ReportsPage: React.FC = () => {
                       >
                         {type.icon}
                       </Box>
-                      <Badge badgeContent={typeReports.length} color="primary">
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {type.name}
-                        </Typography>
-                      </Badge>
+                      <Chip 
+                        label={type.name} 
+                        size="small" 
+                        variant="outlined"
+                      />
                     </Box>
                     
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -501,7 +488,7 @@ const ReportsPage: React.FC = () => {
                         label={report.format.toUpperCase()} 
                         size="small" 
                         variant="outlined"
-                        icon={report.format === 'pdf' ? <PdfIcon /> : <ExcelIcon />}
+                        icon={report.format === 'pdf' ? <ReportIcon /> : <ReportIcon />}
                       />
                     </TableCell>
                     
@@ -515,38 +502,32 @@ const ReportsPage: React.FC = () => {
                     
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Tooltip title="Сгенерировать PDF">
-                          <IconButton 
-                            size="small"
-                            onClick={() => handleGenerateReport(report.id, 'pdf')}
-                            disabled={generatingReport === report.id}
-                          >
-                            {generatingReport === report.id ? (
-                              <LinearProgress size={20} />
-                            ) : (
-                              <PdfIcon />
-                            )}
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleGenerateReport(report.id, 'pdf')}
+                          disabled={generatingReport === report.id}
+                        >
+                          {generatingReport === report.id ? (
+                            <LinearProgress />
+                          ) : (
+                            <ReportIcon />
+                          )}
+                        </IconButton>
                         
-                        <Tooltip title="Сгенерировать Excel">
-                          <IconButton 
-                            size="small"
-                            onClick={() => handleGenerateReport(report.id, 'excel')}
-                            disabled={generatingReport === report.id}
-                          >
-                            <ExcelIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleGenerateReport(report.id, 'excel')}
+                          disabled={generatingReport === report.id}
+                        >
+                          <ReportIcon />
+                        </IconButton>
                         
-                        <Tooltip title="Редактировать">
-                          <IconButton 
-                            size="small"
-                            onClick={() => openReportDialog(report)}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleReportDialog(report)}
+                        >
+                          <EditIcon />
+                        </IconButton>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -574,18 +555,16 @@ const ReportsPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => openReportDialog()}
+            onClick={() => handleReportDialog()}
           >
             Создать отчет
           </Button>
         </Box>
 
         {selectedReportType && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              {getReportTypeInfo(selectedReportType).description}
-            </Typography>
-          </Alert>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {getReportTypeInfo(selectedReportType).description}
+          </Typography>
         )}
 
         <Grid container spacing={3}>
@@ -623,7 +602,7 @@ const ReportsPage: React.FC = () => {
                         label={report.format.toUpperCase()} 
                         size="small" 
                         variant="outlined"
-                        icon={report.format === 'pdf' ? <PdfIcon /> : <ExcelIcon />}
+                        icon={report.format === 'pdf' ? <ReportIcon /> : <ReportIcon />}
                         sx={{ ml: 1 }}
                       />
                     </Box>
@@ -631,7 +610,7 @@ const ReportsPage: React.FC = () => {
                     {report.schedule && (
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <ScheduleIcon sx={{ fontSize: 14 }} />
+                          <ReportIcon sx={{ fontSize: 14 }} />
                           Расписание: {report.schedule.frequency}
                         </Typography>
                       </Box>
@@ -647,55 +626,45 @@ const ReportsPage: React.FC = () => {
 
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between' }}>
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Tooltip title="Сгенерировать PDF">
-                          <IconButton 
-                            size="small"
-                            onClick={() => handleGenerateReport(report.id, 'pdf')}
-                            disabled={generatingReport === report.id}
-                          >
-                            <PdfIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleGenerateReport(report.id, 'pdf')}
+                          disabled={generatingReport === report.id}
+                        >
+                          <ReportIcon />
+                        </IconButton>
                         
-                        <Tooltip title="Сгенерировать Excel">
-                          <IconButton 
-                            size="small"
-                            onClick={() => handleGenerateReport(report.id, 'excel')}
-                            disabled={generatingReport === report.id}
-                          >
-                            <ExcelIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleGenerateReport(report.id, 'excel')}
+                          disabled={generatingReport === report.id}
+                        >
+                          <ReportIcon />
+                        </IconButton>
                         
-                        <Tooltip title="Просмотр">
-                          <IconButton 
-                            size="small"
-                            onClick={() => toast.info('Функция просмотра будет добавлена')}
-                          >
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => toast('Функция просмотра будет добавлена')}
+                        >
+                          <ViewIcon />
+                        </IconButton>
                       </Box>
                       
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Tooltip title="Редактировать">
-                          <IconButton 
-                            size="small"
-                            onClick={() => openReportDialog(report)}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleReportDialog(report)}
+                        >
+                          <EditIcon />
+                        </IconButton>
                         
-                        <Tooltip title="Удалить">
-                          <IconButton 
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteReport(report.id)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton 
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteReport(report.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
                       </Box>
                     </Box>
                   </CardContent>
@@ -717,7 +686,7 @@ const ReportsPage: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => openReportDialog()}
+              onClick={() => handleReportDialog()}
             >
               Создать отчет
             </Button>
@@ -737,14 +706,14 @@ const ReportsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<ChartIcon />}
-            onClick={() => toast.info('Конструктор отчетов будет добавлен')}
+            onClick={() => toast('Конструктор отчетов будет добавлен')}
           >
             Конструктор
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => openReportDialog()}
+            onClick={() => handleReportDialog()}
           >
             Создать отчет
           </Button>
@@ -754,7 +723,7 @@ const ReportsPage: React.FC = () => {
       {/* Вкладки */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={handleTabChange} aria-label="reports tabs">
+          <Tabs value={selectedTab} onChange={handleTabChange} aria-label="reports tabs">
             <Tab label="Панель управления" />
             <Tab label="Список отчетов" />
             <Tab label="Шаблоны" />
@@ -762,15 +731,15 @@ const ReportsPage: React.FC = () => {
           </Tabs>
         </Box>
 
-        <TabPanel value={activeTab} index={0}>
+        <TabPanel value={selectedTab} index={0}>
           {renderDashboard()}
         </TabPanel>
 
-        <TabPanel value={activeTab} index={1}>
+        <TabPanel value={selectedTab} index={1}>
           {renderReportsList()}
         </TabPanel>
 
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel value={selectedTab} index={2}>
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <ReportIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
@@ -782,7 +751,7 @@ const ReportsPage: React.FC = () => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={selectedTab} index={3}>
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <ChartIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
@@ -797,8 +766,8 @@ const ReportsPage: React.FC = () => {
 
       {/* Диалог создания/редактирования отчета */}
       <Dialog 
-        open={openReportDialog} 
-        onClose={() => setOpenReportDialog(false)}
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)}
         maxWidth="md"
         fullWidth
       >
@@ -862,13 +831,13 @@ const ReportsPage: React.FC = () => {
                       <Select {...field} label="Формат">
                         <MenuItem value="pdf">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <PdfIcon />
+                            <ReportIcon />
                             PDF
                           </Box>
                         </MenuItem>
                         <MenuItem value="excel">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <ExcelIcon />
+                            <ReportIcon />
                             Excel
                           </Box>
                         </MenuItem>
@@ -906,7 +875,7 @@ const ReportsPage: React.FC = () => {
                 <Controller
                   name="schedule.frequency"
                   control={control}
-                  defaultValue=""
+                  defaultValue={undefined}
                   render={({ field }) => (
                     <FormControl fullWidth sx={{ mb: 2 }}>
                       <InputLabel>Частота</InputLabel>
@@ -922,7 +891,7 @@ const ReportsPage: React.FC = () => {
                   )}
                 />
                 
-                {watch('schedule.frequency') && (
+                                 {watch('schedule.frequency') && (
                   <Controller
                     name="schedule.time"
                     control={control}
@@ -965,7 +934,7 @@ const ReportsPage: React.FC = () => {
           </DialogContent>
           
           <DialogActions>
-            <Button onClick={() => setOpenReportDialog(false)}>
+            <Button onClick={() => setOpenDialog(false)}>
               Отмена
             </Button>
             <Button type="submit" variant="contained">

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // Типы для экспорта
@@ -42,11 +42,11 @@ export const formatCellValue = (value: any, format: string = 'text'): string => 
     
     case 'date':
       if (value instanceof Date) {
-        return format(value, 'dd.MM.yyyy', { locale: ru });
+        return formatDate(value, 'dd.MM.yyyy', { locale: ru });
       }
       if (typeof value === 'string') {
         try {
-          return format(new Date(value), 'dd.MM.yyyy', { locale: ru });
+          return formatDate(new Date(value), 'dd.MM.yyyy', { locale: ru });
         } catch {
           return String(value);
         }
@@ -71,7 +71,7 @@ export const exportToCSV = (options: ExportOptions): void => {
   
   // Добавляем временную метку
   if (includeTimestamp) {
-    csvContent += `"Дата экспорта: ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}"\n`;
+    csvContent += `"Дата экспорта: ${formatDate(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}"\n`;
   }
   
   csvContent += '\n';
@@ -151,7 +151,7 @@ export const exportToExcel = async (options: ExportOptions): Promise<void> => {
     
     // Добавляем временную метку
     if (includeTimestamp) {
-      worksheetData.push([`Дата экспорта: ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}`]);
+      worksheetData.push([`Дата экспорта: ${formatDate(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}`]);
       worksheetData.push([]);
     }
     
@@ -222,7 +222,7 @@ export const exportToPDF = async (options: ExportOptions): Promise<void> => {
   try {
     // Динамически импортируем jspdf только при необходимости
     const { jsPDF } = await import('jspdf');
-    require('jspdf-autotable');
+    const autoTable = await import('jspdf-autotable');
     
     const { columns, data, filename = 'export.pdf', title, subtitle, includeTimestamp = true } = options;
     
@@ -258,7 +258,7 @@ export const exportToPDF = async (options: ExportOptions): Promise<void> => {
     if (includeTimestamp) {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Дата экспорта: ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}`, 20, yPos);
+      doc.text(`Дата экспорта: ${formatDate(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}`, 20, yPos);
       yPos += 15;
     }
     
@@ -269,7 +269,7 @@ export const exportToPDF = async (options: ExportOptions): Promise<void> => {
     );
     
     // Добавляем таблицу
-    (doc as any).autoTable({
+    autoTable.default(doc, {
       head: [tableHeaders],
       body: tableData,
       startY: yPos,
@@ -387,7 +387,7 @@ export const getEmployeeExportConfig = (): Partial<ExportOptions> => ({
 // Утилита для генерации имени файла
 export const generateFilename = (baseName: string, format: string, includeDate: boolean = true): string => {
   const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9а-яА-Я\s]/g, '').replace(/\s+/g, '_');
-  const dateString = includeDate ? `_${format(new Date(), 'yyyy-MM-dd')}` : '';
+  const dateString = includeDate ? `_${formatDate(new Date(), 'yyyy-MM-dd', { locale: ru })}` : '';
   return `${sanitizedBaseName}${dateString}.${format}`;
 };
 

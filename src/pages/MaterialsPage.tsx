@@ -2,9 +2,19 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
+  Button,
   Card,
   CardContent,
-  Button,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,73 +24,46 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Chip,
-  Grid,
-  Avatar,
-  Alert,
-  Tooltip,
   Tabs,
   Tab,
   Badge,
+  Tooltip,
+  Alert,
+  LinearProgress,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  InputAdornment,
+  Fab,
+  Menu,
+  ListItemButton
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  Inventory as InventoryIcon,
+  FilterList as FilterIcon,
+  Search as SearchIcon,
   Warning as WarningIcon,
-  ShoppingCart as OrderIcon,
-  LocalShipping as SupplierIcon,
-  TrendingDown as LowStockIcon,
+  TrendingDown as TrendingDownIcon,
+  Inventory as InventoryIcon,
+  ShoppingCart as ShoppingCartIcon,
+  LocalShipping as DeliveryIcon,
+  Assessment as ReportIcon,
+  Download as ExportIcon,
+  Upload as ImportIcon,
+  MoreVert as MoreIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useMaterialStore, useAuthStore } from '../store';
-import { Material, Supplier, MaterialOrder } from '../types';
+import { Material, Supplier } from '../types';
 import { formatCurrency } from '../utils';
-
-interface MaterialFormData {
-  name: string;
-  description: string;
-  category: string;
-  unit: string;
-  quantity: number;
-  minQuantity: number;
-  costPerUnit: number;
-  supplierId: string;
-  location: string;
-  barcode?: string;
-}
-
-interface SupplierFormData {
-  name: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  address: string;
-  inn?: string;
-  deliveryTerms: string;
-  paymentTerms: string;
-}
-
-interface OrderFormData {
-  materialId: string;
-  quantity: number;
-  supplierId: string;
-  expectedDelivery: string;
-  notes?: string;
-}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -116,9 +99,9 @@ const MaterialsPage: React.FC = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [viewMaterial, setViewMaterial] = useState<Material | null>(null);
 
-  const { control: materialControl, handleSubmit: handleMaterialSubmit, reset: resetMaterial, formState: { errors: materialErrors } } = useForm<MaterialFormData>();
-  const { control: supplierControl, handleSubmit: handleSupplierSubmit, reset: resetSupplier, formState: { errors: supplierErrors } } = useForm<SupplierFormData>();
-  const { control: orderControl, handleSubmit: handleOrderSubmit, reset: resetOrder, formState: { errors: orderErrors } } = useForm<OrderFormData>();
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<any>();
+  const { control: supplierControl, handleSubmit: handleSupplierSubmit, reset: resetSupplier, formState: { errors: supplierErrors } } = useForm<any>();
+  const { control: orderControl, handleSubmit: handleOrderSubmit, reset: resetOrder, formState: { errors: orderErrors } } = useForm<any>();
 
   useEffect(() => {
     fetchMaterials();
@@ -126,97 +109,82 @@ const MaterialsPage: React.FC = () => {
     fetchOrders();
   }, [fetchMaterials, fetchSuppliers, fetchOrders]);
 
-  const handleCreateMaterial = async (data: MaterialFormData) => {
+  const handleCreateMaterial = async (data: any) => {
     try {
       await createMaterial({
         ...data,
-        lastUpdated: new Date(),
-        expiryDate: null,
-        batch: '',
-        status: data.quantity > data.minQuantity ? 'in_stock' : 'low_stock',
-        tags: [],
-        specifications: {},
-        photos: [],
-        documents: [],
-        maintenance: {
-          lastMaintenance: null,
-          nextMaintenance: null,
-          maintenanceInterval: 0,
-          maintenanceHistory: [],
-        },
-        usage: {
-          totalUsed: 0,
-          averageMonthlyUsage: 0,
-          lastUsed: null,
-          projects: [],
-        },
+        sku: data.sku || `MAT-${Date.now()}`,
+        currentStock: Number(data.currentStock) || 0,
+        minStock: Number(data.minStock) || 0,
+        maxStock: Number(data.maxStock) || 100,
+        reorderPoint: Number(data.reorderPoint) || 0,
+        unitPrice: Number(data.unitPrice) || 0,
+        avgPrice: Number(data.avgPrice) || 0,
+        lastPurchasePrice: Number(data.lastPurchasePrice) || 0,
+        reservedStock: 0,
+        availableStock: Number(data.currentStock) || 0,
+        expiryDate: data.expiryDate || undefined,
+        isActive: true,
+        isHazardous: false,
+        specifications: [],
       });
-      toast.success('Материал успешно добавлен');
       setOpenMaterialDialog(false);
-      resetMaterial();
+      toast.success('Материал создан');
     } catch (error) {
-      toast.error('Ошибка при добавлении материала');
+      toast.error('Ошибка при создании материала');
     }
   };
 
-  const handleEditMaterial = async (data: MaterialFormData) => {
+  const handleEditMaterial = async (data: any) => {
     if (!editingMaterial) return;
     
     try {
       await updateMaterial(editingMaterial.id, {
         ...data,
-        lastUpdated: new Date(),
-        status: data.quantity > data.minQuantity ? 'in_stock' : 'low_stock',
+        currentStock: Number(data.currentStock),
+        minStock: Number(data.minStock),
+        unitPrice: Number(data.unitPrice),
+        updatedAt: new Date(),
       });
-      toast.success('Материал обновлен');
       setOpenMaterialDialog(false);
       setEditingMaterial(null);
-      resetMaterial();
+      toast.success('Материал обновлен');
     } catch (error) {
       toast.error('Ошибка при обновлении материала');
     }
   };
 
-  const handleCreateSupplier = async (data: SupplierFormData) => {
+  const handleCreateSupplier = async (data: any) => {
     try {
       await createSupplier({
         ...data,
         rating: 5,
         isActive: true,
-        materials: [],
-        orders: [],
-        performance: {
-          onTimeDelivery: 100,
-          qualityRating: 5,
-          totalOrders: 0,
-          averageDeliveryTime: 0,
-        },
+        categories: [],
       });
-      toast.success('Поставщик добавлен');
       setOpenSupplierDialog(false);
-      resetSupplier();
+      toast.success('Поставщик создан');
     } catch (error) {
-      toast.error('Ошибка при добавлении поставщика');
+      toast.error('Ошибка при создании поставщика');
     }
   };
 
-  const handleCreateOrder = async (data: OrderFormData) => {
+  const handleCreateOrder = async (data: any) => {
     try {
       await createOrder({
         ...data,
+        status: 'draft' as const,
         orderDate: new Date(),
-        expectedDelivery: new Date(data.expectedDelivery),
-        status: 'pending',
-        totalCost: 0, // Будет рассчитано на основе материала
-        deliveryAddress: '',
-        trackingNumber: '',
-        actualDelivery: null,
-        invoiceNumber: '',
+        expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        urgentOrder: false,
+        totalAmount: 0,
         items: [],
+        orderNumber: `ORD-${Date.now()}`,
+        deliveryAddress: '',
+        createdBy: user?.id || '',
       });
-      toast.success('Заказ создан');
       setOpenOrderDialog(false);
-      resetOrder();
+      toast.success('Заказ создан');
     } catch (error) {
       toast.error('Ошибка при создании заказа');
     }
@@ -232,54 +200,49 @@ const MaterialsPage: React.FC = () => {
     }
   };
 
-  const openCreateMaterialDialog = () => {
-    setEditingMaterial(null);
-    resetMaterial({
-      name: '',
-      description: '',
-      category: '',
-      unit: 'шт',
-      quantity: 0,
-      minQuantity: 10,
-      costPerUnit: 0,
-      supplierId: '',
-      location: '',
-      barcode: '',
-    });
+  const openMaterialForm = (material?: Material) => {
+    if (material) {
+      setEditingMaterial(material);
+      reset({
+        name: material.name,
+        description: material.description,
+        category: material.category,
+        unit: material.unit,
+        currentStock: material.currentStock,
+        minStock: material.minStock,
+        unitPrice: material.unitPrice,
+        supplier: material.supplier,
+      });
+    } else {
+      setEditingMaterial(null);
+      reset({
+        name: '',
+        description: '',
+        category: '',
+        unit: '',
+        currentStock: 0,
+        minStock: 0,
+        unitPrice: 0,
+        supplier: '',
+      });
+    }
     setOpenMaterialDialog(true);
   };
 
-  const openEditMaterialDialog = (material: Material) => {
-    setEditingMaterial(material);
-    resetMaterial({
-      name: material.name,
-      description: material.description,
-      category: material.category,
-      unit: material.unit,
-      quantity: material.quantity,
-      minQuantity: material.minQuantity,
-      costPerUnit: material.costPerUnit,
-      supplierId: material.supplierId,
-      location: material.location,
-      barcode: material.barcode || '',
-    });
-    setOpenMaterialDialog(true);
-  };
-
-  const getStatusColor = (material: Material) => {
-    if (material.quantity === 0) return 'error';
-    if (material.quantity <= material.minQuantity) return 'warning';
+  const getStockStatus = (material: Material) => {
+    if (material.currentStock === 0) return 'error';
+    if (material.currentStock <= material.minStock) return 'warning';
     return 'success';
   };
 
-  const getStatusLabel = (material: Material) => {
-    if (material.quantity === 0) return 'Нет в наличии';
-    if (material.quantity <= material.minQuantity) return 'Мало';
+  const getStockStatusText = (material: Material) => {
+    if (material.currentStock === 0) return 'Нет в наличии';
+    if (material.currentStock <= material.minStock) return 'Мало';
     return 'В наличии';
   };
 
-  const lowStockMaterials = materials.filter(m => m.quantity <= m.minQuantity);
-  const outOfStockMaterials = materials.filter(m => m.quantity === 0);
+  const lowStockMaterials = materials.filter(m => m.currentStock <= m.minStock);
+  const outOfStockMaterials = materials.filter(m => m.currentStock === 0);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -290,7 +253,7 @@ const MaterialsPage: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
-            startIcon={<OrderIcon />}
+            startIcon={<ShoppingCartIcon />}
             onClick={() => setOpenOrderDialog(true)}
           >
             Создать заказ
@@ -298,7 +261,7 @@ const MaterialsPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={openCreateMaterialDialog}
+            onClick={() => openMaterialForm()}
           >
             Добавить материал
           </Button>
@@ -330,7 +293,7 @@ const MaterialsPage: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'warning.main' }}>
                   <Badge badgeContent={lowStockMaterials.length} color="error">
-                    <LowStockIcon />
+                    <TrendingDownIcon />
                   </Badge>
                 </Avatar>
                 <Box>
@@ -365,7 +328,7 @@ const MaterialsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'info.main' }}>
-                  <SupplierIcon />
+                  <DeliveryIcon />
                 </Avatar>
                 <Box>
                   <Typography variant="h6">{suppliers.length}</Typography>
@@ -395,8 +358,8 @@ const MaterialsPage: React.FC = () => {
           variant="fullWidth"
         >
           <Tab label="Материалы" icon={<InventoryIcon />} />
-          <Tab label="Поставщики" icon={<SupplierIcon />} />
-          <Tab label="Заказы" icon={<OrderIcon />} />
+          <Tab label="Поставщики" icon={<DeliveryIcon />} />
+          <Tab label="Заказы" icon={<ShoppingCartIcon />} />
         </Tabs>
 
         {/* Вкладка "Материалы" */}
@@ -411,7 +374,7 @@ const MaterialsPage: React.FC = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                   Добавьте первый материал для начала работы
                 </Typography>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateMaterialDialog}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => openMaterialForm()}>
                   Добавить материал
                 </Button>
               </CardContent>
@@ -436,7 +399,7 @@ const MaterialsPage: React.FC = () => {
                     <TableRow key={material.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: getStatusColor(material) === 'error' ? 'error.main' : 'primary.main', width: 32, height: 32 }}>
+                          <Avatar sx={{ bgcolor: getStockStatus(material) === 'error' ? 'error.main' : 'primary.main', width: 32, height: 32 }}>
                             <InventoryIcon fontSize="small" />
                           </Avatar>
                           <Box>
@@ -455,19 +418,19 @@ const MaterialsPage: React.FC = () => {
                       <TableCell>
                         <Box>
                           <Typography variant="body2" fontWeight={600}>
-                            {material.quantity}
+                            {material.currentStock}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            мин: {material.minQuantity}
+                          <Typography variant="body2" color="text.secondary">
+                            мин: {material.minStock}
                           </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>{material.unit}</TableCell>
-                      <TableCell>{formatCurrency(material.costPerUnit)}</TableCell>
+                      <TableCell>{formatCurrency(material.unitPrice)}</TableCell>
                       <TableCell>
                         <Chip
-                          label={getStatusLabel(material)}
-                          color={getStatusColor(material)}
+                          label={getStockStatusText(material)}
+                          color={getStockStatus(material)}
                           size="small"
                         />
                       </TableCell>
@@ -479,7 +442,7 @@ const MaterialsPage: React.FC = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Редактировать">
-                          <IconButton size="small" onClick={() => openEditMaterialDialog(material)}>
+                          <IconButton size="small" onClick={() => openMaterialForm(material)}>
                             <EditIcon />
                           </IconButton>
                         </Tooltip>
@@ -571,14 +534,14 @@ const MaterialsPage: React.FC = () => {
                 {orders.map((order) => (
                   <TableRow key={order.id} hover>
                     <TableCell>{order.id.slice(0, 8)}</TableCell>
-                    <TableCell>{order.materialId}</TableCell>
-                    <TableCell>{order.quantity}</TableCell>
+                    <TableCell>{order.items?.[0]?.materialId || 'N/A'}</TableCell>
+                    <TableCell>{order.items?.[0]?.quantity || 0}</TableCell>
                     <TableCell>{order.supplierId}</TableCell>
                     <TableCell>
-                      {format(order.orderDate, 'dd.MM.yyyy', { locale: ru })}
+                      {formatDate(order.orderDate, 'dd.MM.yyyy', { locale: ru })}
                     </TableCell>
                     <TableCell>
-                      {format(order.expectedDelivery, 'dd.MM.yyyy', { locale: ru })}
+                      {formatDate(order.expectedDeliveryDate, 'dd.MM.yyyy', { locale: ru })}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -605,15 +568,15 @@ const MaterialsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Controller
                 name="name"
-                control={materialControl}
+                control={control}
                 rules={{ required: 'Название обязательно' }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     label="Название материала"
                     fullWidth
-                    error={!!materialErrors.name}
-                    helperText={materialErrors.name?.message}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
                   />
                 )}
               />
@@ -621,15 +584,15 @@ const MaterialsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Controller
                 name="category"
-                control={materialControl}
+                control={control}
                 rules={{ required: 'Категория обязательна' }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     label="Категория"
                     fullWidth
-                    error={!!materialErrors.category}
-                    helperText={materialErrors.category?.message}
+                    error={!!errors.category}
+                    helperText={errors.category?.message}
                   />
                 )}
               />
@@ -637,7 +600,7 @@ const MaterialsPage: React.FC = () => {
             <Grid item xs={12}>
               <Controller
                 name="description"
-                control={materialControl}
+                control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -651,8 +614,8 @@ const MaterialsPage: React.FC = () => {
             </Grid>
             <Grid item xs={12} md={4}>
               <Controller
-                name="quantity"
-                control={materialControl}
+                name="currentStock"
+                control={control}
                 rules={{ required: 'Количество обязательно', min: { value: 0, message: 'Количество не может быть отрицательным' } }}
                 render={({ field }) => (
                   <TextField
@@ -660,16 +623,16 @@ const MaterialsPage: React.FC = () => {
                     type="number"
                     label="Количество"
                     fullWidth
-                    error={!!materialErrors.quantity}
-                    helperText={materialErrors.quantity?.message}
+                    error={!!errors.currentStock}
+                    helperText={errors.currentStock?.message}
                   />
                 )}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <Controller
-                name="minQuantity"
-                control={materialControl}
+                name="minStock"
+                control={control}
                 rules={{ required: 'Минимальное количество обязательно' }}
                 render={({ field }) => (
                   <TextField
@@ -677,8 +640,8 @@ const MaterialsPage: React.FC = () => {
                     type="number"
                     label="Минимальное количество"
                     fullWidth
-                    error={!!materialErrors.minQuantity}
-                    helperText={materialErrors.minQuantity?.message}
+                    error={!!errors.minStock}
+                    helperText={errors.minStock?.message}
                   />
                 )}
               />
@@ -686,7 +649,7 @@ const MaterialsPage: React.FC = () => {
             <Grid item xs={12} md={4}>
               <Controller
                 name="unit"
-                control={materialControl}
+                control={control}
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>Единица измерения</InputLabel>
@@ -705,8 +668,8 @@ const MaterialsPage: React.FC = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Controller
-                name="costPerUnit"
-                control={materialControl}
+                name="unitPrice"
+                control={control}
                 rules={{ required: 'Цена обязательна', min: { value: 0, message: 'Цена не может быть отрицательной' } }}
                 render={({ field }) => (
                   <TextField
@@ -714,8 +677,8 @@ const MaterialsPage: React.FC = () => {
                     type="number"
                     label="Цена за единицу (руб.)"
                     fullWidth
-                    error={!!materialErrors.costPerUnit}
-                    helperText={materialErrors.costPerUnit?.message}
+                    error={!!errors.unitPrice}
+                    helperText={errors.unitPrice?.message}
                   />
                 )}
               />
@@ -723,7 +686,7 @@ const MaterialsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Controller
                 name="location"
-                control={materialControl}
+                control={control}
                 render={({ field }) => (
                   <TextField {...field} label="Местоположение на складе" fullWidth />
                 )}
@@ -731,8 +694,8 @@ const MaterialsPage: React.FC = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Controller
-                name="supplierId"
-                control={materialControl}
+                name="supplier"
+                control={control}
                 render={({ field }) => (
                   <FormControl fullWidth>
                     <InputLabel>Поставщик</InputLabel>
@@ -750,7 +713,7 @@ const MaterialsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Controller
                 name="barcode"
-                control={materialControl}
+                control={control}
                 render={({ field }) => (
                   <TextField {...field} label="Штрихкод" fullWidth />
                 )}
@@ -762,7 +725,7 @@ const MaterialsPage: React.FC = () => {
           <Button onClick={() => setOpenMaterialDialog(false)}>Отмена</Button>
           <Button
             variant="contained"
-            onClick={handleMaterialSubmit(editingMaterial ? handleEditMaterial : handleCreateMaterial)}
+            onClick={handleSubmit(editingMaterial ? handleEditMaterial : handleCreateMaterial)}
           >
             {editingMaterial ? 'Сохранить' : 'Добавить'}
           </Button>
@@ -897,7 +860,7 @@ const MaterialsPage: React.FC = () => {
                     <Select {...field} label="Материал">
                       {materials.map((material) => (
                         <MenuItem key={material.id} value={material.id}>
-                          {material.name} (осталось: {material.quantity} {material.unit})
+                          {material.name} (осталось: {material.currentStock} {material.unit})
                         </MenuItem>
                       ))}
                     </Select>
@@ -1022,15 +985,15 @@ const MaterialsPage: React.FC = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">Количество:</Typography>
-                <Typography variant="body2">{viewMaterial.quantity} {viewMaterial.unit}</Typography>
+                <Typography variant="body2">{viewMaterial.currentStock} {viewMaterial.unit}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">Цена за единицу:</Typography>
-                <Typography variant="body2">{formatCurrency(viewMaterial.costPerUnit)}</Typography>
+                <Typography variant="body2">{formatCurrency(viewMaterial.unitPrice)}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">Общая стоимость:</Typography>
-                <Typography variant="body2">{formatCurrency(viewMaterial.quantity * viewMaterial.costPerUnit)}</Typography>
+                <Typography variant="body2">{formatCurrency(viewMaterial.currentStock * viewMaterial.unitPrice)}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="caption" color="text.secondary">Местоположение:</Typography>
@@ -1039,8 +1002,8 @@ const MaterialsPage: React.FC = () => {
               <Grid item xs={12}>
                 <Typography variant="caption" color="text.secondary">Статус:</Typography>
                 <Chip
-                  label={getStatusLabel(viewMaterial)}
-                  color={getStatusColor(viewMaterial)}
+                  label={getStockStatusText(viewMaterial)}
+                  color={getStockStatus(viewMaterial)}
                   size="small"
                 />
               </Grid>

@@ -166,7 +166,7 @@ const CalendarPage: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>(mockEvents);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'month' | 'week' | 'day'>('month');
-  const [openEventDialog, setOpenEventDialog] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [filterType, setFilterType] = useState('all');
@@ -189,7 +189,7 @@ const CalendarPage: React.FC = () => {
       };
       
       setEvents(prev => [...prev, newEvent]);
-      setOpenEventDialog(false);
+      setOpenDialog(false);
       reset();
       toast.success('Событие успешно создано');
     } catch (error) {
@@ -207,7 +207,7 @@ const CalendarPage: React.FC = () => {
             : event
         )
       );
-      setOpenEventDialog(false);
+      setOpenDialog(false);
       setSelectedEvent(null);
       reset();
       toast.success('Событие успешно обновлено');
@@ -242,7 +242,7 @@ const CalendarPage: React.FC = () => {
       });
     }
     setSelectedDate(date || null);
-    setOpenEventDialog(true);
+            setOpenDialog(true);
   };
 
   const getEventTypeColor = (type: string) => {
@@ -660,8 +660,8 @@ const CalendarPage: React.FC = () => {
 
       {/* Диалог создания/редактирования события */}
       <Dialog 
-        open={openEventDialog} 
-        onClose={() => setOpenEventDialog(false)}
+                open={openDialog}
+        onClose={() => setOpenDialog(false)}
         maxWidth="md"
         fullWidth
       >
@@ -849,7 +849,7 @@ const CalendarPage: React.FC = () => {
           </DialogContent>
           
           <DialogActions>
-            <Button onClick={() => setOpenEventDialog(false)}>
+            <Button onClick={() => setOpenDialog(false)}>
               Отмена
             </Button>
             <Button type="submit" variant="contained">

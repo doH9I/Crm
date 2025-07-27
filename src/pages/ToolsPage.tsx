@@ -4,7 +4,15 @@ import {
   Typography,
   Card,
   CardContent,
-  Button,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,64 +22,36 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Chip,
-  Grid,
-  Avatar,
+  Button,
   Alert,
+  Avatar,
   Tooltip,
-  Tabs,
-  Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Divider,
-  Badge,
-  Menu,
   ButtonGroup,
-  LinearProgress,
+  LinearProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Build as ToolIcon,
-  Assignment as AssignIcon,
-  Settings as MaintenanceIcon,
-  QrCode as QrCodeIcon,
-  Photo as PhotoIcon,
+  Visibility as ViewIcon,
   FilterList as FilterIcon,
-  ExpandMore as ExpandMoreIcon,
+  Assignment as AssignIcon,
+  Build as MaintenanceIcon,
+  Build as BuildIcon,
+  CheckCircle as CheckCircleIcon,
   CheckCircle as CheckIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
+  Person as PersonIcon,
   Schedule as ScheduleIcon,
   LocationOn as LocationIcon,
-  Person as PersonIcon,
-  AttachMoney as MoneyIcon,
-  MoreVert as MoreIcon,
-  GetApp as ExportIcon,
-  FileUpload as ImportIcon,
-  Visibility as ViewIcon,
-  History as HistoryIcon,
+  Download as ExportIcon,
+  Upload as ImportIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format, addDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useToolStore, useMaterialStore, useAuthStore } from '../store';
-import { Tool, ToolCondition, ToolStatus, Equipment, MaintenanceRecord } from '../types';
+import { Tool, ToolCondition, ToolStatus } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -96,7 +76,7 @@ function TabPanel(props: TabPanelProps) {
 
 const ToolsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openToolDialog, setOpenToolDialog] = useState(false);
   const [openAssignDialog, setOpenAssignDialog] = useState(false);
   const [openMaintenanceDialog, setOpenMaintenanceDialog] = useState(false);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
@@ -105,25 +85,24 @@ const ToolsPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const { 
-    tools, 
-    equipment, 
-    loading, 
-    fetchTools, 
-    fetchEquipment, 
-    createTool, 
-    updateTool, 
-    deleteTool, 
-    assignTool, 
-    returnTool 
+  const {
+    tools,
+    equipment,
+    loading,
+    fetchTools,
+    fetchEquipment,
+    createTool,
+    updateTool,
+    deleteTool,
+    assignTool,
+    returnTool
   } = useToolStore();
-  
+
   const { suppliers } = useMaterialStore();
   const { user } = useAuthStore();
 
-  const { control, handleSubmit, reset, watch, setValue } = useForm<Tool>();
-  const { control: assignControl, handleSubmit: handleAssignSubmit, reset: resetAssign } = useForm();
-  const { control: maintenanceControl, handleSubmit: handleMaintenanceSubmit, reset: resetMaintenance } = useForm();
+  const { control, handleSubmit, reset } = useForm<Tool>();
+  const { control: assignControl } = useForm();
 
   useEffect(() => {
     fetchTools();
@@ -134,19 +113,29 @@ const ToolsPage: React.FC = () => {
     setActiveTab(newValue);
   };
 
-  const handleCreateTool = async (data: Tool) => {
+  const handleCreateTool = async (data: any) => {
     try {
       await createTool({
         ...data,
-        usageHours: data.usageHours || 0,
-        maintenanceInterval: data.maintenanceInterval || 90,
-        status: data.status || ToolStatus.AVAILABLE,
-        condition: data.condition || ToolCondition.GOOD,
+        inventoryNumber: `TOOL-${Date.now()}`,
+        condition: data.condition || 'good',
+        status: 'available',
+        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : new Date(),
+        purchasePrice: Number(data.purchasePrice) || 0,
+        currentValue: Number(data.currentValue) || 0,
+        assignedTo: null,
+        location: data.location || 'Склад',
+        maintenanceSchedule: {
+          lastMaintenance: null,
+          nextMaintenance: null,
+          intervalDays: Number(data.maintenanceInterval) || 30,
+        },
+        usageHistory: [],
         isActive: true,
       });
-      setOpenDialog(false);
+      setOpenToolDialog(false);
       reset();
-      toast.success('Инструмент успешно добавлен');
+      toast.success('Инструмент добавлен');
     } catch (error) {
       toast.error('Ошибка при добавлении инструмента');
     }
@@ -156,7 +145,7 @@ const ToolsPage: React.FC = () => {
     if (!selectedTool) return;
     try {
       await updateTool(selectedTool.id, data);
-      setOpenDialog(false);
+      setOpenToolDialog(false);
       setSelectedTool(null);
       reset();
       toast.success('Инструмент успешно обновлен');
@@ -198,7 +187,7 @@ const ToolsPage: React.FC = () => {
     }
   };
 
-  const openToolDialog = (tool?: Tool) => {
+  const openToolForm = (tool?: Tool) => {
     if (tool) {
       setSelectedTool(tool);
       reset(tool);
@@ -206,8 +195,10 @@ const ToolsPage: React.FC = () => {
       setSelectedTool(null);
       reset();
     }
-    setOpenDialog(true);
+    setOpenToolDialog(true);
   };
+
+
 
   const getStatusColor = (status: ToolStatus) => {
     switch (status) {
@@ -275,10 +266,10 @@ const ToolsPage: React.FC = () => {
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.inventoryNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = filterStatus === 'all' || tool.status === filterStatus;
     const matchesCategory = filterCategory === 'all' || tool.category === filterCategory;
-    
+
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
@@ -305,21 +296,21 @@ const ToolsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<ImportIcon />}
-            onClick={() => toast.info('Функция импорта будет добавлена')}
+            onClick={() => toast('Функция импорта будет добавлена')}
           >
             Импорт
           </Button>
           <Button
             variant="outlined"
             startIcon={<ExportIcon />}
-            onClick={() => toast.info('Функция экспорта будет добавлена')}
+            onClick={() => toast('Функция экспорта будет добавлена')}
           >
             Экспорт
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => openToolDialog()}
+            onClick={() => openToolForm()}
           >
             Добавить инструмент
           </Button>
@@ -331,7 +322,7 @@ const ToolsPage: React.FC = () => {
         <Grid item xs={12} sm={6} md={2.4}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <ToolIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+              <BuildIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 700 }}>
                 {toolStats.total}
               </Typography>
@@ -341,11 +332,11 @@ const ToolsPage: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={2.4}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <CheckIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+              <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
                 {toolStats.available}
               </Typography>
@@ -355,7 +346,7 @@ const ToolsPage: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={2.4}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
@@ -369,11 +360,11 @@ const ToolsPage: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={2.4}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <MaintenanceIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+              <BuildIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
               <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
                 {toolStats.maintenance}
               </Typography>
@@ -383,7 +374,7 @@ const ToolsPage: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={2.4}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
@@ -417,7 +408,7 @@ const ToolsPage: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </Grid>
-            
+
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel>Статус</InputLabel>
@@ -435,7 +426,7 @@ const ToolsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12} md={3}>
               <FormControl fullWidth>
                 <InputLabel>Категория</InputLabel>
@@ -453,7 +444,7 @@ const ToolsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12} md={2}>
               <Button
                 fullWidth
@@ -499,7 +490,7 @@ const ToolsPage: React.FC = () => {
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar sx={{ bgcolor: 'primary.main' }}>
-                            <ToolIcon />
+                            <BuildIcon />
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -511,38 +502,38 @@ const ToolsPage: React.FC = () => {
                           </Box>
                         </Box>
                       </TableCell>
-                      
+
                       <TableCell>
                         <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                           {tool.inventoryNumber}
                         </Typography>
                       </TableCell>
-                      
+
                       <TableCell>
-                        <Chip 
-                          label={tool.category} 
-                          size="small" 
+                        <Chip
+                          label={tool.category}
+                          size="small"
                           variant="outlined"
                         />
                       </TableCell>
-                      
+
                       <TableCell>
-                        <Chip 
-                          label={getStatusText(tool.status)} 
+                        <Chip
+                          label={getStatusText(tool.status)}
                           color={getStatusColor(tool.status)}
                           size="small"
                         />
                       </TableCell>
-                      
+
                       <TableCell>
-                        <Chip 
-                          label={getConditionText(tool.condition)} 
+                        <Chip
+                          label={getConditionText(tool.condition)}
                           color={getConditionColor(tool.condition)}
                           size="small"
                           variant="outlined"
                         />
                       </TableCell>
-                      
+
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <LocationIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
@@ -551,12 +542,12 @@ const ToolsPage: React.FC = () => {
                           </Typography>
                         </Box>
                       </TableCell>
-                      
+
                       <TableCell>
                         {tool.assignedTo ? (
-                          <Chip 
-                            label="Назначен" 
-                            color="primary" 
+                          <Chip
+                            label="Назначен"
+                            color="primary"
                             size="small"
                             icon={<PersonIcon />}
                           />
@@ -566,10 +557,10 @@ const ToolsPage: React.FC = () => {
                           </Typography>
                         )}
                       </TableCell>
-                      
+
                       <TableCell>
                         {tool.nextMaintenanceDate ? (
-                          <Typography 
+                          <Typography
                             variant="body2"
                             color={new Date(tool.nextMaintenanceDate) <= addDays(new Date(), 7) ? 'error' : 'inherit'}
                           >
@@ -581,30 +572,30 @@ const ToolsPage: React.FC = () => {
                           </Typography>
                         )}
                       </TableCell>
-                      
+
                       <TableCell>
                         <ButtonGroup variant="outlined" size="small">
                           <Tooltip title="Просмотр">
-                            <IconButton 
+                            <IconButton
                               size="small"
-                              onClick={() => toast.info('Функция просмотра будет добавлена')}
+                              onClick={() => toast('Функция просмотра будет добавлена')}
                             >
                               <ViewIcon />
                             </IconButton>
                           </Tooltip>
-                          
+
                           <Tooltip title="Редактировать">
-                            <IconButton 
+                            <IconButton
                               size="small"
-                              onClick={() => openToolDialog(tool)}
+                              onClick={() => openToolForm(tool)}
                             >
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
-                          
+
                           {tool.status === ToolStatus.AVAILABLE ? (
                             <Tooltip title="Назначить">
-                              <IconButton 
+                              <IconButton
                                 size="small"
                                 onClick={() => {
                                   setSelectedTool(tool);
@@ -616,7 +607,7 @@ const ToolsPage: React.FC = () => {
                             </Tooltip>
                           ) : tool.status === ToolStatus.IN_USE ? (
                             <Tooltip title="Вернуть">
-                              <IconButton 
+                              <IconButton
                                 size="small"
                                 onClick={() => handleReturnTool(tool.id)}
                               >
@@ -624,9 +615,9 @@ const ToolsPage: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                           ) : null}
-                          
+
                           <Tooltip title="Техобслуживание">
-                            <IconButton 
+                            <IconButton
                               size="small"
                               onClick={() => {
                                 setSelectedTool(tool);
@@ -636,9 +627,9 @@ const ToolsPage: React.FC = () => {
                               <MaintenanceIcon />
                             </IconButton>
                           </Tooltip>
-                          
+
                           <Tooltip title="Удалить">
-                            <IconButton 
+                            <IconButton
                               size="small"
                               color="error"
                               onClick={() => handleDeleteTool(tool.id)}
@@ -654,13 +645,13 @@ const ToolsPage: React.FC = () => {
               </Table>
             </TableContainer>
           )}
-          
+
           {filteredTools.length === 0 && !loading && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
-              <ToolIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <BuildIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
-                {searchTerm || filterStatus !== 'all' || filterCategory !== 'all' 
-                  ? 'Инструменты не найдены' 
+                {searchTerm || filterStatus !== 'all' || filterCategory !== 'all'
+                  ? 'Инструменты не найдены'
                   : 'Нет добавленных инструментов'}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -672,7 +663,7 @@ const ToolsPage: React.FC = () => {
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={() => openToolDialog()}
+                  onClick={() => openToolForm()}
                 >
                   Добавить инструмент
                 </Button>
@@ -683,9 +674,9 @@ const ToolsPage: React.FC = () => {
       </Card>
 
       {/* Диалог создания/редактирования инструмента */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)}
+      <Dialog
+        open={openToolDialog}
+        onClose={() => setOpenToolDialog(false)}
         maxWidth="md"
         fullWidth
       >
@@ -693,7 +684,7 @@ const ToolsPage: React.FC = () => {
           <DialogTitle>
             {selectedTool ? 'Редактировать инструмент' : 'Добавить инструмент'}
           </DialogTitle>
-          
+
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} md={6}>
@@ -713,7 +704,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="inventoryNumber"
@@ -731,7 +722,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="category"
@@ -758,7 +749,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="brand"
@@ -773,7 +764,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="model"
@@ -788,7 +779,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="serialNumber"
@@ -803,7 +794,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="status"
@@ -823,7 +814,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="condition"
@@ -844,7 +835,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="location"
@@ -859,7 +850,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="zone"
@@ -874,7 +865,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="purchaseDate"
@@ -892,7 +883,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="purchasePrice"
@@ -910,7 +901,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="maintenanceInterval"
@@ -926,7 +917,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="usageHours"
@@ -942,7 +933,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <Controller
                   name="description"
@@ -959,7 +950,7 @@ const ToolsPage: React.FC = () => {
                   )}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <Controller
                   name="notes"
@@ -978,9 +969,9 @@ const ToolsPage: React.FC = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          
+
           <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>
+            <Button onClick={() => setOpenToolDialog(false)}>
               Отмена
             </Button>
             <Button type="submit" variant="contained">
@@ -991,8 +982,8 @@ const ToolsPage: React.FC = () => {
       </Dialog>
 
       {/* Диалог назначения инструмента */}
-      <Dialog 
-        open={openAssignDialog} 
+      <Dialog
+        open={openAssignDialog}
         onClose={() => setOpenAssignDialog(false)}
         maxWidth="sm"
         fullWidth
@@ -1001,12 +992,12 @@ const ToolsPage: React.FC = () => {
           <DialogTitle>
             Назначить инструмент
           </DialogTitle>
-          
+
           <DialogContent>
             <Typography variant="body1" sx={{ mb: 2 }}>
               Назначение инструмента: <strong>{selectedTool?.name}</strong>
             </Typography>
-            
+
             <Controller
               name="userId"
               control={assignControl}
@@ -1029,7 +1020,7 @@ const ToolsPage: React.FC = () => {
               )}
             />
           </DialogContent>
-          
+
           <DialogActions>
             <Button onClick={() => setOpenAssignDialog(false)}>
               Отмена
@@ -1042,8 +1033,8 @@ const ToolsPage: React.FC = () => {
       </Dialog>
 
       {/* Диалог технического обслуживания */}
-      <Dialog 
-        open={openMaintenanceDialog} 
+      <Dialog
+        open={openMaintenanceDialog}
         onClose={() => setOpenMaintenanceDialog(false)}
         maxWidth="md"
         fullWidth
@@ -1051,7 +1042,7 @@ const ToolsPage: React.FC = () => {
         <DialogTitle>
           Техническое обслуживание: {selectedTool?.name}
         </DialogTitle>
-        
+
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -1059,7 +1050,7 @@ const ToolsPage: React.FC = () => {
                 Запланировать ТО
               </Typography>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -1069,7 +1060,7 @@ const ToolsPage: React.FC = () => {
                 defaultValue={format(new Date(), 'yyyy-MM-dd')}
               />
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Тип обслуживания</InputLabel>
@@ -1081,7 +1072,7 @@ const ToolsPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -1091,7 +1082,7 @@ const ToolsPage: React.FC = () => {
                 placeholder="Описание выполняемых работ по техническому обслуживанию..."
               />
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -1102,7 +1093,7 @@ const ToolsPage: React.FC = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -1114,12 +1105,12 @@ const ToolsPage: React.FC = () => {
             </Grid>
           </Grid>
         </DialogContent>
-        
+
         <DialogActions>
           <Button onClick={() => setOpenMaintenanceDialog(false)}>
             Отмена
           </Button>
-          <Button 
+          <Button
             variant="contained"
             onClick={() => {
               toast.success('Техническое обслуживание запланировано');

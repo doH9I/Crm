@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  Button,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,67 +23,38 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Chip,
-  Grid,
-  Avatar,
-  Alert,
-  Tooltip,
+  Button,
   Tabs,
   Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Alert,
+  LinearProgress,
+  Divider,
   List,
   ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Divider,
-  LinearProgress,
-  Badge,
-  ButtonGroup,
+  ListItemText
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  AttachMoney as MoneyIcon,
-  Receipt as InvoiceIcon,
+  Visibility as ViewIcon,
+  Payment as PaymentIcon,
+  Receipt as ReceiptIcon,
   AccountBalance as BudgetIcon,
   TrendingUp as IncomeIcon,
   TrendingDown as ExpenseIcon,
-  Assignment as ContractIcon,
-  FilterList as FilterIcon,
-  ExpandMore as ExpandMoreIcon,
-  CheckCircle as PaidIcon,
-  Schedule as PendingIcon,
-  Warning as OverdueIcon,
-  GetApp as ExportIcon,
-  FileUpload as ImportIcon,
-  Visibility as ViewIcon,
-  Send as SendIcon,
-  Payment as PaymentIcon,
-  Analytics as AnalyticsIcon,
+  Warning as WarningIcon,
+  Download as ExportIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { 
   Invoice, 
   Budget, 
   Transaction, 
-  TransactionType, 
-  Contract, 
-  InvoiceItem,
-  BudgetCategory 
+  TransactionType 
 } from '../types';
 
 interface TabPanelProps {
@@ -137,8 +117,8 @@ const mockBudgets: Budget[] = [
     name: 'Бюджет проекта "Солнечный"',
     type: 'project',
     period: {
-      start: startOfMonth(new Date()),
-      end: endOfMonth(new Date()),
+      start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
     },
     categories: [
       {
@@ -341,14 +321,14 @@ const FinancesPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<ExportIcon />}
-            onClick={() => toast.info('Функция экспорта будет добавлена')}
+            onClick={() => toast('Функция экспорта будет добавлена')}
           >
             Экспорт
           </Button>
           <Button
             variant="outlined"
-            startIcon={<AnalyticsIcon />}
-            onClick={() => toast.info('Аналитика будет добавлена')}
+            startIcon={<ViewIcon />}
+            onClick={() => toast('Аналитика будет добавлена')}
           >
             Аналитика
           </Button>
@@ -663,7 +643,6 @@ const FinancesPage: React.FC = () => {
                             <LinearProgress 
                               variant="determinate" 
                               value={(category.spentAmount / category.allocatedAmount) * 100}
-                              size="small"
                             />
                           </Box>
                         ))}
