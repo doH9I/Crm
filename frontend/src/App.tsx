@@ -24,6 +24,7 @@ import Divider from '@mui/material/Divider';
 import { useState } from 'react';
 import { UsersPage } from './components/users/UsersPage';
 import { DashboardPage } from './components/dashboard/DashboardPage';
+import { ProjectsPage } from './components/projects/ProjectsPage';
 
 const theme = createTheme({
   palette: {
@@ -109,7 +110,7 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/users" element={<UsersPage />} />
-              <Route path="/projects" element={<Placeholder title="Проекты" />} />
+              <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/warehouse" element={<Placeholder title="Склад" />} />
               <Route path="/analytics" element={<Placeholder title="Аналитика" />} />
               <Route path="/profile" element={<Placeholder title="Профиль" />} />
