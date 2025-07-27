@@ -26,6 +26,7 @@ import { UsersPage } from './components/users/UsersPage';
 import { DashboardPage } from './components/dashboard/DashboardPage';
 import { ProjectsPage } from './components/projects/ProjectsPage';
 import { WarehousePage } from './components/warehouse/WarehousePage';
+import { AnalyticsPage } from './components/analytics/AnalyticsPage';
 
 const theme = createTheme({
   palette: {
@@ -113,7 +114,7 @@ function App() {
               <Route path="/users" element={<UsersPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/warehouse" element={<WarehousePage />} />
-              <Route path="/analytics" element={<Placeholder title="Аналитика" />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/profile" element={<Placeholder title="Профиль" />} />
               <Route path="/settings" element={<Placeholder title="Настройки" />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
