@@ -1,389 +1,239 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
+  Typography,
   Grid,
   Card,
   CardContent,
-  Typography,
-  IconButton,
-  Chip,
   LinearProgress,
-  Skeleton,
-  Fade,
+  Avatar,
+  Chip,
+  IconButton,
   Button,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  Business as ProjectIcon,
   People as PeopleIcon,
-  AccountBalance as MoneyIcon,
+  Business as BusinessIcon,
+  AttachMoney as MoneyIcon,
   Inventory as InventoryIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  Refresh as RefreshIcon,
+  Build as BuildIcon,
+  Security as SecurityIcon,
+  Add as AddIcon,
+  QrCodeScanner as QrScannerIcon,
+  WbSunny as WeatherIcon,
 } from '@mui/icons-material';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
   Area,
   AreaChart,
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
+
 import { useDashboardStore } from '../store';
-import { formatCurrency, formatNumber, generateColors } from '../utils';
+import { formatCurrency, generateColors } from '../utils';
+import WeatherWidget from '../components/Advanced/WeatherWidget';
+import QRCodeScanner from '../components/Advanced/QRCodeScanner';
 
-// Компонент для статистической карточки
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  change?: number;
-  icon: React.ReactNode;
-  color: 'primary' | 'success' | 'warning' | 'error' | 'info';
-  subtitle?: string;
-}
+const DashboardPage: React.FC = () => {
+  const { stats, loading, fetchStats } = useDashboardStore();
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  change,
-  icon,
-  color,
-  subtitle,
-}) => {
-  const getColorClasses = (color: string) => {
-    const colors = {
-      primary: {
-        bg: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.05))',
-        border: 'rgba(25, 118, 210, 0.2)',
-        icon: '#1976d2',
-      },
-      success: {
-        bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.05))',
-        border: 'rgba(16, 185, 129, 0.2)',
-        icon: '#10b981',
-      },
-      warning: {
-        bg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.05))',
-        border: 'rgba(245, 158, 11, 0.2)',
-        icon: '#f59e0b',
-      },
-      error: {
-        bg: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(248, 113, 113, 0.05))',
-        border: 'rgba(239, 68, 68, 0.2)',
-        icon: '#ef4444',
-      },
-      info: {
-        bg: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.05))',
-        border: 'rgba(59, 130, 246, 0.2)',
-        icon: '#3b82f6',
-      },
-    };
-    return colors[color as keyof typeof colors];
-  };
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
-  const colorConfig = getColorClasses(color);
+  // Данные для графиков
+  const financialData = [
+    { name: 'Янв', income: 2400000, expenses: 1800000 },
+    { name: 'Фев', income: 1398000, expenses: 1200000 },
+    { name: 'Мар', income: 9800000, expenses: 2800000 },
+    { name: 'Апр', income: 3908000, expenses: 2400000 },
+    { name: 'Май', income: 4800000, expenses: 3200000 },
+    { name: 'Июн', income: 3800000, expenses: 2900000 },
+  ];
 
-  return (
-    <Card
-      sx={{
-        height: '100%',
-        background: colorConfig.bg,
-        border: `1px solid ${colorConfig.border}`,
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        },
-      }}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
+  const budgetDistribution = [
+    { name: 'Материалы', value: 45, color: '#1976d2' },
+    { name: 'Зарплата', value: 30, color: '#388e3c' },
+    { name: 'Оборудование', value: 15, color: '#f57c00' },
+    { name: 'Прочее', value: 10, color: '#7b1fa2' },
+  ];
+
+  const projectActivity = [
+    { name: 'Пн', tasks: 12 },
+    { name: 'Вт', tasks: 19 },
+    { name: 'Ср', tasks: 15 },
+    { name: 'Чт', tasks: 22 },
+    { name: 'Пт', tasks: 18 },
+    { name: 'Сб', tasks: 8 },
+    { name: 'Вс', tasks: 5 },
+  ];
+
+  const currentTasks = [
+    { id: 1, name: 'Заливка фундамента', progress: 75, assignee: 'И. Иванов', priority: 'high' },
+    { id: 2, name: 'Монтаж кровли', progress: 45, assignee: 'П. Петров', priority: 'medium' },
+    { id: 3, name: 'Отделочные работы', progress: 20, assignee: 'С. Сидоров', priority: 'low' },
+    { id: 4, name: 'Электромонтаж', progress: 90, assignee: 'К. Козлов', priority: 'high' },
+  ];
+
+  const recentActivities = [
+    { id: 1, type: 'task_completed', message: 'Завершена задача "Подготовка котлована"', time: '2 часа назад', user: 'И. Иванов' },
+    { id: 2, type: 'material_delivered', message: 'Поставлен цемент М400 - 50 мешков', time: '4 часа назад', user: 'Склад' },
+    { id: 3, type: 'safety_incident', message: 'Зарегистрирован инцидент на объекте №2', time: '6 часов назад', user: 'Отдел ТБ' },
+    { id: 4, type: 'quality_check', message: 'Проведена проверка качества фундамента', time: '1 день назад', user: 'К. Петров' },
+  ];
+
+  const StatCard: React.FC<{
+    title: string;
+    value: string | number;
+    change?: number;
+    icon: React.ReactNode;
+    color: string;
+  }> = ({ title, value, change, icon, color }) => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography color="textSecondary" gutterBottom variant="overline">
               {title}
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: colorConfig.icon, mb: 1 }}>
-              {typeof value === 'number' ? formatNumber(value) : value}
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+              {value}
             </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary">
-                {subtitle}
-              </Typography>
-            )}
             {change !== undefined && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 {change >= 0 ? (
-                  <TrendingUpIcon sx={{ fontSize: 16, color: 'success.main', mr: 0.5 }} />
+                  <TrendingUpIcon sx={{ color: 'success.main', fontSize: 18 }} />
                 ) : (
-                  <TrendingDownIcon sx={{ fontSize: 16, color: 'error.main', mr: 0.5 }} />
+                  <TrendingDownIcon sx={{ color: 'error.main', fontSize: 18 }} />
                 )}
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   sx={{
                     color: change >= 0 ? 'success.main' : 'error.main',
                     fontWeight: 600,
                   }}
                 >
-                  {change >= 0 ? '+' : ''}{change.toFixed(1)}%
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-                  за месяц
+                  {Math.abs(change)}%
                 </Typography>
               </Box>
             )}
           </Box>
-          <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: 2,
-              background: colorConfig.icon,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              boxShadow: `0 4px 20px ${colorConfig.border}`,
-            }}
-          >
+          <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>
             {icon}
-          </Box>
+          </Avatar>
         </Box>
       </CardContent>
     </Card>
   );
-};
 
-// Компонент для активности проектов
-const ProjectActivityCard: React.FC = () => {
-  const activityData = [
-    { name: 'Пн', active: 4, completed: 2 },
-    { name: 'Вт', active: 6, completed: 3 },
-    { name: 'Ср', active: 5, completed: 1 },
-    { name: 'Чт', active: 8, completed: 4 },
-    { name: 'Пт', active: 7, completed: 2 },
-    { name: 'Сб', active: 3, completed: 1 },
-    { name: 'Вс', active: 2, completed: 0 },
-  ];
-
-  return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
+  const FinancialChart: React.FC = () => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Активность проектов
+            Финансовая динамика
           </Typography>
-          <IconButton size="small">
-            <RefreshIcon />
-          </IconButton>
+          <Button size="small" variant="outlined">
+            Подробнее
+          </Button>
         </Box>
-        <Box sx={{ height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={activityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" stroke="#666" fontSize={12} />
-              <YAxis stroke="#666" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                }}
-              />
-              <Bar dataKey="active" fill="#1976d2" name="Активные" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="completed" fill="#10b981" name="Завершенные" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Box>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={financialData}>
+            <defs>
+              <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#1976d2" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#1976d2" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#d32f2f" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#d32f2f" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="name" />
+            <YAxis tickFormatter={(value) => `${value / 1000000}M`} />
+            <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+            <Area
+              type="monotone"
+              dataKey="income"
+              stroke="#1976d2"
+              strokeWidth={3}
+              fill="url(#incomeGradient)"
+              name="Доходы"
+            />
+            <Area
+              type="monotone"
+              dataKey="expenses"
+              stroke="#d32f2f"
+              strokeWidth={3}
+              fill="url(#expensesGradient)"
+              name="Расходы"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );
-};
 
-// Компонент для распределения бюджета
-const BudgetDistributionCard: React.FC = () => {
-  const budgetData = [
-    { name: 'Материалы', value: 45, color: '#1976d2' },
-    { name: 'Труд', value: 30, color: '#42a5f5' },
-    { name: 'Техника', value: 15, color: '#90caf9' },
-    { name: 'Прочее', value: 10, color: '#bbdefb' },
-  ];
-
-  return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+  const BudgetDistributionCard: React.FC = () => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
           Распределение бюджета
         </Typography>
-        <Box sx={{ height: 250, display: 'flex', alignItems: 'center' }}>
-          <ResponsiveContainer width="60%" height="100%">
-            <PieChart>
-              <Pie
-                data={budgetData}
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {budgetData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          <Box sx={{ flex: 1, pl: 2 }}>
-            {budgetData.map((item, index) => (
-              <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    backgroundColor: item.color,
-                    mr: 1,
-                  }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {item.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {item.value}%
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie
+              data={budgetDistribution}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {budgetDistribution.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );
-};
 
-// Компонент для доходов и расходов
-const FinancialChart: React.FC = () => {
-  const financialData = [
-    { month: 'Янв', income: 2400000, expense: 1800000 },
-    { month: 'Фев', income: 1800000, expense: 1600000 },
-    { month: 'Мар', income: 3200000, expense: 2200000 },
-    { month: 'Апр', income: 2800000, expense: 2000000 },
-    { month: 'Май', income: 3600000, expense: 2400000 },
-    { month: 'Июн', income: 3200000, expense: 2600000 },
-  ];
-
-  return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Доходы и расходы
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Chip
-              size="small"
-              label="Доходы"
-              sx={{ backgroundColor: '#1976d2', color: 'white' }}
-            />
-            <Chip
-              size="small"
-              label="Расходы"
-              sx={{ backgroundColor: '#f59e0b', color: 'white' }}
-            />
-          </Box>
-        </Box>
-        <Box sx={{ height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={financialData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#666" fontSize={12} />
-              <YAxis stroke="#666" fontSize={12} tickFormatter={(value) => `${value / 1000000}M`} />
-              <Tooltip
-                formatter={(value: number) => [formatCurrency(value), '']}
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="income"
-                stackId="1"
-                stroke="#1976d2"
-                fill="url(#incomeGradient)"
-                name="Доходы"
-              />
-              <Area
-                type="monotone"
-                dataKey="expense"
-                stackId="2"
-                stroke="#f59e0b"
-                fill="url(#expenseGradient)"
-                name="Расходы"
-              />
-              <defs>
-                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1976d2" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#1976d2" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-            </AreaChart>
-          </ResponsiveContainer>
-        </Box>
+  const ProjectActivityCard: React.FC = () => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          Активность по проектам
+        </Typography>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={projectActivity}>
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="tasks" fill="#1976d2" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );
-};
 
-// Компонент для текущих задач
-const CurrentTasksCard: React.FC = () => {
-  const tasks = [
-    { id: 1, title: 'Укладка фундамента', project: 'Солнечный', progress: 75, priority: 'high' },
-    { id: 2, title: 'Монтаж кровли', project: 'Бизнес-Центр', progress: 45, priority: 'medium' },
-    { id: 3, title: 'Отделочные работы', project: 'Коттедж', progress: 90, priority: 'low' },
-    { id: 4, title: 'Электромонтаж', project: 'Солнечный', progress: 30, priority: 'high' },
-  ];
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'error';
-      case 'medium': return 'warning';
-      case 'low': return 'success';
-      default: return 'default';
-    }
-  };
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'Высокий';
-      case 'medium': return 'Средний';
-      case 'low': return 'Низкий';
-      default: return 'Обычный';
-    }
-  };
-
-  return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
+  const CurrentTasksCard: React.FC = () => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Текущие задачи
@@ -392,41 +242,87 @@ const CurrentTasksCard: React.FC = () => {
             Все задачи
           </Button>
         </Box>
-        <Box sx={{ space: 2 }}>
-          {tasks.map((task) => (
-            <Box key={task.id} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {currentTasks.map((task) => (
+            <Box key={task.id}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  {task.title}
+                  {task.name}
                 </Typography>
                 <Chip
                   size="small"
-                  label={getPriorityText(task.priority)}
-                  color={getPriorityColor(task.priority) as any}
-                  variant="outlined"
+                  label={task.priority}
+                  color={
+                    task.priority === 'high'
+                      ? 'error'
+                      : task.priority === 'medium'
+                      ? 'warning'
+                      : 'success'
+                  }
                 />
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                Проект: {task.project}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={task.progress}
-                  sx={{
-                    flex: 1,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: '#f0f0f0',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 4,
-                      backgroundColor: task.progress >= 80 ? '#10b981' : task.progress >= 50 ? '#f59e0b' : '#1976d2',
-                    },
-                  }}
-                />
-                <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {task.assignee}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
                   {task.progress}%
                 </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={task.progress}
+                sx={{ height: 8, borderRadius: 4 }}
+              />
+            </Box>
+          ))}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
+  const RecentActivitiesCard: React.FC = () => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          Последние события
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {recentActivities.map((activity) => (
+            <Box key={activity.id} sx={{ display: 'flex', gap: 2, p: 1 }}>
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  bgcolor:
+                    activity.type === 'task_completed'
+                      ? 'success.main'
+                      : activity.type === 'material_delivered'
+                      ? 'info.main'
+                      : activity.type === 'safety_incident'
+                      ? 'error.main'
+                      : 'warning.main',
+                }}
+              >
+                {activity.type === 'task_completed' ? '✓' : 
+                 activity.type === 'material_delivered' ? '📦' :
+                 activity.type === 'safety_incident' ? '⚠️' : '🔍'}
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {activity.message}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {activity.user}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    •
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {activity.time}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           ))}
@@ -434,182 +330,213 @@ const CurrentTasksCard: React.FC = () => {
       </CardContent>
     </Card>
   );
-};
 
-const DashboardPage: React.FC = () => {
-  const { stats, isLoading, fetchStats } = useDashboardStore();
+  const QuickActionsCard: React.FC = () => (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          Быстрые действия
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<AddIcon />}
+              sx={{ mb: 1 }}
+            >
+              Новый проект
+            </Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<QrScannerIcon />}
+              onClick={() => setQrScannerOpen(true)}
+              sx={{ mb: 1 }}
+            >
+              QR Сканер
+            </Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<SecurityIcon />}
+              sx={{ mb: 1 }}
+            >
+              Инцидент ТБ
+            </Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<InventoryIcon />}
+              sx={{ mb: 1 }}
+            >
+              Инвентарь
+            </Button>
+          </Grid>
+        </Grid>
+      </CardContent>
+    </Card>
+  );
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
-  if (isLoading || !stats) {
+  if (loading) {
     return (
-      <Box>
-        {/* Skeleton for stats cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Grid item xs={12} sm={6} lg={3} key={index}>
-              <Card>
-                <CardContent>
-                  <Skeleton variant="text" width="60%" height={24} />
-                  <Skeleton variant="text" width="80%" height={40} />
-                  <Skeleton variant="text" width="40%" height={16} />
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-        
-        {/* Skeleton for charts */}
-        <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
-            <Card>
-              <CardContent>
-                <Skeleton variant="rectangular" height={300} />
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <Card>
-              <CardContent>
-                <Skeleton variant="rectangular" height={300} />
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+      <Box sx={{ p: 3 }}>
+        <LinearProgress />
       </Box>
     );
   }
 
   return (
-    <Fade in={true} timeout={600}>
-      <Box>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Добро пожаловать в Construction CRM
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Обзор ключевых показателей и текущего состояния проектов
-          </Typography>
-        </Box>
+    <Box sx={{ p: 3 }}>
+      {/* Заголовок */}
+      <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
+        Дашборд управления
+      </Typography>
 
-        {/* Stats Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              title="Активные проекты"
-              value={stats.activeProjects}
-              change={12.5}
-              icon={<ProjectIcon />}
-              color="primary"
-              subtitle={`Всего: ${stats.totalProjects}`}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              title="Доход за месяц"
-              value={formatCurrency(stats.monthlyRevenue)}
-              change={8.2}
-              icon={<MoneyIcon />}
-              color="success"
-              subtitle="Прибыль растет"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              title="Сотрудники"
-              value={`${stats.activeEmployees}/${stats.employeeCount}`}
-              change={-2.1}
-              icon={<PeopleIcon />}
-              color="info"
-              subtitle="Активные сотрудники"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} lg={3}>
-            <StatCard
-              title="Склад"
-              value={stats.materialCount}
-              icon={<InventoryIcon />}
-              color="warning"
-              subtitle={`${stats.lowStockMaterials} на исходе`}
-            />
-          </Grid>
+      {/* Основные показатели */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Активные проекты"
+            value={stats?.activeProjects || 0}
+            change={12}
+            icon={<BusinessIcon />}
+            color="#1976d2"
+          />
         </Grid>
-
-        {/* Charts Row 1 */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} lg={8}>
-            <FinancialChart />
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <BudgetDistributionCard />
-          </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Месячная выручка"
+            value={formatCurrency(stats?.monthlyRevenue || 0)}
+            change={8.2}
+            icon={<MoneyIcon />}
+            color="#388e3c"
+          />
         </Grid>
-
-        {/* Charts Row 2 */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} lg={8}>
-            <ProjectActivityCard />
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <CurrentTasksCard />
-          </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Сотрудники"
+            value={stats?.employeeCount || 0}
+            change={-2.1}
+            icon={<PeopleIcon />}
+            color="#f57c00"
+          />
         </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            title="Склад"
+            value={`${stats?.materialCount || 0} единиц`}
+            change={5.4}
+            icon={<InventoryIcon />}
+            color="#7b1fa2"
+          />
+        </Grid>
+      </Grid>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-              Быстрые действия
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<ProjectIcon />}
-                  sx={{ py: 1.5, borderRadius: 2 }}
-                >
-                  Новый проект
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<PeopleIcon />}
-                  sx={{ py: 1.5, borderRadius: 2 }}
-                >
-                  Добавить сотрудника
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<InventoryIcon />}
-                  sx={{ py: 1.5, borderRadius: 2 }}
-                >
-                  Заказ материалов
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<ScheduleIcon />}
-                  sx={{ py: 1.5, borderRadius: 2 }}
-                >
-                  Планировщик
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-      </Box>
-    </Fade>
+      {/* Дополнительные показатели */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <BuildIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {stats?.brokenTools || 0}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Неисправных инструментов
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <SecurityIcon sx={{ fontSize: 40, color: 'error.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {stats?.safetyIncidentsThisMonth || 0}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Инцидентов за месяц
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <MoneyIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {stats?.overdueInvoices || 0}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Просроченных счетов
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {Math.round(stats?.utilizationRate || 0)}%
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Загрузка персонала
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Графики и виджеты */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} lg={8}>
+          <FinancialChart />
+        </Grid>
+        <Grid item xs={12} lg={4}>
+          <WeatherWidget compact />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <BudgetDistributionCard />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <ProjectActivityCard />
+        </Grid>
+      </Grid>
+
+      {/* Детальная информация */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <CurrentTasksCard />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <RecentActivitiesCard />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <QuickActionsCard />
+        </Grid>
+      </Grid>
+
+      {/* QR Сканер */}
+      <QRCodeScanner
+        open={qrScannerOpen}
+        onClose={() => setQrScannerOpen(false)}
+        onScan={(data) => {
+          console.log('QR scanned:', data);
+          // Здесь можно добавить логику обработки сканированного QR кода
+        }}
+      />
+    </Box>
   );
 };
 
