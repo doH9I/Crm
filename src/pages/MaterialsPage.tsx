@@ -1,0 +1,1030 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Tabs,
+  Tab,
+  Badge,
+  Tooltip,
+  Alert,
+  LinearProgress,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  InputAdornment,
+  Fab,
+  Menu,
+  ListItemButton,
+  Avatar
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Visibility as ViewIcon,
+  FilterList as FilterIcon,
+  Search as SearchIcon,
+  Warning as WarningIcon,
+  TrendingDown as TrendingDownIcon,
+  Inventory as InventoryIcon,
+  ShoppingCart as ShoppingCartIcon,
+  LocalShipping as DeliveryIcon,
+  Assessment as ReportIcon,
+  Download as ExportIcon,
+  Upload as ImportIcon,
+  MoreVert as MoreIcon
+} from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import { format as formatDate } from 'date-fns';
+import { ru } from 'date-fns/locale';
+import { useMaterialStore, useAuthStore, useProjectFilterStore } from '../store';
+import { Material, Supplier } from '../types';
+import { formatCurrency } from '../utils';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`materials-tabpanel-${index}`}
+      aria-labelledby={`materials-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+const MaterialsPage: React.FC = () => {
+  const { materials, suppliers, orders, loading, fetchMaterials, fetchSuppliers, fetchOrders, createMaterial, updateMaterial, deleteMaterial, createSupplier, createOrder } = useMaterialStore();
+  const { user } = useAuthStore();
+  const { selectedProjectId } = useProjectFilterStore();
+  
+  const [tabValue, setTabValue] = useState(0);
+  const [openMaterialDialog, setOpenMaterialDialog] = useState(false);
+  const [openSupplierDialog, setOpenSupplierDialog] = useState(false);
+  const [openOrderDialog, setOpenOrderDialog] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [viewMaterial, setViewMaterial] = useState<Material | null>(null);
+
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<any>();
+  const { control: supplierControl, handleSubmit: handleSupplierSubmit, reset: resetSupplier, formState: { errors: supplierErrors } } = useForm<any>();
+  const { control: orderControl, handleSubmit: handleOrderSubmit, reset: resetOrder, formState: { errors: orderErrors } } = useForm<any>();
+
+  useEffect(() => {
+    fetchMaterials();
+    fetchSuppliers();
+    fetchOrders();
+  }, [fetchMaterials, fetchSuppliers, fetchOrders]);
+
+  const handleCreateMaterial = async (data: any) => {
+    try {
+      await createMaterial({
+        ...data,
+        sku: data.sku || `MAT-${Date.now()}`,
+        currentStock: Number(data.currentStock) || 0,
+        minStock: Number(data.minStock) || 0,
+        maxStock: Number(data.maxStock) || 100,
+        reorderPoint: Number(data.reorderPoint) || 0,
+        unitPrice: Number(data.unitPrice) || 0,
+        avgPrice: Number(data.avgPrice) || 0,
+        lastPurchasePrice: Number(data.lastPurchasePrice) || 0,
+        reservedStock: 0,
+        availableStock: Number(data.currentStock) || 0,
+        expiryDate: data.expiryDate || undefined,
+        isActive: true,
+        isHazardous: false,
+        specifications: [],
+      });
+      setOpenMaterialDialog(false);
+      toast.success('Материал создан');
+    } catch (error) {
+      toast.error('Ошибка при создании материала');
+    }
+  };
+
+  const handleEditMaterial = async (data: any) => {
+    if (!editingMaterial) return;
+    
+    try {
+      await updateMaterial(editingMaterial.id, {
+        ...data,
+        currentStock: Number(data.currentStock),
+        minStock: Number(data.minStock),
+        unitPrice: Number(data.unitPrice),
+        updatedAt: new Date(),
+      });
+      setOpenMaterialDialog(false);
+      setEditingMaterial(null);
+      toast.success('Материал обновлен');
+    } catch (error) {
+      toast.error('Ошибка при обновлении материала');
+    }
+  };
+
+  const handleCreateSupplier = async (data: any) => {
+    try {
+      await createSupplier({
+        ...data,
+        rating: 5,
+        isActive: true,
+        categories: [],
+      });
+      setOpenSupplierDialog(false);
+      toast.success('Поставщик создан');
+    } catch (error) {
+      toast.error('Ошибка при создании поставщика');
+    }
+  };
+
+  const handleCreateOrder = async (data: any) => {
+    try {
+      await createOrder({
+        ...data,
+        status: 'draft' as const,
+        orderDate: new Date(),
+        expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        urgentOrder: false,
+        totalAmount: 0,
+        items: [],
+        orderNumber: `ORD-${Date.now()}`,
+        deliveryAddress: '',
+        createdBy: user?.id || '',
+      });
+      setOpenOrderDialog(false);
+      toast.success('Заказ создан');
+    } catch (error) {
+      toast.error('Ошибка при создании заказа');
+    }
+  };
+
+  const handleDeleteMaterial = async (id: string) => {
+    try {
+      await deleteMaterial(id);
+      toast.success('Материал удален');
+      setDeleteConfirmId(null);
+    } catch (error) {
+      toast.error('Ошибка при удалении материала');
+    }
+  };
+
+  const openMaterialForm = (material?: Material) => {
+    if (material) {
+      setEditingMaterial(material);
+      reset({
+        name: material.name,
+        description: material.description,
+        category: material.category,
+        unit: material.unit,
+        currentStock: material.currentStock,
+        minStock: material.minStock,
+        unitPrice: material.unitPrice,
+        supplier: material.supplier,
+      });
+    } else {
+      setEditingMaterial(null);
+      reset({
+        name: '',
+        description: '',
+        category: '',
+        unit: '',
+        currentStock: 0,
+        minStock: 0,
+        unitPrice: 0,
+        supplier: '',
+      });
+    }
+    setOpenMaterialDialog(true);
+  };
+
+  const getStockStatus = (material: Material) => {
+    if (material.currentStock === 0) return 'error';
+    if (material.currentStock <= material.minStock) return 'warning';
+    return 'success';
+  };
+
+  const getStockStatusText = (material: Material) => {
+    if (material.currentStock === 0) return 'Нет в наличии';
+    if (material.currentStock <= material.minStock) return 'Мало';
+    return 'В наличии';
+  };
+
+  const lowStockMaterials = materials.filter(m => m.currentStock <= m.minStock);
+  const outOfStockMaterials = materials.filter(m => m.currentStock === 0);
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            {selectedProjectId ? 'Склад выбранного проекта' : 'Управление складом'}
+          </Typography>
+          {selectedProjectId && (
+            <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
+              Показаны материалы только для выбранного проекта
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<ShoppingCartIcon />}
+            onClick={() => setOpenOrderDialog(true)}
+          >
+            Создать заказ
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => openMaterialForm()}
+          >
+            Добавить материал
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Статистика */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <InventoryIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{materials.length}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Всего материалов
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'warning.main' }}>
+                  <Badge badgeContent={lowStockMaterials.length} color="error">
+                    <TrendingDownIcon />
+                  </Badge>
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{lowStockMaterials.length}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Заканчиваются
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'error.main' }}>
+                  <WarningIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{outOfStockMaterials.length}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Нет в наличии
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'info.main' }}>
+                  <DeliveryIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{suppliers.length}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Поставщиков
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Предупреждения */}
+      {lowStockMaterials.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="subtitle2">
+            Внимание! Заканчиваются материалы: {lowStockMaterials.map(m => m.name).join(', ')}
+          </Typography>
+        </Alert>
+      )}
+
+      <Paper sx={{ width: '100%' }}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, newValue) => setTabValue(newValue)}
+          variant="fullWidth"
+        >
+          <Tab label="Материалы" icon={<InventoryIcon />} />
+          <Tab label="Поставщики" icon={<DeliveryIcon />} />
+          <Tab label="Заказы" icon={<ShoppingCartIcon />} />
+        </Tabs>
+
+        {/* Вкладка "Материалы" */}
+        <TabPanel value={tabValue} index={0}>
+          {materials.length === 0 && !loading ? (
+            <Card>
+              <CardContent sx={{ textAlign: 'center', py: 6 }}>
+                <InventoryIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                  Нет материалов
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Добавьте первый материал для начала работы
+                </Typography>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => openMaterialForm()}>
+                  Добавить материал
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Материал</TableCell>
+                    <TableCell>Категория</TableCell>
+                    <TableCell>Количество</TableCell>
+                    <TableCell>Единица</TableCell>
+                    <TableCell>Цена за ед.</TableCell>
+                    <TableCell>Статус</TableCell>
+                    <TableCell>Местоположение</TableCell>
+                    <TableCell align="right">Действия</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {materials.map((material) => (
+                    <TableRow key={material.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar sx={{ bgcolor: getStockStatus(material) === 'error' ? 'error.main' : 'primary.main', width: 32, height: 32 }}>
+                            <InventoryIcon fontSize="small" />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight={600}>
+                              {material.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {material.description}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={material.category} size="small" variant="outlined" />
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2" fontWeight={600}>
+                            {material.currentStock}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            мин: {material.minStock}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>{material.unit}</TableCell>
+                      <TableCell>{formatCurrency(material.unitPrice)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getStockStatusText(material)}
+                          color={getStockStatus(material)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{material.location}</TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Просмотр">
+                          <IconButton size="small" onClick={() => setViewMaterial(material)}>
+                            <ViewIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Редактировать">
+                          <IconButton size="small" onClick={() => openMaterialForm(material)}>
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Удалить">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => setDeleteConfirmId(material.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+
+        {/* Вкладка "Поставщики" */}
+        <TabPanel value={tabValue} index={1}>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenSupplierDialog(true)}
+            >
+              Добавить поставщика
+            </Button>
+          </Box>
+          
+          <Grid container spacing={3}>
+            {suppliers.map((supplier) => (
+              <Grid item xs={12} md={6} lg={4} key={supplier.id}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ mb: 1 }}>
+                      {supplier.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {supplier.contactPerson}
+                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Email: {supplier.email}
+                      </Typography>
+                      <br />
+                      <Typography variant="caption" color="text.secondary">
+                        Телефон: {supplier.phone}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Chip
+                        label={`Рейтинг: ${supplier.rating}/5`}
+                        color="primary"
+                        size="small"
+                      />
+                      <Chip
+                        label={supplier.isActive ? 'Активен' : 'Неактивен'}
+                        color={supplier.isActive ? 'success' : 'default'}
+                        size="small"
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </TabPanel>
+
+        {/* Вкладка "Заказы" */}
+        <TabPanel value={tabValue} index={2}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Номер заказа</TableCell>
+                  <TableCell>Материал</TableCell>
+                  <TableCell>Количество</TableCell>
+                  <TableCell>Поставщик</TableCell>
+                  <TableCell>Дата заказа</TableCell>
+                  <TableCell>Ожидаемая доставка</TableCell>
+                  <TableCell>Статус</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id} hover>
+                    <TableCell>{order.id.slice(0, 8)}</TableCell>
+                    <TableCell>{order.items?.[0]?.materialId || 'N/A'}</TableCell>
+                    <TableCell>{order.items?.[0]?.quantity || 0}</TableCell>
+                    <TableCell>{order.supplierId}</TableCell>
+                    <TableCell>
+                      {formatDate(order.orderDate, 'dd.MM.yyyy', { locale: ru })}
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(order.expectedDeliveryDate, 'dd.MM.yyyy', { locale: ru })}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={order.status}
+                        color={order.status === 'delivered' ? 'success' : 'primary'}
+                        size="small"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </TabPanel>
+      </Paper>
+
+      {/* Диалог создания/редактирования материала */}
+      <Dialog open={openMaterialDialog} onClose={() => setOpenMaterialDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {editingMaterial ? 'Редактировать материал' : 'Добавить новый материал'}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="name"
+                control={control}
+                rules={{ required: 'Название обязательно' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Название материала"
+                    fullWidth
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="category"
+                control={control}
+                rules={{ required: 'Категория обязательна' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Категория"
+                    fullWidth
+                    error={!!errors.category}
+                    helperText={errors.category?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Описание"
+                    fullWidth
+                    multiline
+                    rows={2}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name="currentStock"
+                control={control}
+                rules={{ required: 'Количество обязательно', min: { value: 0, message: 'Количество не может быть отрицательным' } }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Количество"
+                    fullWidth
+                    error={!!errors.currentStock}
+                    helperText={errors.currentStock?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name="minStock"
+                control={control}
+                rules={{ required: 'Минимальное количество обязательно' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Минимальное количество"
+                    fullWidth
+                    error={!!errors.minStock}
+                    helperText={errors.minStock?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Controller
+                name="unit"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Единица измерения</InputLabel>
+                    <Select {...field} label="Единица измерения">
+                      <MenuItem value="шт">штук</MenuItem>
+                      <MenuItem value="кг">килограмм</MenuItem>
+                      <MenuItem value="м">метр</MenuItem>
+                      <MenuItem value="м²">м²</MenuItem>
+                      <MenuItem value="м³">м³</MenuItem>
+                      <MenuItem value="л">литр</MenuItem>
+                      <MenuItem value="упак">упаковка</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="unitPrice"
+                control={control}
+                rules={{ required: 'Цена обязательна', min: { value: 0, message: 'Цена не может быть отрицательной' } }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Цена за единицу (руб.)"
+                    fullWidth
+                    error={!!errors.unitPrice}
+                    helperText={errors.unitPrice?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="location"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Местоположение на складе" fullWidth />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="supplier"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Поставщик</InputLabel>
+                    <Select {...field} label="Поставщик">
+                      {suppliers.map((supplier) => (
+                        <MenuItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="barcode"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Штрихкод" fullWidth />
+                )}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenMaterialDialog(false)}>Отмена</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit(editingMaterial ? handleEditMaterial : handleCreateMaterial)}
+          >
+            {editingMaterial ? 'Сохранить' : 'Добавить'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог добавления поставщика */}
+      <Dialog open={openSupplierDialog} onClose={() => setOpenSupplierDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Добавить поставщика</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="name"
+                control={supplierControl}
+                rules={{ required: 'Название компании обязательно' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Название компании"
+                    fullWidth
+                    error={!!supplierErrors.name}
+                    helperText={supplierErrors.name?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="contactPerson"
+                control={supplierControl}
+                rules={{ required: 'Контактное лицо обязательно' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Контактное лицо"
+                    fullWidth
+                    error={!!supplierErrors.contactPerson}
+                    helperText={supplierErrors.contactPerson?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="email"
+                control={supplierControl}
+                rules={{
+                  required: 'Email обязателен',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Неверный формат email'
+                  }
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    type="email"
+                    fullWidth
+                    error={!!supplierErrors.email}
+                    helperText={supplierErrors.email?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="phone"
+                control={supplierControl}
+                render={({ field }) => (
+                  <TextField {...field} label="Телефон" fullWidth />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="address"
+                control={supplierControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Адрес"
+                    fullWidth
+                    multiline
+                    rows={2}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="deliveryTerms"
+                control={supplierControl}
+                render={({ field }) => (
+                  <TextField {...field} label="Условия доставки" fullWidth />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="paymentTerms"
+                control={supplierControl}
+                render={({ field }) => (
+                  <TextField {...field} label="Условия оплаты" fullWidth />
+                )}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSupplierDialog(false)}>Отмена</Button>
+          <Button variant="contained" onClick={handleSupplierSubmit(handleCreateSupplier)}>
+            Добавить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог создания заказа */}
+      <Dialog open={openOrderDialog} onClose={() => setOpenOrderDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Создать заказ материала</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <Controller
+                name="materialId"
+                control={orderControl}
+                rules={{ required: 'Выберите материал' }}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!orderErrors.materialId}>
+                    <InputLabel>Материал</InputLabel>
+                    <Select {...field} label="Материал">
+                      {materials.map((material) => (
+                        <MenuItem key={material.id} value={material.id}>
+                          {material.name} (осталось: {material.currentStock} {material.unit})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="quantity"
+                control={orderControl}
+                rules={{ required: 'Количество обязательно', min: { value: 1, message: 'Количество должно быть больше 0' } }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Количество для заказа"
+                    fullWidth
+                    error={!!orderErrors.quantity}
+                    helperText={orderErrors.quantity?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="supplierId"
+                control={orderControl}
+                rules={{ required: 'Выберите поставщика' }}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!orderErrors.supplierId}>
+                    <InputLabel>Поставщик</InputLabel>
+                    <Select {...field} label="Поставщик">
+                      {suppliers.map((supplier) => (
+                        <MenuItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="expectedDelivery"
+                control={orderControl}
+                rules={{ required: 'Дата доставки обязательна' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="date"
+                    label="Ожидаемая дата доставки"
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    error={!!orderErrors.expectedDelivery}
+                    helperText={orderErrors.expectedDelivery?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Controller
+                name="notes"
+                control={orderControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Примечания"
+                    fullWidth
+                    multiline
+                    rows={2}
+                  />
+                )}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenOrderDialog(false)}>Отмена</Button>
+          <Button variant="contained" onClick={handleOrderSubmit(handleCreateOrder)}>
+            Создать заказ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления */}
+      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)}>
+        <DialogTitle>Подтверждение удаления</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Вы уверены, что хотите удалить этот материал? Это действие нельзя отменить.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmId(null)}>Отмена</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => deleteConfirmId && handleDeleteMaterial(deleteConfirmId)}
+          >
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог просмотра материала */}
+      <Dialog open={!!viewMaterial} onClose={() => setViewMaterial(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Информация о материале</DialogTitle>
+        <DialogContent>
+          {viewMaterial && (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <Typography variant="h6">{viewMaterial.name}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {viewMaterial.description}
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Категория:</Typography>
+                <Typography variant="body2">{viewMaterial.category}</Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Количество:</Typography>
+                <Typography variant="body2">{viewMaterial.currentStock} {viewMaterial.unit}</Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Цена за единицу:</Typography>
+                <Typography variant="body2">{formatCurrency(viewMaterial.unitPrice)}</Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Общая стоимость:</Typography>
+                <Typography variant="body2">{formatCurrency(viewMaterial.currentStock * viewMaterial.unitPrice)}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Местоположение:</Typography>
+                <Typography variant="body2">{viewMaterial.location}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Статус:</Typography>
+                <Chip
+                  label={getStockStatusText(viewMaterial)}
+                  color={getStockStatus(viewMaterial)}
+                  size="small"
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewMaterial(null)}>Закрыть</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default MaterialsPage;
