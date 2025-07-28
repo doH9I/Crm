@@ -32,7 +32,7 @@ import {
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
-import ProjectSelector from './ProjectSelector';
+
 
 interface NavigationItem {
   id: string;
@@ -63,6 +63,15 @@ const navigationItems: NavigationItem[] = [
     permission: MODULES.PROJECTS,
     children: [
       {
+        id: 'all-projects',
+        label: 'Все проекты',
+        path: '/projects',
+        icon: <ProjectIcon />,
+        badge: 8,
+        badgeColor: 'primary',
+        permission: MODULES.PROJECTS,
+      },
+      {
         id: 'active-projects',
         label: 'Активные проекты',
         path: '/projects?status=active',
@@ -78,6 +87,15 @@ const navigationItems: NavigationItem[] = [
         icon: <FolderIcon />,
         badge: 3,
         badgeColor: 'warning',
+        permission: MODULES.PROJECTS,
+      },
+      {
+        id: 'completed-projects',
+        label: 'Завершенные проекты',
+        path: '/projects?status=completed',
+        icon: <CheckIcon />,
+        badge: 2,
+        badgeColor: 'info',
         permission: MODULES.PROJECTS,
       },
     ],
@@ -399,23 +417,7 @@ const Sidebar: React.FC = () => {
 
       <Divider sx={{ mx: 2 }} />
 
-      {/* Project Selector */}
-      <Box sx={{ px: 2, py: 1 }}>
-        <Typography 
-          variant="caption" 
-          color="text.secondary" 
-          sx={{ 
-            px: 1, 
-            py: 1, 
-            display: 'block',
-            fontWeight: 600,
-            letterSpacing: 0.5,
-          }}
-        >
-          ПРОЕКТЫ
-        </Typography>
-        <ProjectSelector />
-      </Box>
+
 
       {/* Navigation */}
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>

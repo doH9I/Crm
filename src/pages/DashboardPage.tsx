@@ -54,46 +54,117 @@ const DashboardPage: React.FC = () => {
     fetchStats();
   }, [fetchStats]);
 
-  // Данные для графиков
-  const financialData = [
-    { name: 'Янв', income: 2400000, expenses: 1800000, month: 'january' },
-    { name: 'Фев', income: 1398000, expenses: 1200000, month: 'february' },
-    { name: 'Мар', income: 9800000, expenses: 2800000, month: 'march' },
-    { name: 'Апр', income: 3908000, expenses: 2400000, month: 'april' },
-    { name: 'Май', income: 4800000, expenses: 3200000, month: 'may' },
-    { name: 'Июн', income: 3800000, expenses: 2900000, month: 'june' },
-  ];
+  // Данные для графиков в зависимости от выбранного проекта
+  const getFinancialData = () => {
+    if (selectedProject) {
+      // Данные для конкретного проекта
+      return [
+        { name: 'Янв', income: selectedProject.spentAmount * 0.2, expenses: selectedProject.spentAmount * 0.15, month: 'january' },
+        { name: 'Фев', income: selectedProject.spentAmount * 0.3, expenses: selectedProject.spentAmount * 0.25, month: 'february' },
+        { name: 'Мар', income: selectedProject.spentAmount * 0.4, expenses: selectedProject.spentAmount * 0.35, month: 'march' },
+        { name: 'Апр', income: selectedProject.spentAmount * 0.5, expenses: selectedProject.spentAmount * 0.45, month: 'april' },
+        { name: 'Май', income: selectedProject.spentAmount * 0.6, expenses: selectedProject.spentAmount * 0.55, month: 'may' },
+        { name: 'Июн', income: selectedProject.spentAmount * 0.7, expenses: selectedProject.spentAmount * 0.65, month: 'june' },
+      ];
+    }
+    // Общие данные для всех проектов
+    return [
+      { name: 'Янв', income: 2400000, expenses: 1800000, month: 'january' },
+      { name: 'Фев', income: 1398000, expenses: 1200000, month: 'february' },
+      { name: 'Мар', income: 9800000, expenses: 2800000, month: 'march' },
+      { name: 'Апр', income: 3908000, expenses: 2400000, month: 'april' },
+      { name: 'Май', income: 4800000, expenses: 3200000, month: 'may' },
+      { name: 'Июн', income: 3800000, expenses: 2900000, month: 'june' },
+    ];
+  };
 
-  const budgetDistribution = [
-    { name: 'Материалы', value: 45, color: '#1976d2', category: 'materials' },
-    { name: 'Зарплата', value: 30, color: '#388e3c', category: 'salary' },
-    { name: 'Оборудование', value: 15, color: '#f57c00', category: 'equipment' },
-    { name: 'Прочее', value: 10, color: '#7b1fa2', category: 'other' },
-  ];
+  const getBudgetDistribution = () => {
+    if (selectedProject) {
+      // Распределение бюджета для конкретного проекта
+      return [
+        { name: 'Материалы', value: 50, color: '#1976d2', category: 'materials' },
+        { name: 'Зарплата', value: 25, color: '#388e3c', category: 'salary' },
+        { name: 'Оборудование', value: 15, color: '#f57c00', category: 'equipment' },
+        { name: 'Прочее', value: 10, color: '#7b1fa2', category: 'other' },
+      ];
+    }
+    // Общее распределение бюджета
+    return [
+      { name: 'Материалы', value: 45, color: '#1976d2', category: 'materials' },
+      { name: 'Зарплата', value: 30, color: '#388e3c', category: 'salary' },
+      { name: 'Оборудование', value: 15, color: '#f57c00', category: 'equipment' },
+      { name: 'Прочее', value: 10, color: '#7b1fa2', category: 'other' },
+    ];
+  };
 
-  const projectActivity = [
-    { name: 'Пн', tasks: 12, day: 'monday' },
-    { name: 'Вт', tasks: 19, day: 'tuesday' },
-    { name: 'Ср', tasks: 15, day: 'wednesday' },
-    { name: 'Чт', tasks: 22, day: 'thursday' },
-    { name: 'Пт', tasks: 18, day: 'friday' },
-    { name: 'Сб', tasks: 8, day: 'saturday' },
-    { name: 'Вс', tasks: 5, day: 'sunday' },
-  ];
+  const getProjectActivity = () => {
+    if (selectedProject) {
+      // Активность для конкретного проекта
+      return [
+        { name: 'Пн', tasks: Math.floor(selectedProject.progress / 10), day: 'monday' },
+        { name: 'Вт', tasks: Math.floor(selectedProject.progress / 8), day: 'tuesday' },
+        { name: 'Ср', tasks: Math.floor(selectedProject.progress / 12), day: 'wednesday' },
+        { name: 'Чт', tasks: Math.floor(selectedProject.progress / 6), day: 'thursday' },
+        { name: 'Пт', tasks: Math.floor(selectedProject.progress / 9), day: 'friday' },
+        { name: 'Сб', tasks: Math.floor(selectedProject.progress / 15), day: 'saturday' },
+        { name: 'Вс', tasks: Math.floor(selectedProject.progress / 20), day: 'sunday' },
+      ];
+    }
+    // Общая активность
+    return [
+      { name: 'Пн', tasks: 12, day: 'monday' },
+      { name: 'Вт', tasks: 19, day: 'tuesday' },
+      { name: 'Ср', tasks: 15, day: 'wednesday' },
+      { name: 'Чт', tasks: 22, day: 'thursday' },
+      { name: 'Пт', tasks: 18, day: 'friday' },
+      { name: 'Сб', tasks: 8, day: 'saturday' },
+      { name: 'Вс', tasks: 5, day: 'sunday' },
+    ];
+  };
 
-  const currentTasks = [
-    { id: 1, name: 'Заливка фундамента', progress: 75, assignee: 'И. Иванов', priority: 'high' },
-    { id: 2, name: 'Монтаж кровли', progress: 45, assignee: 'П. Петров', priority: 'medium' },
-    { id: 3, name: 'Отделочные работы', progress: 20, assignee: 'С. Сидоров', priority: 'low' },
-    { id: 4, name: 'Электромонтаж', progress: 90, assignee: 'К. Козлов', priority: 'high' },
-  ];
+  const getCurrentTasks = () => {
+    if (selectedProject) {
+      // Задачи для конкретного проекта
+      return [
+        { id: 1, name: `${selectedProject.name} - Фундамент`, progress: selectedProject.progress * 0.8, assignee: 'И. Иванов', priority: 'high' },
+        { id: 2, name: `${selectedProject.name} - Стены`, progress: selectedProject.progress * 0.6, assignee: 'П. Петров', priority: 'medium' },
+        { id: 3, name: `${selectedProject.name} - Кровля`, progress: selectedProject.progress * 0.4, assignee: 'С. Сидоров', priority: 'low' },
+        { id: 4, name: `${selectedProject.name} - Отделка`, progress: selectedProject.progress * 0.2, assignee: 'К. Козлов', priority: 'high' },
+      ];
+    }
+    // Общие задачи
+    return [
+      { id: 1, name: 'Заливка фундамента', progress: 75, assignee: 'И. Иванов', priority: 'high' },
+      { id: 2, name: 'Монтаж кровли', progress: 45, assignee: 'П. Петров', priority: 'medium' },
+      { id: 3, name: 'Отделочные работы', progress: 20, assignee: 'С. Сидоров', priority: 'low' },
+      { id: 4, name: 'Электромонтаж', progress: 90, assignee: 'К. Козлов', priority: 'high' },
+    ];
+  };
 
-  const recentActivities = [
-    { id: 1, type: 'task_completed', message: 'Завершена задача "Подготовка котлована"', time: '2 часа назад', user: 'И. Иванов' },
-    { id: 2, type: 'material_delivered', message: 'Поставлен цемент М400 - 50 мешков', time: '4 часа назад', user: 'Склад' },
-    { id: 3, type: 'safety_incident', message: 'Зарегистрирован инцидент на объекте №2', time: '6 часов назад', user: 'Отдел ТБ' },
-    { id: 4, type: 'quality_check', message: 'Проведена проверка качества фундамента', time: '1 день назад', user: 'К. Петров' },
-  ];
+  const getRecentActivities = () => {
+    if (selectedProject) {
+      // Активности для конкретного проекта
+      return [
+        { id: 1, type: 'task_completed', message: `Завершена задача в проекте "${selectedProject.name}"`, time: '2 часа назад', user: 'И. Иванов' },
+        { id: 2, type: 'material_delivered', message: `Поставлены материалы для "${selectedProject.name}"`, time: '4 часа назад', user: 'Склад' },
+        { id: 3, type: 'safety_incident', message: `Проверка безопасности на "${selectedProject.name}"`, time: '6 часов назад', user: 'Отдел ТБ' },
+        { id: 4, type: 'quality_check', message: `Проверка качества "${selectedProject.name}"`, time: '1 день назад', user: 'К. Петров' },
+      ];
+    }
+    // Общие активности
+    return [
+      { id: 1, type: 'task_completed', message: 'Завершена задача "Подготовка котлована"', time: '2 часа назад', user: 'И. Иванов' },
+      { id: 2, type: 'material_delivered', message: 'Поставлен цемент М400 - 50 мешков', time: '4 часа назад', user: 'Склад' },
+      { id: 3, type: 'safety_incident', message: 'Зарегистрирован инцидент на объекте №2', time: '6 часов назад', user: 'Отдел ТБ' },
+      { id: 4, type: 'quality_check', message: 'Проведена проверка качества фундамента', time: '1 день назад', user: 'К. Петров' },
+    ];
+  };
+
+  const financialData = getFinancialData();
+  const budgetDistribution = getBudgetDistribution();
+  const projectActivity = getProjectActivity();
+  const currentTasks = getCurrentTasks();
+  const recentActivities = getRecentActivities();
 
   // Обработчики кликов по графикам
   const handleBudgetClick = (data: any) => {
@@ -549,18 +620,18 @@ const DashboardPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Активные проекты"
-            value={stats?.activeProjects || 0}
-            change={12}
+            title={selectedProject ? "Прогресс проекта" : "Активные проекты"}
+            value={selectedProject ? `${selectedProject.progress}%` : (stats?.activeProjects || 0)}
+            change={selectedProject ? selectedProject.progress - 10 : 12}
             icon={<BusinessIcon />}
             color="#1976d2"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Месячная выручка"
-            value={formatCurrency(stats?.monthlyRevenue || 0)}
-            change={8.2}
+            title={selectedProject ? "Бюджет проекта" : "Месячная выручка"}
+            value={selectedProject ? formatCurrency(selectedProject.spentAmount) : formatCurrency(stats?.monthlyRevenue || 0)}
+            change={selectedProject ? 8.2 : 8.2}
             icon={<MoneyIcon />}
             color="#388e3c"
           />

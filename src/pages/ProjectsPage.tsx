@@ -44,6 +44,7 @@ import { ru } from 'date-fns/locale';
 import { useProjectStore, useAuthStore } from '../store';
 import { Project, ProjectStatus, ProjectType } from '../types';
 import { formatCurrency } from '../utils';
+import { useProjectFilter } from '../hooks/useProjectFilter';
 
 interface ProjectFormData {
   name: string;
@@ -60,8 +61,9 @@ interface ProjectFormData {
 }
 
 const ProjectsPage: React.FC = () => {
-  const { projects, loading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
+  const { projects, loading, fetchProjects, createProject, updateProject, deleteProject, selectedProject, selectProject, setShowAllProjects } = useProjectStore();
   const { user } = useAuthStore();
+  const { showAllProjects } = useProjectFilter();
   const [searchParams] = useSearchParams();
   
   const [openDialog, setOpenDialog] = useState(false);
@@ -221,19 +223,41 @@ const ProjectsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {statusFilter === 'active' ? 'Активные проекты' : 
-           statusFilter === 'planning' ? 'Проекты в планировании' : 
-           'Управление проектами'}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreateDialog}
-          sx={{ borderRadius: 2 }}
-        >
-          Создать проект
-        </Button>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            {statusFilter === 'active' ? 'Активные проекты' : 
+             statusFilter === 'planning' ? 'Проекты в планировании' : 
+             statusFilter === 'completed' ? 'Завершенные проекты' :
+             'Управление проектами'}
+          </Typography>
+          {selectedProject && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Выбранный проект: {selectedProject.name}
+            </Typography>
+          )}
+          {showAllProjects && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Режим: Все проекты
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={setShowAllProjects}
+            sx={{ borderRadius: 2 }}
+          >
+            Все проекты
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openCreateDialog}
+            sx={{ borderRadius: 2 }}
+          >
+            Создать проект
+          </Button>
+        </Box>
       </Box>
 
       {filteredProjects.length === 0 && !loading ? (
@@ -327,6 +351,15 @@ const ProjectsPage: React.FC = () => {
                     {format(project.endDate, 'dd.MM.yyyy', { locale: ru })}
                   </TableCell>
                   <TableCell align="right">
+                    <Tooltip title="Выбрать проект">
+                      <IconButton 
+                        size="small" 
+                        color={selectedProject?.id === project.id ? 'primary' : 'default'}
+                        onClick={() => selectProject(project)}
+                      >
+                        <ProjectIcon />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Просмотр">
                       <IconButton size="small">
                         <ViewIcon />
