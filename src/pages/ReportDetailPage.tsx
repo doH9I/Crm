@@ -47,6 +47,32 @@ import { ru } from 'date-fns/locale';
 
 // Моковые данные для отчётов
 const reportData = {
+  'financial-overview': {
+    title: 'Финансовый обзор',
+    data: {
+      summary: {
+        totalRevenue: 15000000,
+        totalExpenses: 12000000,
+        profit: 3000000,
+        profitMargin: 20,
+        trend: 'up',
+        monthlyRevenue: [
+          { month: 'Янв', revenue: 2000000, expenses: 1600000 },
+          { month: 'Фев', revenue: 2200000, expenses: 1700000 },
+          { month: 'Мар', revenue: 2400000, expenses: 1800000 },
+          { month: 'Апр', revenue: 2500000, expenses: 1900000 },
+          { month: 'Май', revenue: 2800000, expenses: 2000000 },
+          { month: 'Июн', revenue: 3100000, expenses: 2000000 },
+        ],
+        categories: [
+          { name: 'Материалы', amount: 5000000, percentage: 41.7 },
+          { name: 'Зарплата', amount: 4000000, percentage: 33.3 },
+          { name: 'Оборудование', amount: 2000000, percentage: 16.7 },
+          { name: 'Прочее', amount: 1000000, percentage: 8.3 },
+        ]
+      }
+    }
+  },
   'budget-analysis': {
     title: 'Анализ бюджета',
     data: {
@@ -206,6 +232,8 @@ const ReportDetailPage: React.FC = () => {
 
   const getReportTypeIcon = () => {
     switch (reportType) {
+      case 'financial-overview':
+        return '📊';
       case 'budget-analysis':
         return '💰';
       case 'project-activity':
@@ -484,6 +512,116 @@ const ReportDetailPage: React.FC = () => {
     );
   };
 
+  const renderFinancialOverview = () => {
+    const summaryData = data.data.summary;
+    
+    return (
+      <Grid container spacing={3}>
+        {/* Основные показатели */}
+        <Grid item xs={12}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="success.main">
+                    {summaryData.totalRevenue.toLocaleString('ru-RU')} ₽
+                  </Typography>
+                  <Typography variant="body2">Общая выручка</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="error.main">
+                    {summaryData.totalExpenses.toLocaleString('ru-RU')} ₽
+                  </Typography>
+                  <Typography variant="body2">Общие расходы</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="primary.main">
+                    {summaryData.profit.toLocaleString('ru-RU')} ₽
+                  </Typography>
+                  <Typography variant="body2">Прибыль</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Typography variant="h4" color="info.main">
+                    {summaryData.profitMargin}%
+                  </Typography>
+                  <Typography variant="body2">Рентабельность</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Grid>
+
+        {/* График динамики */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>
+                Динамика доходов и расходов
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={summaryData.monthlyRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis tickFormatter={(value) => `${value / 1000000}M`} />
+                  <Tooltip 
+                    formatter={(value: any) => [`${value.toLocaleString('ru-RU')} ₽`, '']}
+                    labelFormatter={(label) => `Месяц: ${label}`}
+                  />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#4CAF50" name="Доходы" />
+                  <Bar dataKey="expenses" fill="#F44336" name="Расходы" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Распределение расходов */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>
+                Структура расходов
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={summaryData.categories}
+                    dataKey="amount"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label={(entry) => `${entry.percentage}%`}
+                  >
+                    {summaryData.categories.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042'][index % 4]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => [`${value.toLocaleString('ru-RU')} ₽`, '']} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  };
+
   const renderMonthlyFinancial = () => {
     const months = Object.keys(data.data);
     
@@ -642,6 +780,8 @@ const ReportDetailPage: React.FC = () => {
     if (!data) return null;
 
     switch (reportType) {
+      case 'financial-overview':
+        return renderFinancialOverview();
       case 'budget-analysis':
         return renderBudgetAnalysis();
       case 'project-activity':

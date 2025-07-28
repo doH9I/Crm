@@ -779,6 +779,35 @@ export const useNotificationStore = create<NotificationState>()(
   )
 );
 
+// Простые сторы-заглушки для недостающей функциональности
+export const useFinanceStore = () => ({
+  invoices: [],
+  budgets: [],
+  contracts: [],
+  loading: false,
+  fetchInvoices: async () => {},
+  fetchBudgets: async () => {},
+  fetchContracts: async () => {},
+});
+
+export const useReportStore = () => ({
+  reports: [],
+  templates: [],
+  loading: false,
+  fetchReports: async () => {},
+  fetchTemplates: async () => {},
+});
+
+export const useHRStore = () => ({
+  employees: [],
+  timeEntries: [],
+  trainings: [],
+  loading: false,
+  fetchEmployees: async () => {},
+  fetchTimeEntries: async () => {},
+  fetchTrainings: async () => {},
+});
+
 // Store для общего состояния приложения
 export const useAppStore = create<AppState>()(
   devtools(

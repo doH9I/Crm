@@ -23,6 +23,7 @@ import {
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { WeatherForecast } from '../../types';
+import { useProjectFilterStore, useProjectStore } from '../../store';
 
 interface WeatherWidgetProps {
   location?: string;
@@ -33,15 +34,30 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({
   location = 'Москва', 
   compact = false 
 }) => {
+  const { selectedProjectId, getProjectById } = useProjectFilterStore();
+  const { projects } = useProjectStore();
   const [weather, setWeather] = useState<WeatherForecast | null>(null);
   const [forecast, setForecast] = useState<WeatherForecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
+  // Определяем локацию на основе выбранного проекта
+  const currentLocation = React.useMemo(() => {
+    if (selectedProjectId) {
+      const project = getProjectById(selectedProjectId);
+      if (project) {
+        // Извлекаем город из адреса проекта
+        const addressParts = project.address.split(',');
+        return addressParts[0].replace('г. ', '').trim();
+      }
+    }
+    return location || 'Москва';
+  }, [selectedProjectId, getProjectById, location]);
+
   // Симуляция получения данных о погоде
   const mockWeatherData: WeatherForecast = {
     id: '1',
-    location,
+    location: currentLocation,
     date: new Date(),
     temperature: { min: -5, max: 2 },
     humidity: 75,
@@ -87,7 +103,44 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({
 
   useEffect(() => {
     fetchWeatherData();
-  }, [location]);
+  }, [currentLocation]);
+
+  // Функция для генерации URL карты
+  const getMapUrl = () => {
+    if (selectedProjectId) {
+      const project = getProjectById(selectedProjectId);
+      if (project) {
+        // URL для конкретного проекта
+        return `ll=${getCoordinatesForAddress(project.address)}&pt=${getCoordinatesForAddress(project.address)},pm2rdm&z=14`;
+      }
+    }
+    
+    // URL для всех объектов
+    const allProjects = projects.filter(p => p.address);
+    if (allProjects.length > 0) {
+      const points = allProjects.map(p => {
+        const coords = getCoordinatesForAddress(p.address);
+        return `${coords},pm2rdm`;
+      }).join('~');
+      return `pt=${points}&z=10`;
+    }
+    
+    // Москва по умолчанию
+    return `ll=37.617734,55.755826&pt=37.617734,55.755826,pm2rdm&z=10`;
+  };
+
+  // Функция для получения координат по адресу (заглушка)
+  const getCoordinatesForAddress = (address: string) => {
+    // Простая заглушка для координат городов
+    const cityCoords: {[key: string]: string} = {
+      'Москва': '37.617734,55.755826',
+      'Санкт-Петербург': '30.335027,59.934280',
+      'Екатеринбург': '60.612234,56.837430',
+    };
+    
+    const city = address.split(',')[0].replace('г. ', '').trim();
+    return cityCoords[city] || cityCoords['Москва'];
+  };
 
   const fetchWeatherData = async () => {
     setLoading(true);
@@ -232,7 +285,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         {/* Заголовок */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Погода - {location}
+            Погода - {currentLocation}
           </Typography>
           <Tooltip title="Обновить">
             <IconButton size="small" onClick={fetchWeatherData}>
@@ -384,6 +437,56 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({
             ))}
           </Box>
         </Box>
+
+        {/* Карта объектов */}
+        {!compact && (
+          <Box sx={{ mt: 3, mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+              {selectedProjectId ? 'Местоположение проекта' : 'Все объекты'}
+            </Typography>
+            <Box 
+              sx={{ 
+                height: 200, 
+                bgcolor: 'grey.100', 
+                borderRadius: 1, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '1px solid',
+                borderColor: 'grey.300',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Заглушка карты Яндекс */}
+              <iframe
+                src={`https://yandex.ru/map-widget/v1/?um=constructor%3A${encodeURIComponent(getMapUrl())}&amp;source=constructor`}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ border: 'none' }}
+                title={`Карта - ${currentLocation}`}
+              />
+              
+              {/* Overlay с информацией */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  bgcolor: 'rgba(255, 255, 255, 0.9)',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontSize: '0.75rem',
+                  fontWeight: 600
+                }}
+              >
+                📍 {currentLocation}
+              </Box>
+            </Box>
+          </Box>
+        )}
 
         {/* Время обновления */}
         <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', textAlign: 'center' }}>
