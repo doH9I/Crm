@@ -46,6 +46,7 @@ import { ru } from 'date-fns/locale';
 import { useHRStore, useAuthStore } from '../store';
 import { User, UserRole } from '../types';
 import { formatCurrency } from '../utils';
+import { useProjectFilter } from '../hooks/useProjectFilter';
 
 interface EmployeeFormData {
   name: string;
@@ -66,6 +67,7 @@ interface EmployeeFormData {
 const EmployeesPage: React.FC = () => {
   const { employees, loading, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useHRStore();
   const { user } = useAuthStore();
+  const { selectedProject, showAllProjects, filterEmployeesByProject } = useProjectFilter();
   
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
@@ -206,9 +208,21 @@ const EmployeesPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление персоналом
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление персоналом
+          </Typography>
+          {selectedProject && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Проект: {selectedProject.name}
+            </Typography>
+          )}
+          {showAllProjects && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Все проекты
+            </Typography>
+          )}
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -225,7 +239,7 @@ const EmployeesPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" color="primary.main">
-                {employees.length}
+                {filterEmployeesByProject(employees).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Всего сотрудников
@@ -237,7 +251,7 @@ const EmployeesPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" color="success.main">
-                {employees.filter(e => e.isActive).length}
+                {filterEmployeesByProject(employees).filter(e => e.isActive).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Активных
@@ -249,7 +263,7 @@ const EmployeesPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" color="warning.main">
-                {employees.filter(e => !e.isActive).length}
+                {filterEmployeesByProject(employees).filter(e => !e.isActive).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Неактивных
@@ -261,7 +275,7 @@ const EmployeesPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" color="info.main">
-                {formatCurrency(employees.reduce((sum, e) => sum + (e.salary || 0), 0))}
+                {formatCurrency(filterEmployeesByProject(employees).reduce((sum, e) => sum + (e.salary || 0), 0))}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Общий фонд зарплат
@@ -271,7 +285,7 @@ const EmployeesPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {employees.length === 0 && !loading ? (
+      {filterEmployeesByProject(employees).length === 0 && !loading ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
             <PeopleIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -302,7 +316,7 @@ const EmployeesPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {employees.map((employee) => (
+              {filterEmployeesByProject(employees).map((employee) => (
                 <TableRow key={employee.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

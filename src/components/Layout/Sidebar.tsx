@@ -32,6 +32,7 @@ import {
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
+import ProjectSelector from './ProjectSelector';
 
 interface NavigationItem {
   id: string;
@@ -397,6 +398,24 @@ const Sidebar: React.FC = () => {
       </Box>
 
       <Divider sx={{ mx: 2 }} />
+
+      {/* Project Selector */}
+      <Box sx={{ px: 2, py: 1 }}>
+        <Typography 
+          variant="caption" 
+          color="text.secondary" 
+          sx={{ 
+            px: 1, 
+            py: 1, 
+            display: 'block',
+            fontWeight: 600,
+            letterSpacing: 0.5,
+          }}
+        >
+          ПРОЕКТЫ
+        </Typography>
+        <ProjectSelector />
+      </Box>
 
       {/* Navigation */}
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>

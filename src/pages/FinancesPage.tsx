@@ -70,6 +70,7 @@ import {
   TransactionType,
   Contract 
 } from '../types';
+import { useProjectFilter } from '../hooks/useProjectFilter';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -281,6 +282,7 @@ const mockContracts: Contract[] = [
 ];
 
 const FinancesPage: React.FC = () => {
+  const { selectedProject, showAllProjects, filterInvoicesByProject, filterBudgetsByProject, filterContractsByProject } = useProjectFilter();
   const [activeTab, setActiveTab] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
@@ -487,7 +489,7 @@ const FinancesPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {contracts.map((contract) => {
+              {filterContractsByProject(contracts).map((contract) => {
                 const completedMilestones = contract.milestones?.filter(m => m.isCompleted).length || 0;
                 const totalMilestones = contract.milestones?.length || 0;
                 const progress = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0;
@@ -608,9 +610,21 @@ const FinancesPage: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Финансы
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Финансы
+          </Typography>
+          {selectedProject && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Проект: {selectedProject.name}
+            </Typography>
+          )}
+          {showAllProjects && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Все проекты
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
@@ -736,7 +750,7 @@ const FinancesPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {invoices.map((invoice) => (
+                {filterInvoicesByProject(invoices).map((invoice) => (
                   <TableRow key={invoice.id} hover>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
@@ -860,7 +874,7 @@ const FinancesPage: React.FC = () => {
           </Box>
 
           <Grid container spacing={3}>
-            {budgets.map((budget) => (
+                            {filterBudgetsByProject(budgets).map((budget) => (
               <Grid item xs={12} md={6} key={budget.id}>
                 <Card>
                   <CardContent>

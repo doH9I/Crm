@@ -45,12 +45,14 @@ interface ProjectState {
   tasks: ProjectTask[];
   loading: boolean;
   selectedProject: Project | null;
+  showAllProjects: boolean;
   fetchProjects: () => Promise<void>;
   fetchProjectTasks: (projectId: string) => Promise<void>;
   createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  selectProject: (project: Project) => void;
+  selectProject: (project: Project | null) => void;
+  setShowAllProjects: () => void;
   createTask: (task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTask: (id: string, updates: Partial<ProjectTask>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -350,6 +352,7 @@ export const useProjectStore = create<ProjectState>()(
       tasks: [],
       loading: false as boolean,
       selectedProject: null,
+      showAllProjects: false,
       fetchProjects: async () => {
         set(state => { state.loading = true; });
         try {
@@ -384,6 +387,68 @@ export const useProjectStore = create<ProjectState>()(
               riskLevel: 'medium',
               weatherSensitive: true,
               safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '2',
+              name: 'Торговый центр "МегаМолл"',
+              description: 'Строительство торгового центра площадью 50,000 м²',
+              client: 'ООО "ТоргСтрой"',
+              clientContact: 'Петров П.П.',
+              clientPhone: '+7 (999) 987-65-43',
+              clientEmail: 'petrov@torgstroy.ru',
+              address: 'г. Москва, ул. Торговая, 25',
+              status: 'planning' as any,
+              type: 'commercial' as any,
+              startDate: new Date('2024-03-01'),
+              endDate: new Date('2025-06-01'),
+              plannedEndDate: new Date('2025-05-01'),
+              budget: 80000000,
+              spentAmount: 5000000,
+              approvedBudget: 85000000,
+              contingencyFund: 3000000,
+              managerId: '2',
+              architectId: '3',
+              engineerId: '4',
+              teamMembers: ['2', '3', '4', '6', '7'],
+              progress: 15,
+              priority: 'medium',
+              notes: 'Проект в стадии планирования',
+              riskLevel: 'low',
+              weatherSensitive: false,
+              safetyRequirements: ['СИЗ', 'Ограждения'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Промышленный цех "ТехПром"',
+              description: 'Строительство производственного цеха',
+              client: 'ООО "ПромСтрой"',
+              clientContact: 'Сидоров С.С.',
+              clientPhone: '+7 (999) 555-44-33',
+              clientEmail: 'sidorov@promstroy.ru',
+              address: 'г. Москва, ул. Промышленная, 10',
+              status: 'completed' as any,
+              type: 'industrial' as any,
+              startDate: new Date('2023-06-01'),
+              endDate: new Date('2024-02-01'),
+              plannedEndDate: new Date('2024-01-01'),
+              budget: 30000000,
+              spentAmount: 30000000,
+              approvedBudget: 32000000,
+              contingencyFund: 1000000,
+              managerId: '3',
+              architectId: '4',
+              engineerId: '5',
+              teamMembers: ['3', '4', '5', '8', '9'],
+              progress: 100,
+              priority: 'high',
+              notes: 'Проект завершен успешно',
+              riskLevel: 'low',
+              weatherSensitive: true,
+              safetyRequirements: ['Спецодежда', 'Защитные очки'],
               createdAt: new Date(),
               updatedAt: new Date(),
             },
@@ -435,6 +500,13 @@ export const useProjectStore = create<ProjectState>()(
       selectProject: (project) => {
         set(state => {
           state.selectedProject = project;
+          state.showAllProjects = false;
+        });
+      },
+      setShowAllProjects: () => {
+        set(state => {
+          state.selectedProject = null;
+          state.showAllProjects = true;
         });
       },
       createTask: async (task) => {

@@ -65,6 +65,7 @@ import { ru } from 'date-fns/locale';
 import { useMaterialStore, useAuthStore } from '../store';
 import { Material, Supplier } from '../types';
 import { formatCurrency } from '../utils';
+import { useProjectFilter } from '../hooks/useProjectFilter';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -90,6 +91,7 @@ function TabPanel(props: TabPanelProps) {
 const MaterialsPage: React.FC = () => {
   const { materials, suppliers, orders, loading, fetchMaterials, fetchSuppliers, fetchOrders, createMaterial, updateMaterial, deleteMaterial, createSupplier, createOrder } = useMaterialStore();
   const { user } = useAuthStore();
+  const { selectedProject, showAllProjects, filterMaterialsByProject, filterSuppliersByProject, filterMaterialOrdersByProject } = useProjectFilter();
   
   const [tabValue, setTabValue] = useState(0);
   const [openMaterialDialog, setOpenMaterialDialog] = useState(false);
@@ -248,9 +250,21 @@ const MaterialsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление складом
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление складом
+          </Typography>
+          {selectedProject && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Проект: {selectedProject.name}
+            </Typography>
+          )}
+          {showAllProjects && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Все проекты
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
@@ -279,7 +293,7 @@ const MaterialsPage: React.FC = () => {
                   <InventoryIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{materials.length}</Typography>
+                  <Typography variant="h6">{filterMaterialsByProject(materials).length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Всего материалов
                   </Typography>
@@ -332,7 +346,7 @@ const MaterialsPage: React.FC = () => {
                   <DeliveryIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{suppliers.length}</Typography>
+                  <Typography variant="h6">{filterSuppliersByProject(suppliers).length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Поставщиков
                   </Typography>
@@ -396,7 +410,7 @@ const MaterialsPage: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {materials.map((material) => (
+                  {filterMaterialsByProject(materials).map((material) => (
                     <TableRow key={material.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -478,7 +492,7 @@ const MaterialsPage: React.FC = () => {
           </Box>
           
           <Grid container spacing={3}>
-            {suppliers.map((supplier) => (
+            {filterSuppliersByProject(suppliers).map((supplier) => (
               <Grid item xs={12} md={6} lg={4} key={supplier.id}>
                 <Card>
                   <CardContent>
@@ -532,7 +546,7 @@ const MaterialsPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {orders.map((order) => (
+                {filterMaterialOrdersByProject(orders).map((order) => (
                   <TableRow key={order.id} hover>
                     <TableCell>{order.id.slice(0, 8)}</TableCell>
                     <TableCell>{order.items?.[0]?.materialId || 'N/A'}</TableCell>

@@ -38,13 +38,15 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useDashboardStore } from '../store';
+import { useDashboardStore, useProjectStore } from '../store';
 import { formatCurrency } from '../utils';
 import WeatherWidget from '../components/Advanced/WeatherWidget';
 import QRCodeScanner from '../components/Advanced/QRCodeScanner';
+import { useProjectFilter } from '../hooks/useProjectFilter';
 
 const DashboardPage: React.FC = () => {
   const { stats, loading, fetchStats } = useDashboardStore();
+  const { selectedProject, showAllProjects } = useProjectStore();
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -380,6 +382,98 @@ const DashboardPage: React.FC = () => {
     </Card>
   );
 
+  const ProjectInfoCard: React.FC = () => {
+    if (showAllProjects) {
+      return (
+        <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
+              Все проекты
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', opacity: 0.8 }}>
+              Отображаются данные по всем проектам
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Chip 
+                label="Общий обзор" 
+                size="small" 
+                sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} 
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (!selectedProject) {
+      return (
+        <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
+              Проект не выбран
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'white', opacity: 0.8 }}>
+              Выберите проект в меню для отображения данных
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Chip 
+                label="Требуется выбор" 
+                size="small" 
+                sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} 
+              />
+            </Box>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
+            {selectedProject.name}
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'white', opacity: 0.8, mb: 2 }}>
+            {selectedProject.description}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'white', opacity: 0.7 }}>
+                Прогресс
+              </Typography>
+              <Typography variant="h6" sx={{ color: 'white' }}>
+                {selectedProject.progress}%
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'white', opacity: 0.7 }}>
+                Бюджет
+              </Typography>
+              <Typography variant="h6" sx={{ color: 'white' }}>
+                {formatCurrency(selectedProject.spentAmount)} / {formatCurrency(selectedProject.budget)}
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Chip 
+              label={selectedProject.status === 'in_progress' ? 'В работе' : 
+                     selectedProject.status === 'planning' ? 'Планирование' : 
+                     selectedProject.status === 'completed' ? 'Завершен' : selectedProject.status} 
+              size="small" 
+              sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} 
+            />
+            <Chip 
+              label={selectedProject.priority === 'high' ? 'Высокий' : 
+                     selectedProject.priority === 'medium' ? 'Средний' : 'Низкий'} 
+              size="small" 
+              sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }} 
+            />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const QuickActionsCard: React.FC = () => (
     <Card sx={{ height: '100%' }}>
       <CardContent>
@@ -573,6 +667,9 @@ const DashboardPage: React.FC = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <RecentActivitiesCard />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <ProjectInfoCard />
         </Grid>
         <Grid item xs={12} md={4}>
           <QuickActionsCard />
