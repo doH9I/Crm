@@ -30,6 +30,7 @@ import {
 import { useAuthStore, useAppStore } from '../../store';
 import Sidebar from './Sidebar';
 import NotificationPanel from './NotificationPanel';
+import TopNavbar from './TopNavbar';
 
 const DRAWER_WIDTH = 280;
 
@@ -54,16 +55,25 @@ const DashboardLayout: React.FC = () => {
       '/materials': 'Материалы',
       '/tools': 'Инструменты',
       '/employees': 'Сотрудники',
+      '/timesheet': 'Табель учёта времени',
       '/finances': 'Финансы',
       '/calendar': 'Календарь',
       '/reports': 'Отчеты',
       '/settings': 'Настройки',
       '/profile': 'Профиль',
+      '/suppliers': 'Поставщики',
+      '/clients': 'Заказчики',
+      '/contractors': 'Подрядчики',
+      '/tasks': 'Задачи',
+      '/safety': 'Безопасность',
     };
     
     const currentPath = location.pathname;
     if (currentPath.startsWith('/projects/') && currentPath !== '/projects') {
       return 'Детали проекта';
+    }
+    if (currentPath.startsWith('/reports/') && currentPath !== '/reports') {
+      return 'Детальный отчет';
     }
     
     return pathMap[currentPath] || 'Страница';
@@ -106,233 +116,243 @@ const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* AppBar */}
-      <AppBar
-        position="fixed"
-        elevation={1}
-        sx={{
-          zIndex: theme.zIndex.drawer + 1,
-          transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          ...(isMobile && {
-            marginLeft: 0,
-            width: `calc(100% - ${DRAWER_WIDTH}px)`,
+    <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
+      {/* Верхняя панель навигации */}
+      <TopNavbar />
+
+      {/* Основной контент с AppBar и Sidebar */}
+      <Box sx={{ display: 'flex', flexGrow: 1 }}>
+        {/* AppBar */}
+        <AppBar
+          position="fixed"
+          elevation={1}
+          sx={{
+            zIndex: theme.zIndex.drawer + 1,
+            top: 64, // Смещение под верхнюю панель
             transition: theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
+              duration: theme.transitions.duration.leavingScreen,
             }),
-          }),
-        }}
-      >
-        <Toolbar sx={{ pr: '24px' }}>
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="toggle drawer"
-            onClick={handleDrawerToggle}
-            sx={{ mr: '36px' }}
-          >
-            <MenuIcon />
-          </IconButton>
+            ...(isMobile && {
+              marginLeft: 0,
+              width: `calc(100% - ${DRAWER_WIDTH}px)`,
+              transition: theme.transitions.create(['width', 'margin'], {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+            }),
+          }}
+        >
+          <Toolbar sx={{ pr: '24px', minHeight: '56px !important' }}>
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="toggle drawer"
+              onClick={handleDrawerToggle}
+              sx={{ mr: '36px' }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          <Typography
-            component="h1"
-            variant="h6"
-            color="inherit"
-            noWrap
-            sx={{ 
-              flexGrow: 1,
-              fontWeight: 600,
-              color: theme.palette.text.primary,
+            <Typography
+              component="h1"
+              variant="h6"
+              color="inherit"
+              noWrap
+              sx={{ 
+                flexGrow: 1,
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+              }}
+            >
+              {getPageTitle()}
+            </Typography>
+
+            {/* Уведомления */}
+            <Tooltip title="Уведомления">
+              <IconButton
+                color="inherit"
+                onClick={handleNotificationOpen}
+                sx={{ mr: 1 }}
+              >
+                <Badge badgeContent={3} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+
+            {/* Меню профиля */}
+            <Tooltip title="Профиль">
+              <IconButton
+                onClick={handleAccountMenuOpen}
+                sx={{ ml: 1 }}
+              >
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: 'primary.main',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {user?.name?.charAt(0) || 'A'}
+                </Avatar>
+              </IconButton>
+            </Tooltip>
+          </Toolbar>
+        </AppBar>
+
+        {/* Sidebar */}
+        <Drawer
+          variant={isMobile ? 'temporary' : 'persistent'}
+          open={isMobile ? sidebar.isOpen : sidebar.isOpen || !sidebar.isPinned}
+          onClose={handleDrawerToggle}
+          sx={{
+            width: DRAWER_WIDTH,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              top: 64, // Смещение под верхнюю панель
+              height: 'calc(100vh - 64px)',
+              transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+              overflowX: 'hidden',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+            },
+          }}
+        >
+          {/* Sidebar Header */}
+          <Toolbar
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 3,
+              minHeight: '56px !important',
+              background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="rgba(255,255,255,0.05)" fill-rule="evenodd"%3E%3Cpath d="m0 40l40-40v40z"/%3E%3Cpath d="m0 40l40-40v40z" transform="translate(0 -40)"/%3E%3C/g%3E%3C/svg%3E")',
+              },
             }}
           >
-            {getPageTitle()}
-          </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', zIndex: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  mr: 2,
+                }}
+              >
+                <BusinessIcon sx={{ fontSize: 24 }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" noWrap sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+                  Construction
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
+                  CRM System
+                </Typography>
+              </Box>
+            </Box>
+            
+            {!isMobile && (
+              <IconButton
+                onClick={handleDrawerToggle}
+                sx={{ color: 'white', zIndex: 1 }}
+              >
+                <ChevronLeftIcon />
+              </IconButton>
+            )}
+          </Toolbar>
 
-          {/* Уведомления */}
-          <Tooltip title="Уведомления">
-            <IconButton
-              color="inherit"
-              onClick={handleNotificationOpen}
-              sx={{ mr: 1 }}
-            >
-              <Badge badgeContent={3} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+          <Divider />
 
-          {/* Меню профиля */}
-          <Tooltip title="Профиль">
-            <IconButton
-              onClick={handleAccountMenuOpen}
-              sx={{ ml: 1 }}
+          {/* Sidebar Content */}
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+            <Sidebar />
+          </Box>
+
+          {/* Sidebar Footer */}
+          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 2,
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.05))',
+                border: '1px solid rgba(25, 118, 210, 0.1)',
+              }}
             >
               <Avatar
                 sx={{
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
                   bgcolor: 'primary.main',
                   fontSize: '0.875rem',
                 }}
               >
                 {user?.name?.charAt(0) || 'A'}
               </Avatar>
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                  {user?.name || 'Пользователь'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Drawer>
 
-      {/* Sidebar */}
-      <Drawer
-        variant={isMobile ? 'temporary' : 'persistent'}
-        open={isMobile ? sidebar.isOpen : sidebar.isOpen || !sidebar.isPinned}
-        onClose={handleDrawerToggle}
-        sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
-          whiteSpace: 'nowrap',
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-            overflowX: 'hidden',
-            background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-          },
-        }}
-      >
-        {/* Sidebar Header */}
-        <Toolbar
+        {/* Main Content */}
+        <Box
+          component="main"
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 3,
-            background: 'linear-gradient(135deg, #1976d2, #42a5f5)',
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="rgba(255,255,255,0.05)" fill-rule="evenodd"%3E%3Cpath d="m0 40l40-40v40z"/%3E%3Cpath d="m0 40l40-40v40z" transform="translate(0 -40)"/%3E%3C/g%3E%3C/svg%3E")',
-            },
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', zIndex: 1 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.2)',
-                mr: 2,
-              }}
-            >
-              <BusinessIcon sx={{ fontSize: 24 }} />
-            </Box>
-            <Box>
-              <Typography variant="h6" noWrap sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                Construction
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
-                CRM System
-              </Typography>
-            </Box>
-          </Box>
-          
-          {!isMobile && (
-            <IconButton
-              onClick={handleDrawerToggle}
-              sx={{ color: 'white', zIndex: 1 }}
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-          )}
-        </Toolbar>
-
-        <Divider />
-
-        {/* Sidebar Content */}
-        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-          <Sidebar />
-        </Box>
-
-        {/* Sidebar Footer */}
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              p: 2,
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.05))',
-              border: '1px solid rgba(25, 118, 210, 0.1)',
-            }}
-          >
-            <Avatar
-              sx={{
-                width: 36,
-                height: 36,
-                bgcolor: 'primary.main',
-                fontSize: '0.875rem',
-              }}
-            >
-              {user?.name?.charAt(0) || 'A'}
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
-                {user?.name || 'Пользователь'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Drawer>
-
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          overflow: 'auto',
-          background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-          minHeight: '100vh',
-          transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          ...(isMobile && {
-            marginLeft: 0,
+            flexGrow: 1,
+            overflow: 'auto',
+            background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+            minHeight: 'calc(100vh - 64px)',
+            marginTop: '56px', // Высота второго AppBar
             transition: theme.transitions.create('margin', {
               easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
+              duration: theme.transitions.duration.leavingScreen,
             }),
-          }),
-        }}
-      >
-        <Toolbar />
-        <Box sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
-          <Fade in={true} timeout={300}>
-            <Box>
-              <Outlet />
-            </Box>
-          </Fade>
+            ...(isMobile && {
+              marginLeft: 0,
+              transition: theme.transitions.create('margin', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
+            }),
+          }}
+        >
+          <Box sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+            <Fade in={true} timeout={300}>
+              <Box>
+                <Outlet />
+              </Box>
+            </Fade>
+          </Box>
         </Box>
       </Box>
 

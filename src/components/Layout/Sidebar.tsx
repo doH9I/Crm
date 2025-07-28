@@ -38,6 +38,7 @@ import {
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
   AllInclusive as AllProjectsIcon,
+  AccessTime as TimesheetIcon,
 } from '@mui/icons-material';
 
 interface NavigationItem {
@@ -57,15 +58,6 @@ const Sidebar: React.FC = () => {
   const { canAccess, isAdmin, user } = usePermissions();
   const [openSections, setOpenSections] = React.useState<string[]>(['projects', 'warehouse']);
   
-  // Стор проектов и фильтрации
-  const { projects, fetchProjects } = useProjectStore();
-  const { selectedProjectId, setSelectedProject, getProjectById } = useProjectFilterStore();
-  
-  // Загружаем проекты при монтировании компонента
-  React.useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
-
   const handleNavigation = (path: string) => {
     if (path !== '#') {
       navigate(path);
@@ -80,18 +72,6 @@ const Sidebar: React.FC = () => {
     );
   };
 
-  const handleProjectChange = (event: SelectChangeEvent<string>) => {
-    const projectId = event.target.value === 'all' ? null : event.target.value;
-    setSelectedProject(projectId);
-  };
-
-  // Получаем информацию о выбранном проекте
-  const selectedProject = selectedProjectId ? getProjectById(selectedProjectId) : null;
-  
-  // Фильтруем проекты для счетчиков
-  const activeProjectsCount = projects.filter(p => p.status === 'in_progress').length;
-  const planningProjectsCount = projects.filter(p => p.status === 'planning').length;
-
   const navigationItems: NavigationItem[] = [
     {
       id: 'dashboard',
@@ -105,7 +85,7 @@ const Sidebar: React.FC = () => {
       label: 'Проекты',
       path: '/projects',
       icon: <ProjectIcon />,
-      badge: projects.length,
+      badge: 10, // Placeholder, will be updated with actual count
       badgeColor: 'primary',
       permission: MODULES.PROJECTS,
       children: [
@@ -114,7 +94,7 @@ const Sidebar: React.FC = () => {
           label: 'Активные проекты',
           path: '/projects?status=active',
           icon: <TrendingUpIcon />,
-          badge: activeProjectsCount,
+          badge: 5, // Placeholder, will be updated with actual count
           badgeColor: 'success',
           permission: MODULES.PROJECTS,
         },
@@ -123,7 +103,7 @@ const Sidebar: React.FC = () => {
           label: 'В планировании',
           path: '/projects?status=planning',
           icon: <FolderIcon />,
-          badge: planningProjectsCount,
+          badge: 5, // Placeholder, will be updated with actual count
           badgeColor: 'warning',
           permission: MODULES.PROJECTS,
         },
@@ -171,6 +151,15 @@ const Sidebar: React.FC = () => {
       icon: <EmployeeIcon />,
       badge: 24,
       badgeColor: 'success',
+      permission: MODULES.EMPLOYEES,
+    },
+    {
+      id: 'timesheet',
+      label: 'Табель учёта времени',
+      path: '/timesheet',
+      icon: <TimesheetIcon />,
+      badge: 'NEW',
+      badgeColor: 'info',
       permission: MODULES.EMPLOYEES,
     },
     {
@@ -382,98 +371,6 @@ const Sidebar: React.FC = () => {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Project Selector */}
-      <Box sx={{ p: 2, mx: 2, my: 1 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Выбор проекта</InputLabel>
-          <Select
-            value={selectedProjectId || 'all'}
-            label="Выбор проекта"
-            onChange={handleProjectChange}
-            sx={{
-              '& .MuiSelect-select': {
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              },
-            }}
-          >
-            <MenuItem value="all">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AllProjectsIcon fontSize="small" />
-                Все проекты
-              </Box>
-            </MenuItem>
-            {projects.map((project) => (
-              <MenuItem key={project.id} value={project.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ProjectIcon fontSize="small" />
-                  {project.name}
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        
-        {selectedProject && (
-          <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
-            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
-              ВЫБРАННЫЙ ПРОЕКТ
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
-              {selectedProject.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Прогресс: {selectedProject.progress}%
-            </Typography>
-          </Box>
-        )}
-      </Box>
-
-      {/* Quick Stats */}
-      <Box sx={{ p: 2, mx: 2, my: 1 }}>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.05))',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-          }}
-        >
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            СТАТИСТИКА
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-            <Box textAlign="center">
-              <Typography variant="h6" color="success.main" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                {selectedProjectId ? 1 : projects.length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Проекты
-              </Typography>
-            </Box>
-            <Box textAlign="center">
-              <Typography variant="h6" color="primary.main" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                24
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Сотрудники
-              </Typography>
-            </Box>
-            <Box textAlign="center">
-              <Typography variant="h6" color="warning.main" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                3
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Задачи
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-
-      <Divider sx={{ mx: 2 }} />
-
       {/* Navigation */}
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
         <Typography 

@@ -22,6 +22,7 @@ import ClientsPage from './pages/ClientsPage';
 import TasksPage from './pages/TasksPage';
 import SafetyPage from './pages/SafetyPage';
 import ReportDetailPage from './pages/ReportDetailPage';
+import TimesheetPage from './pages/TimesheetPage';
 
 // Добавляем импорт для страницы подрядчиков
 const ContractorsPage = React.lazy(() => import('./pages/ContractorsPage'));
@@ -244,6 +245,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRouteWithPermissions requiredPermission={MODULES.DASHBOARD}>
                 <SafetyPage />
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+
+          {/* Табель учёта рабочего времени */}
+          <Route 
+            path="timesheet" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.EMPLOYEES}>
+                <TimesheetPage />
               </ProtectedRouteWithPermissions>
             } 
           />

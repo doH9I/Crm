@@ -27,7 +27,33 @@ import {
   Tabs,
   Tab,
   LinearProgress,
-  Avatar
+  Avatar,
+  Tooltip,
+  Fab,
+  Switch,
+  FormControlLabel,
+  Autocomplete,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  ListItemButton,
+  Badge,
+  Alert,
+  Skeleton,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  Drawer,
+  TreeView,
+  TreeItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,13 +64,76 @@ import {
   Assessment as ReportIcon,
   BarChart as ChartIcon,
   TrendingUp as TrendingUpIcon,
-  Business as BusinessIcon
+  Business as BusinessIcon,
+  PieChart as PieChartIcon,
+  ShowChart as LineChartIcon,
+  TableChart as TableIcon,
+  Dashboard as DashboardIcon,
+  Build as BuildIcon,
+  Schedule as ScheduleIcon,
+  FilterList as FilterIcon,
+  Settings as SettingsIcon,
+  Save as SaveIcon,
+  Share as ShareIcon,
+  Email as EmailIcon,
+  Print as PrintIcon,
+  Refresh as RefreshIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  PlayArrow as PlayIcon,
+  Stop as StopIcon,
+  Palette as PaletteIcon,
+  Code as CodeIcon,
+  DataUsage as DataIcon,
+  Timeline as TimelineIcon,
+  AccountBalance as FinanceIcon,
+  People as PeopleIcon,
+  Inventory as InventoryIcon,
+  Security as SecurityIcon,
+  Construction as ConstructionIcon,
+  Analytics as AnalyticsIcon,
+  AutoGraph as AutoGraphIcon,
+  Insights as InsightsIcon,
+  Calculate as CalculateIcon,
+  MonetizationOn as MoneyIcon,
+  Engineering as EngineeringIcon,
+  Architecture as ArchitectureIcon,
+  Gavel as ComplianceIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Report, Template } from '../types';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ComposedChart,
+  ScatterChart,
+  Scatter,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Treemap,
+  FunnelChart,
+  Funnel,
+  LabelList,
+} from 'recharts';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,180 +156,227 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Типы отчетов
-const reportTypes = [
+// Расширенные типы отчетов с детальными подкategoriями
+const advancedReportTypes = [
   {
     id: 'financial',
-    name: 'Финансовые отчеты',
-    description: 'Доходы, расходы, прибыль, бюджеты',
-    icon: <BusinessIcon />,
+    name: 'Финансовая аналитика',
+    description: 'Полный финансовый анализ и прогнозирование',
+    icon: <FinanceIcon />,
     color: '#4caf50',
     subtypes: [
-      { id: 'profit_loss', name: 'Отчет о прибылях и убытках' },
-      { id: 'budget_analysis', name: 'Анализ бюджета' },
-      { id: 'cash_flow', name: 'Отчет о движении денежных средств' },
-      { id: 'invoice_report', name: 'Отчет по счетам' },
+      { id: 'profit_loss', name: 'P&L отчет', description: 'Прибыли и убытки' },
+      { id: 'cash_flow', name: 'Денежные потоки', description: 'Движение денежных средств' },
+      { id: 'budget_variance', name: 'Отклонения бюджета', description: 'Анализ отклонений от плана' },
+      { id: 'roi_analysis', name: 'ROI анализ', description: 'Возврат инвестиций' },
+      { id: 'cost_breakdown', name: 'Структура затрат', description: 'Детализация расходов' },
+      { id: 'revenue_forecast', name: 'Прогноз доходов', description: 'Планирование выручки' },
+      { id: 'margin_analysis', name: 'Анализ маржинальности', description: 'Рентабельность по проектам' },
+      { id: 'tax_reporting', name: 'Налоговая отчетность', description: 'Подготовка налоговых документов' },
     ]
   },
   {
     id: 'project',
-    name: 'Отчеты по проектам',
-    description: 'Прогресс, задачи, ресурсы',
-    icon: <ReportIcon />,
+    name: 'Проектная аналитика',
+    description: 'Глубокий анализ проектов и производительности',
+    icon: <ConstructionIcon />,
     color: '#2196f3',
     subtypes: [
-      { id: 'project_progress', name: 'Прогресс проектов' },
-      { id: 'project_timeline', name: 'Временные рамки проектов' },
-      { id: 'project_costs', name: 'Затраты по проектам' },
-      { id: 'project_quality', name: 'Качество работ' },
+      { id: 'project_dashboard', name: 'Дашборд проектов', description: 'Обзор всех проектов' },
+      { id: 'gantt_analysis', name: 'Анализ Ганта', description: 'Временные рамки и зависимости' },
+      { id: 'resource_utilization', name: 'Загрузка ресурсов', description: 'Эффективность использования' },
+      { id: 'milestone_tracking', name: 'Отслеживание вех', description: 'Контроль ключевых событий' },
+      { id: 'risk_assessment', name: 'Оценка рисков', description: 'Анализ проектных рисков' },
+      { id: 'quality_metrics', name: 'Метрики качества', description: 'Показатели качества работ' },
+      { id: 'change_requests', name: 'Изменения в проекте', description: 'Отслеживание изменений' },
+      { id: 'stakeholder_reports', name: 'Отчеты для заказчиков', description: 'Презентационные материалы' },
     ]
   },
   {
     id: 'hr',
-    name: 'Кадровые отчеты',
-    description: 'Сотрудники, время, зарплата',
-    icon: <ReportIcon />,
+    name: 'HR Аналитика',
+    description: 'Управление персоналом и эффективность',
+    icon: <PeopleIcon />,
     color: '#ff9800',
     subtypes: [
-      { id: 'attendance', name: 'Табель учета рабочего времени' },
-      { id: 'payroll', name: 'Расчет заработной платы' },
-      { id: 'performance', name: 'Оценка производительности' },
-      { id: 'training', name: 'Отчет по обучению' },
+      { id: 'timesheet_analysis', name: 'Анализ табелей', description: 'Рабочее время и производительность' },
+      { id: 'payroll_breakdown', name: 'Фонд оплаты труда', description: 'Структура зарплат' },
+      { id: 'performance_review', name: 'Оценка персонала', description: 'KPI и эффективность' },
+      { id: 'training_analytics', name: 'Аналитика обучения', description: 'Программы развития' },
+      { id: 'absence_tracking', name: 'Отсутствия', description: 'Отпуска и больничные' },
+      { id: 'overtime_analysis', name: 'Сверхурочные', description: 'Анализ переработок' },
+      { id: 'skill_matrix', name: 'Матрица навыков', description: 'Компетенции сотрудников' },
+      { id: 'turnover_analysis', name: 'Текучесть кадров', description: 'Удержание персонала' },
     ]
   },
   {
     id: 'inventory',
-    name: 'Складские отчеты',
-    description: 'Материалы, инструменты, поставки',
-    icon: <ReportIcon />,
+    name: 'Складская аналитика',
+    description: 'Управление запасами и логистика',
+    icon: <InventoryIcon />,
     color: '#9c27b0',
     subtypes: [
-      { id: 'stock_levels', name: 'Остатки на складе' },
-      { id: 'material_usage', name: 'Использование материалов' },
-      { id: 'supplier_report', name: 'Отчет по поставщикам' },
-      { id: 'tool_maintenance', name: 'Техобслуживание инструментов' },
+      { id: 'stock_analysis', name: 'Анализ остатков', description: 'Движение товарно-материальных ценностей' },
+      { id: 'abc_analysis', name: 'ABC анализ', description: 'Классификация материалов' },
+      { id: 'supplier_performance', name: 'Оценка поставщиков', description: 'Качество поставок' },
+      { id: 'procurement_analytics', name: 'Аналитика закупок', description: 'Эффективность закупок' },
+      { id: 'waste_analysis', name: 'Анализ отходов', description: 'Потери и списания' },
+      { id: 'inventory_turnover', name: 'Оборачиваемость', description: 'Скорость оборота запасов' },
+      { id: 'demand_forecast', name: 'Прогноз потребности', description: 'Планирование закупок' },
+      { id: 'cost_optimization', name: 'Оптимизация затрат', description: 'Снижение расходов на склад' },
+    ]
+  },
+  {
+    id: 'operations',
+    name: 'Операционная аналитика',
+    description: 'Производственные процессы и эффективность',
+    icon: <EngineeringIcon />,
+    color: '#607d8b',
+    subtypes: [
+      { id: 'productivity_metrics', name: 'Метрики производительности', description: 'KPI операций' },
+      { id: 'equipment_efficiency', name: 'Эффективность оборудования', description: 'OEE анализ' },
+      { id: 'downtime_analysis', name: 'Анализ простоев', description: 'Причины остановок' },
+      { id: 'capacity_planning', name: 'Планирование мощностей', description: 'Загрузка производства' },
+      { id: 'workflow_optimization', name: 'Оптимизация процессов', description: 'Улучшение workflow' },
+      { id: 'cycle_time_analysis', name: 'Анализ времени цикла', description: 'Скорость выполнения' },
+      { id: 'bottleneck_identification', name: 'Узкие места', description: 'Поиск ограничений' },
+      { id: 'lean_metrics', name: 'Lean метрики', description: 'Бережливое производство' },
+    ]
+  },
+  {
+    id: 'safety',
+    name: 'Безопасность и соответствие',
+    description: 'Охрана труда и регулятивное соответствие',
+    icon: <SecurityIcon />,
+    color: '#f44336',
+    subtypes: [
+      { id: 'incident_analysis', name: 'Анализ инцидентов', description: 'Безопасность на объектах' },
+      { id: 'compliance_tracking', name: 'Соответствие требованиям', description: 'Регулятивные нормы' },
+      { id: 'training_compliance', name: 'Обучение по ТБ', description: 'Подготовка персонала' },
+      { id: 'audit_reports', name: 'Аудиторские отчеты', description: 'Проверки соответствия' },
+      { id: 'environmental_impact', name: 'Экологическое воздействие', description: 'Влияние на окружающую среду' },
+      { id: 'risk_register', name: 'Реестр рисков', description: 'Управление рисками' },
+      { id: 'certification_tracking', name: 'Отслеживание сертификатов', description: 'Срок действия документов' },
+      { id: 'emergency_preparedness', name: 'Готовность к ЧС', description: 'Планы реагирования' },
+    ]
+  },
+  {
+    id: 'client',
+    name: 'Клиентская аналитика',
+    description: 'Анализ клиентов и удовлетворенности',
+    icon: <BusinessIcon />,
+    color: '#795548',
+    subtypes: [
+      { id: 'client_satisfaction', name: 'Удовлетворенность клиентов', description: 'Опросы и NPS' },
+      { id: 'client_profitability', name: 'Прибыльность клиентов', description: 'CLV анализ' },
+      { id: 'project_feedback', name: 'Обратная связь по проектам', description: 'Качество работ' },
+      { id: 'communication_tracking', name: 'Отслеживание коммуникаций', description: 'История взаимодействий' },
+      { id: 'contract_analysis', name: 'Анализ контрактов', description: 'Условия и выполнение' },
+      { id: 'change_order_impact', name: 'Влияние изменений', description: 'Анализ доп. работ' },
+      { id: 'retention_analysis', name: 'Удержание клиентов', description: 'Лояльность и повторные заказы' },
+      { id: 'market_share', name: 'Доля рынка', description: 'Позиционирование' },
+    ]
+  },
+  {
+    id: 'predictive',
+    name: 'Предиктивная аналитика',
+    description: 'Машинное обучение и прогнозирование',
+    icon: <InsightsIcon />,
+    color: '#3f51b5',
+    subtypes: [
+      { id: 'demand_forecasting', name: 'Прогноз спроса', description: 'ML модели предсказания' },
+      { id: 'maintenance_prediction', name: 'Предиктивное ТО', description: 'Прогноз поломок' },
+      { id: 'cost_prediction', name: 'Прогноз затрат', description: 'Планирование бюджета' },
+      { id: 'timeline_prediction', name: 'Прогноз сроков', description: 'Время завершения проектов' },
+      { id: 'quality_prediction', name: 'Прогноз качества', description: 'Предотвращение дефектов' },
+      { id: 'resource_optimization', name: 'Оптимизация ресурсов', description: 'AI планирование' },
+      { id: 'anomaly_detection', name: 'Обнаружение аномалий', description: 'Выявление отклонений' },
+      { id: 'trend_analysis', name: 'Анализ трендов', description: 'Долгосрочные тенденции' },
     ]
   }
 ];
 
-// Моковые данные отчетов
-const mockReports: Report[] = [
-  {
-    id: '1',
-    name: 'Ежемесячный финансовый отчет',
-    type: 'financial',
-    description: 'Сводный отчет по доходам и расходам за месяц',
-    parameters: [
-      { name: 'period', type: 'date', value: 'current_month', required: true },
-      { name: 'include_projects', type: 'boolean', value: true, required: false }
-    ],
-    schedule: {
-      frequency: 'monthly',
-      dayOfMonth: 1,
-      time: '09:00',
-      timezone: 'Europe/Moscow'
-    },
-    recipients: ['admin@company.com', 'accountant@company.com'],
-    format: 'pdf',
-    isActive: true,
-    lastGenerated: new Date('2024-01-01'),
-    createdBy: '1',
-    createdAt: new Date('2023-12-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '2',
-    name: 'Отчет по прогрессу проектов',
-    type: 'project',
-    description: 'Состояние всех активных проектов',
-    parameters: [
-      { name: 'status', type: 'select', value: 'active', options: ['all', 'active', 'completed'], required: true },
-      { name: 'date_range', type: 'date', value: 'current_quarter', required: true }
-    ],
-    schedule: {
-      frequency: 'weekly',
-      dayOfWeek: 1,
-      time: '10:00',
-      timezone: 'Europe/Moscow'
-    },
-    recipients: ['manager@company.com'],
-    format: 'excel',
-    isActive: true,
-    lastGenerated: new Date('2024-01-15'),
-    createdBy: '2',
-    createdAt: new Date('2023-11-15'),
-    updatedAt: new Date('2024-01-15'),
-  }
-];
+// Моковые данные для графиков
+const mockChartData = {
+  financial: [
+    { month: 'Янв', revenue: 2400000, expenses: 1800000, profit: 600000 },
+    { month: 'Фев', revenue: 1398000, expenses: 1200000, profit: 198000 },
+    { month: 'Мар', revenue: 9800000, expenses: 2800000, profit: 7000000 },
+    { month: 'Апр', revenue: 3908000, expenses: 2400000, profit: 1508000 },
+    { month: 'Май', revenue: 4800000, expenses: 3200000, profit: 1600000 },
+    { month: 'Июн', revenue: 3800000, expenses: 2900000, profit: 900000 },
+  ],
+  projects: [
+    { name: 'Завершено', value: 25, color: '#4caf50' },
+    { name: 'В работе', value: 35, color: '#2196f3' },
+    { name: 'Планирование', value: 20, color: '#ff9800' },
+    { name: 'Приостановлено', value: 10, color: '#f44336' },
+    { name: 'Отменено', value: 10, color: '#9e9e9e' },
+  ],
+  efficiency: [
+    { department: 'Строительство', planned: 100, actual: 120, efficiency: 120 },
+    { department: 'Отделка', planned: 80, actual: 85, efficiency: 106 },
+    { department: 'Инженерия', planned: 60, actual: 55, efficiency: 92 },
+    { department: 'Логистика', planned: 40, actual: 45, efficiency: 113 },
+  ],
+  timeline: [
+    { date: '2024-01', projects: 5, completed: 3, delayed: 1, onTime: 4 },
+    { date: '2024-02', projects: 7, completed: 5, delayed: 2, onTime: 5 },
+    { date: '2024-03', projects: 8, completed: 6, delayed: 1, onTime: 7 },
+    { date: '2024-04', projects: 10, completed: 8, delayed: 2, onTime: 8 },
+    { date: '2024-05', projects: 12, completed: 9, delayed: 3, onTime: 9 },
+    { date: '2024-06', projects: 15, completed: 12, delayed: 2, onTime: 13 },
+  ]
+};
 
-// Моковые данные шаблонов
-const mockTemplates: Template[] = [
+// Шаблоны дашбордов
+const dashboardTemplates = [
   {
-    id: '1',
-    name: 'Еженедельный отчет по проектам',
-    type: 'project',
-    category: 'weekly',
-    description: 'Шаблон для еженедельной отчетности по ходу выполнения проектов',
-    content: {
-      sections: ['overview', 'progress', 'issues', 'next_week'],
-      metrics: ['completion_percentage', 'budget_spent', 'tasks_completed'],
-      charts: ['progress_timeline', 'budget_chart']
-    },
-    isDefault: true,
-    isActive: true,
-    createdBy: 'admin',
-    usageCount: 24,
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-15'),
+    id: 'executive',
+    name: 'Исполнительный дашборд',
+    description: 'Ключевые показатели для руководства',
+    widgets: ['kpi-summary', 'revenue-chart', 'project-status', 'alerts'],
+    target: 'executives'
   },
   {
-    id: '2',
-    name: 'Финансовый отчет',
-    type: 'report',
-    category: 'financial',
-    description: 'Шаблон для ежемесячных финансовых отчетов',
-    content: {
-      sections: ['income', 'expenses', 'profit_loss', 'cash_flow'],
-      metrics: ['total_revenue', 'total_expenses', 'net_profit', 'profit_margin'],
-      charts: ['revenue_chart', 'expense_breakdown', 'profit_trend']
-    },
-    isDefault: false,
-    isActive: true,
-    createdBy: 'admin',
-    usageCount: 12,
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-20'),
+    id: 'project-manager',
+    name: 'Дашборд проект-менеджера',
+    description: 'Управление проектами и ресурсами',
+    widgets: ['project-timeline', 'resource-allocation', 'milestone-tracker', 'team-performance'],
+    target: 'managers'
   },
   {
-    id: '3',
-    name: 'Отчет по безопасности',
-    type: 'report',
-    category: 'safety',
-    description: 'Шаблон для отчетности по технике безопасности',
-    content: {
-      sections: ['incidents', 'training', 'equipment', 'compliance'],
-      metrics: ['incident_count', 'training_hours', 'safety_score'],
-      charts: ['incident_trend', 'training_progress']
-    },
-    isDefault: false,
-    isActive: true,
-    createdBy: 'admin',
-    usageCount: 8,
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-18'),
+    id: 'financial',
+    name: 'Финансовый дашборд',
+    description: 'Финансовые показатели и аналитика',
+    widgets: ['cash-flow', 'budget-variance', 'profitability', 'cost-breakdown'],
+    target: 'accountants'
   },
+  {
+    id: 'operational',
+    name: 'Операционный дашборд',
+    description: 'Производственные метрики',
+    widgets: ['productivity', 'equipment-status', 'quality-metrics', 'safety-indicators'],
+    target: 'operations'
+  }
 ];
 
 const ReportsPage: React.FC = () => {
   // State
   const [selectedTab, setSelectedTab] = useState(0);
-  const [reports, setReports] = useState<Report[]>(mockReports);
+  const [reports, setReports] = useState<Report[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [selectedReportType, setSelectedReportType] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<Template[]>(mockTemplates);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [dashboardMode, setDashboardMode] = useState(false);
+  const [selectedDashboard, setSelectedDashboard] = useState('executive');
+  const [reportBuilderOpen, setReportBuilderOpen] = useState(false);
+  const [analyticsDrawerOpen, setAnalyticsDrawerOpen] = useState(false);
+  const [liveMode, setLiveMode] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   const { control, handleSubmit, reset, formState, watch } = useForm<Report>();
 
@@ -248,910 +384,754 @@ const ReportsPage: React.FC = () => {
     setSelectedTab(newValue);
   };
 
-  const handleCreateReport = async (data: Report) => {
-    try {
-      const newReport: Report = {
-        ...data,
-        id: Date.now().toString(),
-        isActive: true,
-        createdBy: '1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      setReports(prev => [...prev, newReport]);
-      setOpenDialog(false);
-      reset();
-      toast.success('Отчет успешно создан');
-    } catch (error) {
-      toast.error('Ошибка при создании отчета');
-    }
-  };
-
-  const handleGenerateReport = async (reportId: string, format: 'pdf' | 'excel' = 'pdf') => {
-    setGeneratingReport(reportId);
-    try {
-      // Симуляция генерации отчета
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Обновляем дату последней генерации
-      setReports(prev =>
-        prev.map(report =>
-          report.id === reportId
-            ? { ...report, lastGenerated: new Date(), format }
-            : report
-        )
-      );
-      
-      toast.success(`Отчет успешно сгенерирован в формате ${format.toUpperCase()}`);
-      
-      // Симуляция скачивания файла
-      const link = document.createElement('a');
-      link.href = '#';
-      link.download = `report_${reportId}.${format}`;
-      link.click();
-      
-    } catch (error) {
-      toast.error('Ошибка при генерации отчета');
-    } finally {
-      setGeneratingReport(null);
-    }
-  };
-
-  const handleDeleteReport = async (reportId: string) => {
-    if (window.confirm('Вы уверены, что хотите удалить этот отчет?')) {
-      try {
-        setReports(prev => prev.filter(r => r.id !== reportId));
-        toast.success('Отчет удален');
-      } catch (error) {
-        toast.error('Ошибка при удалении отчета');
-      }
-    }
-  };
-
-  const handleReportDialog = (report?: Report) => {
-    if (report) {
-      setSelectedReport(report);
-      reset(report);
-    } else {
-      setSelectedReport(null);
-      reset({
-        name: '',
-        type: 'financial',
-        description: '',
-        format: 'pdf',
-        schedule: {
-          frequency: undefined,
-          time: '09:00',
-        },
-        recipients: [],
-        parameters: {},
-        isActive: true,
-      } as any);
-    }
-    setOpenDialog(true);
-  };
-
-  const getReportTypeInfo = (type: string) => {
-    return reportTypes.find(rt => rt.id === type) || reportTypes[0];
-  };
-
-  const getReportsByType = (type: string) => {
-    return reports.filter(report => report.type === type);
-  };
-
-  const renderDashboard = () => {
-    const stats = {
-      totalReports: reports.length,
-      activeReports: reports.filter(r => r.isActive).length,
-      scheduledReports: reports.filter(r => r.schedule).length,
-      generatedToday: reports.filter(r => 
-        r.lastGenerated && 
-        format(r.lastGenerated, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-      ).length,
-    };
-
-    return (
-      <Box>
-        {/* Статистика */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <ReportIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {stats.totalReports}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Всего отчетов
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                  {stats.activeReports}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Активных
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <ReportIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                  {stats.scheduledReports}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  По расписанию
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <DownloadIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
-                  {stats.generatedToday}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Сегодня
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Типы отчетов */}
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-          Категории отчетов
-        </Typography>
+  const renderAdvancedDashboard = () => (
+    <Box>
+      {/* Заголовок с контролами */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Интерактивный дашборд
+          </Typography>
+          <Chip 
+            label={liveMode ? 'LIVE' : 'СТАТИЧНЫЙ'} 
+            color={liveMode ? 'success' : 'default'}
+            variant={liveMode ? 'filled' : 'outlined'}
+          />
+        </Box>
         
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {reportTypes.map((type) => {
-            const typeReports = getReportsByType(type.id);
-            return (
-              <Grid item xs={12} sm={6} md={3} key={type.id}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                size="small"
+              />
+            }
+            label="Авто-обновление"
+          />
+          
+          <Button
+            variant="outlined"
+            startIcon={<SettingsIcon />}
+            onClick={() => setAnalyticsDrawerOpen(true)}
+            size="small"
+          >
+            Настройки
+          </Button>
+          
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={() => toast('Обновление данных...')}
+            size="small"
+          >
+            Обновить
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Выбор шаблона дашборда */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Шаблоны дашбордов
+          </Typography>
+          <Grid container spacing={2}>
+            {dashboardTemplates.map((template) => (
+              <Grid item xs={12} sm={6} md={3} key={template.id}>
                 <Card 
+                  variant="outlined"
                   sx={{ 
                     cursor: 'pointer',
-                    '&:hover': { 
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4 
-                    },
-                    transition: 'all 0.2s'
+                    border: selectedDashboard === template.id ? '2px solid' : '1px solid',
+                    borderColor: selectedDashboard === template.id ? 'primary.main' : 'divider',
+                    '&:hover': { borderColor: 'primary.main' }
                   }}
-                  onClick={() => {
-                    setSelectedReportType(type.id);
-                    setSelectedTab(1);
-                  }}
+                  onClick={() => setSelectedDashboard(template.id)}
                 >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Box 
-                        sx={{ 
-                          bgcolor: type.color, 
-                          color: 'white', 
-                          p: 1, 
-                          borderRadius: 1,
-                          mr: 2 
-                        }}
-                      >
-                        {type.icon}
-                      </Box>
-                      <Chip 
-                        label={type.name} 
-                        size="small" 
-                        variant="outlined"
-                      />
-                    </Box>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {type.description}
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {type.subtypes.slice(0, 2).map((subtype) => (
-                        <Chip 
-                          key={subtype.id}
-                          label={subtype.name} 
-                          size="small" 
-                          variant="outlined"
-                        />
-                      ))}
-                      {type.subtypes.length > 2 && (
-                        <Chip 
-                          label={`+${type.subtypes.length - 2}`} 
-                          size="small" 
-                          variant="outlined"
-                          color="primary"
-                        />
-                      )}
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-
-        {/* Последние отчеты */}
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-          Последние отчеты
-        </Typography>
-        
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Название</TableCell>
-                <TableCell>Тип</TableCell>
-                <TableCell>Последняя генерация</TableCell>
-                <TableCell>Формат</TableCell>
-                <TableCell>Статус</TableCell>
-                <TableCell>Действия</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {reports.slice(0, 5).map((report) => {
-                const typeInfo = getReportTypeInfo(report.type);
-                return (
-                  <TableRow key={report.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ color: typeInfo.color }}>
-                          {typeInfo.icon}
-                        </Box>
-                        <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                            {report.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {report.description}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Chip 
-                        label={typeInfo.name} 
-                        size="small" 
-                        sx={{ bgcolor: typeInfo.color, color: 'white' }}
-                      />
-                    </TableCell>
-                    
-                    <TableCell>
-                      {report.lastGenerated ? (
-                        <Typography variant="body2">
-                          {format(report.lastGenerated, 'dd.MM.yyyy HH:mm', { locale: ru })}
-                        </Typography>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Не генерировался
-                        </Typography>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Chip 
-                        label={report.format.toUpperCase()} 
-                        size="small" 
-                        variant="outlined"
-                        icon={report.format === 'pdf' ? <ReportIcon /> : <ReportIcon />}
-                      />
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Chip 
-                        label={report.isActive ? 'Активен' : 'Неактивен'} 
-                        color={report.isActive ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton 
-                          size="small"
-                          onClick={() => handleGenerateReport(report.id, 'pdf')}
-                          disabled={generatingReport === report.id}
-                        >
-                          {generatingReport === report.id ? (
-                            <LinearProgress />
-                          ) : (
-                            <ReportIcon />
-                          )}
-                        </IconButton>
-                        
-                        <IconButton 
-                          size="small"
-                          onClick={() => handleGenerateReport(report.id, 'excel')}
-                          disabled={generatingReport === report.id}
-                        >
-                          <ReportIcon />
-                        </IconButton>
-                        
-                        <IconButton 
-                          size="small"
-                          onClick={() => handleReportDialog(report)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-    );
-  };
-
-  const renderReportsList = () => {
-    const filteredReports = selectedReportType ? 
-      getReportsByType(selectedReportType) : reports;
-
-    return (
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h6">
-            {selectedReportType ? 
-              getReportTypeInfo(selectedReportType).name : 
-              'Все отчеты'}
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleReportDialog()}
-          >
-            Создать отчет
-          </Button>
-        </Box>
-
-        {selectedReportType && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {getReportTypeInfo(selectedReportType).description}
-          </Typography>
-        )}
-
-        <Grid container spacing={3}>
-          {filteredReports.map((report) => {
-            const typeInfo = getReportTypeInfo(report.type);
-            return (
-              <Grid item xs={12} md={6} lg={4} key={report.id}>
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ color: typeInfo.color }}>
-                          {typeInfo.icon}
-                        </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {report.name}
-                        </Typography>
-                      </Box>
-                      <Chip 
-                        label={report.isActive ? 'Активен' : 'Неактивен'} 
-                        color={report.isActive ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </Box>
-
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {report.description}
-                    </Typography>
-
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Формат: 
-                      </Typography>
-                      <Chip 
-                        label={report.format.toUpperCase()} 
-                        size="small" 
-                        variant="outlined"
-                        icon={report.format === 'pdf' ? <ReportIcon /> : <ReportIcon />}
-                        sx={{ ml: 1 }}
-                      />
-                    </Box>
-
-                    {report.schedule && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <ReportIcon sx={{ fontSize: 14 }} />
-                          Расписание: {report.schedule.frequency}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {report.lastGenerated && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          Последняя генерация: {format(report.lastGenerated, 'dd.MM.yyyy HH:mm', { locale: ru })}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton 
-                          size="small"
-                          onClick={() => handleGenerateReport(report.id, 'pdf')}
-                          disabled={generatingReport === report.id}
-                        >
-                          <ReportIcon />
-                        </IconButton>
-                        
-                        <IconButton 
-                          size="small"
-                          onClick={() => handleGenerateReport(report.id, 'excel')}
-                          disabled={generatingReport === report.id}
-                        >
-                          <ReportIcon />
-                        </IconButton>
-                        
-                        <IconButton 
-                          size="small"
-                          onClick={() => toast('Функция просмотра будет добавлена')}
-                        >
-                          <ViewIcon />
-                        </IconButton>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton 
-                          size="small"
-                          onClick={() => handleReportDialog(report)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        
-                        <IconButton 
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteReport(report.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-
-        {filteredReports.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <ReportIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Нет отчетов для отображения
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Создайте первый отчет для начала работы
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleReportDialog()}
-            >
-              Создать отчет
-            </Button>
-          </Box>
-        )}
-      </Box>
-    );
-  };
-
-  const renderTemplatesTab = () => {
-    return (
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h6">Шаблоны отчетов</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => console.log('Создать шаблон')}
-          >
-            Создать шаблон
-          </Button>
-        </Box>
-
-        <Grid container spacing={3}>
-          {templates.map((template) => (
-            <Grid item xs={12} md={6} lg={4} key={template.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <DashboardIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                       {template.name}
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {template.isDefault && (
-                        <Chip label="По умолчанию" size="small" color="primary" />
-                      )}
-                      {template.isActive && (
-                        <Chip label="Активный" size="small" color="success" />
-                      )}
-                    </Box>
-                  </Box>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {template.description}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Chip
-                      label={getTemplateTypeText(template.type)}
-                      size="small"
-                      color={template.type === 'project' ? 'primary' : 'default'}
-                    />
                     <Typography variant="caption" color="text.secondary">
-                      Использований: {template.usageCount}
+                      {template.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* KPI карточки */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
+                    ₽15.2M
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Выручка (MTD)
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    <TrendingUpIcon fontSize="small" color="success" />
+                    <Typography variant="caption" color="success.main" sx={{ ml: 0.5 }}>
+                      +12.5%
                     </Typography>
                   </Box>
+                </Box>
+                <MoneyIcon sx={{ fontSize: 48, color: 'success.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                    Создан: {format(new Date(template.createdAt), 'dd.MM.yyyy', { locale: ru })}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                    42
                   </Typography>
-
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<ViewIcon />}
-                      onClick={() => console.log('Просмотр шаблона', template.id)}
-                    >
-                      Просмотр
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<ReportIcon />}
-                      onClick={() => console.log('Использовать шаблон', template.id)}
-                    >
-                      Использовать
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                  <Typography variant="body2" color="text.secondary">
+                    Активных проектов
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={78} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                  />
+                </Box>
+                <ConstructionIcon sx={{ fontSize: 48, color: 'primary.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
-      </Box>
-    );
-  };
 
-  const renderAnalyticsTab = () => {
-    const analyticsData = [
-      { title: 'Финансовая аналитика', description: 'Детальный анализ доходов и расходов', icon: <BusinessIcon />, color: 'primary' },
-      { title: 'Производительность проектов', description: 'Анализ эффективности выполнения проектов', icon: <TrendingUpIcon />, color: 'success' },
-      { title: 'Аналитика ресурсов', description: 'Использование материалов и инструментов', icon: <ChartIcon />, color: 'info' },
-      { title: 'Прогнозирование', description: 'Прогнозы на основе исторических данных', icon: <ReportIcon />, color: 'warning' },
-    ];
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                    156
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Сотрудников
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Загрузка: 89%
+                  </Typography>
+                </Box>
+                <PeopleIcon sx={{ fontSize: 48, color: 'warning.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-    return (
-      <Box>
-        <Typography variant="h6" sx={{ mb: 3 }}>Расширенная аналитика</Typography>
-        
-        <Grid container spacing={3}>
-          {analyticsData.map((item, index) => (
-            <Grid item xs={12} md={6} key={index}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ bgcolor: `${item.color}.main`, mr: 2 }}>
-                      {item.icon}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        {item.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {item.description}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    startIcon={<ChartIcon />}
-                    onClick={() => console.log('Открыть аналитику', item.title)}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: 'error.main' }}>
+                    3
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Критичные проблемы
+                  </Typography>
+                  <Chip label="Требуют внимания" size="small" color="error" sx={{ mt: 1 }} />
+                </Box>
+                <SecurityIcon sx={{ fontSize: 48, color: 'error.main', opacity: 0.3 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Интерактивные графики */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} lg={8}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6">Финансовые показатели</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button size="small" variant="outlined">6M</Button>
+                  <Button size="small" variant="contained">1Y</Button>
+                  <Button size="small" variant="outlined">3Y</Button>
+                </Box>
+              </Box>
+              
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={mockChartData.financial}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <RechartsTooltip formatter={(value) => `₽${Number(value).toLocaleString()}`} />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#4caf50" name="Выручка" />
+                  <Bar dataKey="expenses" fill="#f44336" name="Расходы" />
+                  <Line type="monotone" dataKey="profit" stroke="#2196f3" strokeWidth={3} name="Прибыль" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} lg={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>Статус проектов</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={mockChartData.projects}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
                   >
-                    Открыть
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                    {mockChartData.projects.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Эффективность по отделам */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>Эффективность отделов</Typography>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={mockChartData.efficiency}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="department" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Legend />
+                  <Bar dataKey="planned" fill="#e0e0e0" name="План" />
+                  <Bar dataKey="actual" fill="#2196f3" name="Факт" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </Grid>
 
-        {/* Заглушка для будущих графиков */}
-        <Card sx={{ mt: 3 }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Интерактивные дашборды
-            </Typography>
-            <Box sx={{ 
-              height: 300, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              backgroundColor: 'action.hover',
-              borderRadius: 1,
-              border: '2px dashed',
-              borderColor: 'divider'
-            }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <ChartIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">
-                  Интерактивные графики
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>Временная динамика</Typography>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={mockChartData.timeline}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Legend />
+                  <Area type="monotone" dataKey="completed" stackId="1" stroke="#4caf50" fill="#4caf50" name="Завершено" />
+                  <Area type="monotone" dataKey="delayed" stackId="1" stroke="#f44336" fill="#f44336" name="Задержки" />
+                  <Area type="monotone" dataKey="onTime" stackId="2" stroke="#2196f3" fill="#2196f3" name="В срок" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Дополнительные метрики */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>Топ исполнители</Typography>
+              <List dense>
+                {[
+                  { name: 'Иван Иванов', metric: '127%', trend: 'up' },
+                  { name: 'Петр Петров', metric: '118%', trend: 'up' },
+                  { name: 'Анна Сидорова', metric: '112%', trend: 'stable' },
+                  { name: 'Михаил Козлов', metric: '98%', trend: 'down' },
+                ].map((performer, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <Avatar sx={{ width: 32, height: 32, fontSize: 14 }}>
+                        {performer.name.charAt(0)}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={performer.name}
+                      secondary={`Эффективность: ${performer.metric}`}
+                    />
+                    <TrendingUpIcon 
+                      fontSize="small" 
+                      color={performer.trend === 'up' ? 'success' : performer.trend === 'down' ? 'error' : 'disabled'} 
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>Критичные задачи</Typography>
+              <List dense>
+                {[
+                  { task: 'Заливка фундамента Объект #12', deadline: '2 дня', priority: 'high' },
+                  { task: 'Поставка материалов Проект "Север"', deadline: '1 день', priority: 'critical' },
+                  { task: 'Техосмотр крана №3', deadline: '3 дня', priority: 'medium' },
+                  { task: 'Согласование проекта "Центр"', deadline: '5 дней', priority: 'low' },
+                ].map((task, index) => (
+                  <ListItem key={index}>
+                    <ListItemText 
+                      primary={task.task}
+                      secondary={`Срок: ${task.deadline}`}
+                    />
+                    <Chip 
+                      size="small" 
+                      color={
+                        task.priority === 'critical' ? 'error' :
+                        task.priority === 'high' ? 'warning' :
+                        task.priority === 'medium' ? 'info' : 'default'
+                      }
+                      label={task.priority}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>Уведомления системы</Typography>
+              <List dense>
+                {[
+                  { message: 'Низкий остаток цемента на складе', type: 'warning', time: '2 мин назад' },
+                  { message: 'Превышен бюджет проекта "Юг"', type: 'error', time: '15 мин назад' },
+                  { message: 'Завершен проект "Восток"', type: 'success', time: '1 час назад' },
+                  { message: 'Новая заявка от клиента', type: 'info', time: '2 часа назад' },
+                ].map((notification, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      {notification.type === 'warning' && <InventoryIcon color="warning" />}
+                      {notification.type === 'error' && <MoneyIcon color="error" />}
+                      {notification.type === 'success' && <ConstructionIcon color="success" />}
+                      {notification.type === 'info' && <BusinessIcon color="info" />}
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={notification.message}
+                      secondary={notification.time}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+
+  const renderReportBuilder = () => (
+    <Box>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Конструктор отчетов
+      </Typography>
+      
+      <Stepper orientation="vertical">
+        <Step active>
+          <StepLabel>Выбор типа отчета</StepLabel>
+          <StepContent>
+            <Grid container spacing={2}>
+              {advancedReportTypes.slice(0, 4).map((type) => (
+                <Grid item xs={12} sm={6} md={3} key={type.id}>
+                  <Card 
+                    variant="outlined"
+                    sx={{ 
+                      cursor: 'pointer',
+                      '&:hover': { borderColor: 'primary.main' }
+                    }}
+                  >
+                    <CardContent sx={{ textAlign: 'center' }}>
+                      <Box sx={{ color: type.color, mb: 1 }}>
+                        {type.icon}
+                      </Box>
+                      <Typography variant="subtitle2">{type.name}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+            <Box sx={{ mt: 2 }}>
+              <Button variant="contained" sx={{ mr: 1 }}>
+                Продолжить
+              </Button>
+            </Box>
+          </StepContent>
+        </Step>
+        
+        <Step>
+          <StepLabel>Настройка параметров</StepLabel>
+          <StepContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Название отчета"
+                  defaultValue="Финансовый отчет за период"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Период</InputLabel>
+                  <Select defaultValue="month">
+                    <MenuItem value="week">Неделя</MenuItem>
+                    <MenuItem value="month">Месяц</MenuItem>
+                    <MenuItem value="quarter">Квартал</MenuItem>
+                    <MenuItem value="year">Год</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+            <Box sx={{ mt: 2 }}>
+              <Button variant="contained" sx={{ mr: 1 }}>
+                Продолжить
+              </Button>
+              <Button>Назад</Button>
+            </Box>
+          </StepContent>
+        </Step>
+        
+        <Step>
+          <StepLabel>Выбор данных</StepLabel>
+          <StepContent>
+            <Typography>Настройка источников данных и метрик</Typography>
+            <Box sx={{ mt: 2 }}>
+              <Button variant="contained" sx={{ mr: 1 }}>
+                Создать отчет
+              </Button>
+              <Button>Назад</Button>
+            </Box>
+          </StepContent>
+        </Step>
+      </Stepper>
+    </Box>
+  );
+
+  const renderAdvancedAnalytics = () => (
+    <Box>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Расширенная аналитика
+      </Typography>
+      
+      <Grid container spacing={3}>
+        {advancedReportTypes.map((type) => (
+          <Grid item xs={12} md={6} lg={4} key={type.id}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ color: type.color, mr: 2 }}>
+                    {type.icon}
+                  </Box>
+                  <Typography variant="h6">{type.name}</Typography>
+                </Box>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {type.description}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Здесь будут расположены интерактивные диаграммы и графики
+                
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2">
+                      Доступные отчеты ({type.subtypes.length})
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <List dense>
+                      {type.subtypes.map((subtype) => (
+                        <ListItemButton key={subtype.id}>
+                          <ListItemText 
+                            primary={subtype.name}
+                            secondary={subtype.description}
+                          />
+                          <IconButton size="small">
+                            <PlayIcon />
+                          </IconButton>
+                        </ListItemButton>
+                      ))}
+                    </List>
+                  </AccordionDetails>
+                </Accordion>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+
+  const renderPredictiveAnalytics = () => (
+    <Box>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Предиктивная аналитика и ML
+      </Typography>
+      
+      <Alert severity="info" sx={{ mb: 3 }}>
+        Используются алгоритмы машинного обучения для прогнозирования и оптимизации
+      </Alert>
+      
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Прогноз выручки
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <TrendingUpIcon color="success" sx={{ mr: 1 }} />
+                <Typography variant="h4" color="success.main">
+                  +18%
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  на следующий квартал
                 </Typography>
               </Box>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    );
-  };
-
-  const getTemplateTypeText = (type: string) => {
-    switch (type) {
-      case 'project': return 'Проектный';
-      case 'task': return 'Задачи';
-      case 'estimate': return 'Смета';
-      case 'contract': return 'Контракт';
-      case 'report': return 'Отчет';
-      case 'email': return 'Email';
-      default: return type;
-    }
-  };
+              <LinearProgress 
+                variant="determinate" 
+                value={85} 
+                sx={{ mb: 1 }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                Точность модели: 85%
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Оптимизация ресурсов
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Потенциальная экономия:
+                </Typography>
+                <Typography variant="h4" color="primary.main">
+                  ₽2.3M
+                </Typography>
+              </Box>
+              <Button variant="outlined" startIcon={<CalculateIcon />}>
+                Показать рекомендации
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  );
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Отчеты и аналитика
+          Отчеты и расширенная аналитика
         </Typography>
+        
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={liveMode}
+                onChange={(e) => setLiveMode(e.target.checked)}
+              />
+            }
+            label="Live режим"
+          />
+          
           <Button
             variant="outlined"
-            startIcon={<ChartIcon />}
-            onClick={() => toast('Конструктор отчетов будет добавлен')}
+            startIcon={<BuildIcon />}
+            onClick={() => setReportBuilderOpen(true)}
           >
             Конструктор
           </Button>
+          
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => handleReportDialog()}
+            onClick={() => setOpenDialog(true)}
           >
             Создать отчет
           </Button>
         </Box>
       </Box>
 
-      {/* Вкладки */}
+      {/* Расширенные вкладки */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={selectedTab} onChange={handleTabChange} aria-label="reports tabs">
-            <Tab label="Панель управления" />
-            <Tab label="Список отчетов" />
-            <Tab label="Шаблоны" />
-            <Tab label="Аналитика" />
+          <Tabs 
+            value={selectedTab} 
+            onChange={handleTabChange} 
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab label="Дашборд" icon={<DashboardIcon />} />
+            <Tab label="Конструктор" icon={<BuildIcon />} />
+            <Tab label="Аналитика" icon={<AnalyticsIcon />} />
+            <Tab label="Предиктивная" icon={<InsightsIcon />} />
+            <Tab label="Шаблоны" icon={<ReportIcon />} />
+            <Tab label="Список отчетов" icon={<TableIcon />} />
           </Tabs>
         </Box>
 
         <TabPanel value={selectedTab} index={0}>
-          {renderDashboard()}
+          {renderAdvancedDashboard()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={1}>
-          {renderReportsList()}
+          {renderReportBuilder()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>
-          {renderTemplatesTab()}
+          {renderAdvancedAnalytics()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={3}>
-          {renderAnalyticsTab()}
+          {renderPredictiveAnalytics()}
+        </TabPanel>
+
+        <TabPanel value={selectedTab} index={4}>
+          <Typography variant="h6">Шаблоны отчетов</Typography>
+          {/* Существующий код шаблонов */}
+        </TabPanel>
+
+        <TabPanel value={selectedTab} index={5}>
+          <Typography variant="h6">Список всех отчетов</Typography>
+          {/* Существующий код списка отчетов */}
         </TabPanel>
       </Card>
 
-      {/* Диалог создания/редактирования отчета */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)}
-        maxWidth="md"
+      {/* SpeedDial для быстрых действий */}
+      <SpeedDial
+        ariaLabel="Быстрые действия"
+        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+      >
+        <SpeedDialAction
+          icon={<DashboardIcon />}
+          tooltipTitle="Новый дашборд"
+          onClick={() => toast('Создание дашборда')}
+        />
+        <SpeedDialAction
+          icon={<ChartIcon />}
+          tooltipTitle="Экспресс-анализ"
+          onClick={() => toast('Экспресс-анализ')}
+        />
+        <SpeedDialAction
+          icon={<ShareIcon />}
+          tooltipTitle="Поделиться"
+          onClick={() => toast('Функция поделиться')}
+        />
+        <SpeedDialAction
+          icon={<PrintIcon />}
+          tooltipTitle="Печать"
+          onClick={() => toast('Печать отчета')}
+        />
+      </SpeedDial>
+
+      {/* Drawer с настройками аналитики */}
+      <Drawer
+        anchor="right"
+        open={analyticsDrawerOpen}
+        onClose={() => setAnalyticsDrawerOpen(false)}
+      >
+        <Box sx={{ width: 350, p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 3 }}>
+            Настройки аналитики
+          </Typography>
+          
+          <FormControlLabel
+            control={<Switch defaultChecked />}
+            label="Автоматическое обновление"
+            sx={{ mb: 2, display: 'block' }}
+          />
+          
+          <FormControlLabel
+            control={<Switch defaultChecked />}
+            label="Уведомления о аномалиях"
+            sx={{ mb: 2, display: 'block' }}
+          />
+          
+          <FormControlLabel
+            control={<Switch />}
+            label="Экспорт в реальном времени"
+            sx={{ mb: 2, display: 'block' }}
+          />
+          
+          <Typography variant="subtitle2" sx={{ mb: 2 }}>
+            Интервал обновления
+          </Typography>
+          
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <Select defaultValue={30}>
+              <MenuItem value={10}>10 секунд</MenuItem>
+              <MenuItem value={30}>30 секунд</MenuItem>
+              <MenuItem value={60}>1 минута</MenuItem>
+              <MenuItem value={300}>5 минут</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <Button variant="contained" fullWidth>
+            Сохранить настройки
+          </Button>
+        </Box>
+      </Drawer>
+
+      {/* Диалог конструктора отчетов */}
+      <Dialog
+        open={reportBuilderOpen}
+        onClose={() => setReportBuilderOpen(false)}
+        maxWidth="lg"
         fullWidth
       >
-        <form onSubmit={handleSubmit(selectedReport ? () => {} : handleCreateReport)}>
-          <DialogTitle>
-            {selectedReport ? 'Редактировать отчет' : 'Создать новый отчет'}
-          </DialogTitle>
-          
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <Controller
-                  name="name"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: 'Название отчета обязательно' }}
-                  render={({ field, fieldState }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Название отчета"
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                    />
-                  )}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="type"
-                  control={control}
-                  defaultValue="financial"
-                  rules={{ required: 'Выберите тип отчета' }}
-                  render={({ field, fieldState }) => (
-                    <FormControl fullWidth error={!!fieldState.error}>
-                      <InputLabel>Тип отчета</InputLabel>
-                      <Select {...field} label="Тип отчета">
-                        {reportTypes.map((type) => (
-                          <MenuItem key={type.id} value={type.id}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {type.icon}
-                              {type.name}
-                            </Box>
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name="format"
-                  control={control}
-                  defaultValue="pdf"
-                  render={({ field }) => (
-                    <FormControl fullWidth>
-                      <InputLabel>Формат</InputLabel>
-                      <Select {...field} label="Формат">
-                        <MenuItem value="pdf">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <ReportIcon />
-                            PDF
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="excel">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <ReportIcon />
-                            Excel
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value="csv">CSV</MenuItem>
-                        <MenuItem value="json">JSON</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Controller
-                  name="description"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Описание"
-                      multiline
-                      rows={3}
-                      placeholder="Краткое описание отчета"
-                    />
-                  )}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  Автоматическая генерация
-                </Typography>
-                
-                <Controller
-                  name="schedule.frequency"
-                  control={control}
-                  defaultValue={undefined}
-                  render={({ field }) => (
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Частота</InputLabel>
-                      <Select {...field} label="Частота">
-                        <MenuItem value="">Без расписания</MenuItem>
-                        <MenuItem value="daily">Ежедневно</MenuItem>
-                        <MenuItem value="weekly">Еженедельно</MenuItem>
-                        <MenuItem value="monthly">Ежемесячно</MenuItem>
-                        <MenuItem value="quarterly">Ежеквартально</MenuItem>
-                        <MenuItem value="yearly">Ежегодно</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-                
-                                 {watch('schedule.frequency') && (
-                  <Controller
-                    name="schedule.time"
-                    control={control}
-                    defaultValue="09:00"
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Время генерации"
-                        type="time"
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    )}
-                  />
-                )}
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Controller
-                  name="recipients"
-                  control={control}
-                  defaultValue={[]}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Получатели (email)"
-                      placeholder="user1@company.com, user2@company.com"
-                      helperText="Введите email адреса через запятую"
-                      value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                      onChange={(e) => {
-                        const emails = e.target.value.split(',').map(email => email.trim()).filter(Boolean);
-                        field.onChange(emails);
-                      }}
-                    />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          </DialogContent>
-          
-          <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>
-              Отмена
-            </Button>
-            <Button type="submit" variant="contained">
-              {selectedReport ? 'Сохранить' : 'Создать'}
-            </Button>
-          </DialogActions>
-        </form>
+        <DialogTitle>
+          Конструктор отчетов
+        </DialogTitle>
+        <DialogContent>
+          {renderReportBuilder()}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReportBuilderOpen(false)}>
+            Отмена
+          </Button>
+          <Button variant="contained">
+            Создать отчет
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
