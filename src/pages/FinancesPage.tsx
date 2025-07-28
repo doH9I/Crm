@@ -31,7 +31,14 @@ import {
   Divider,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  InputAdornment,
+  Fab,
+  Menu,
+  ListItemButton,
+  ButtonGroup,
+  Tooltip,
+  Avatar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,11 +51,17 @@ import {
   TrendingUp as IncomeIcon,
   TrendingDown as ExpenseIcon,
   Warning as WarningIcon,
-  Download as ExportIcon
+  Download as ExportIcon,
+  Send as SendIcon,
+  PendingActions as PendingIcon,
+  EventBusy as OverdueIcon,
+  Assignment as InvoiceIcon,
+  Description as ContractIcon,
+  AttachMoney as MoneyIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { 
   Invoice, 

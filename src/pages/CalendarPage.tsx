@@ -227,98 +227,166 @@ const CalendarPage: React.FC = () => {
     }
   };
 
-  const openEventDialog = (event?: CalendarEvent, date?: Date) => {
-    if (event) {
-      setSelectedEvent(event);
-      reset(event);
-    } else {
-      setSelectedEvent(null);
-      reset({
-        startDate: date || new Date(),
-        endDate: addDays(date || new Date(), 0),
-        allDay: false,
-        type: 'task',
-        priority: 'medium',
-      });
-    }
-    setSelectedDate(date || null);
-            setOpenDialog(true);
+  const renderWeekView = () => {
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+    return (
+      <Box>
+        <Grid container>
+          {weekDays.map((day, index) => {
+            const dayEvents = getEventsForDate(day);
+            const isToday = isSameDay(day, new Date());
+            
+            if (!showWeekends && (day.getDay() === 0 || day.getDay() === 6)) {
+              return null;
+            }
+
+            return (
+              <Grid item xs key={day.toISOString()} sx={{ minHeight: 400 }}>
+                <Card sx={{ height: '100%', border: isToday ? 2 : 1, borderColor: isToday ? 'primary.main' : 'divider' }}>
+                  <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      {format(day, 'EEEE, d MMMM', { locale: ru })}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {dayEvents.map((event) => (
+                        <Chip
+                          key={event.id}
+                          label={`${format(new Date(event.startDate), 'HH:mm')} ${event.title}`}
+                          size="small"
+                          sx={{
+                            backgroundColor: event.color || getEventTypeColor(event.type),
+                            color: 'white',
+                            justifyContent: 'flex-start',
+                          }}
+                          onClick={() => openEventDialog(event)}
+                        />
+                      ))}
+                      
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => openEventDialog(undefined, day)}
+                        sx={{ mt: 1 }}
+                      >
+                        Добавить событие
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Box>
+    );
   };
 
-  const getEventTypeColor = (type: string) => {
-    const colorMap = {
-      task: '#f44336',
-      meeting: '#2196f3',
-      deadline: '#ff5722',
-      delivery: '#ff9800',
-      inspection: '#9c27b0',
-      holiday: '#4caf50',
-      training: '#00bcd4',
-    };
-    return colorMap[type as keyof typeof colorMap] || '#757575';
-  };
+  const renderDayView = () => {
+    const dayEvents = getEventsForDate(currentDate).sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
 
-  const getEventTypeIcon = (type: string) => {
-    switch (type) {
-      case 'task':
-        return <TaskIcon />;
-      case 'meeting':
-        return <MeetingIcon />;
-      case 'delivery':
-        return <DeliveryIcon />;
-      case 'inspection':
-        return <InspectionIcon />;
-      case 'training':
-        return <TrainingIcon />;
-      default:
-        return <EventIcon />;
-    }
-  };
-
-  const getEventTypeText = (type: string) => {
-    const typeMap = {
-      task: 'Задача',
-      meeting: 'Встреча',
-      deadline: 'Дедлайн',
-      delivery: 'Поставка',
-      inspection: 'Инспекция',
-      holiday: 'Праздник',
-      training: 'Обучение',
-    };
-    return typeMap[type as keyof typeof typeMap] || type;
-  };
-
-  const filteredEvents = events.filter(event => {
-    if (filterType === 'all') return true;
-    return event.type === filterType;
-  });
-
-  const getEventsForDate = (date: Date) => {
-    return filteredEvents.filter(event => {
-      if (event.allDay) {
-        return isSameDay(new Date(event.startDate), date);
-      }
-      return (
-        isSameDay(new Date(event.startDate), date) ||
-        isSameDay(new Date(event.endDate), date) ||
-        (new Date(event.startDate) <= date && new Date(event.endDate) >= date)
-      );
-    });
-  };
-
-  const getTodayEvents = () => {
-    const today = new Date();
-    return getEventsForDate(today);
-  };
-
-  const getUpcomingEvents = () => {
-    const today = startOfDay(new Date());
-    const nextWeek = endOfDay(addDays(today, 7));
-    
-    return filteredEvents.filter(event => {
-      const eventDate = new Date(event.startDate);
-      return eventDate >= today && eventDate <= nextWeek;
-    }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return (
+      <Box>
+        <Typography variant="h5" sx={{ mb: 3 }}>
+          {format(currentDate, 'EEEE, d MMMM yyyy', { locale: ru })}
+        </Typography>
+        
+        <Card>
+          <CardContent>
+            {dayEvents.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                  На этот день нет запланированных событий
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => openEventDialog(undefined, currentDate)}
+                >
+                  Добавить событие
+                </Button>
+              </Box>
+            ) : (
+              <List>
+                {dayEvents.map((event, index) => (
+                  <React.Fragment key={event.id}>
+                    <ListItem>
+                      <ListItemIcon>
+                        <Avatar 
+                          sx={{ 
+                            bgcolor: event.color || getEventTypeColor(event.type),
+                            width: 32,
+                            height: 32,
+                          }}
+                        >
+                          {getEventTypeIcon(event.type)}
+                        </Avatar>
+                      </ListItemIcon>
+                      
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              {event.title}
+                            </Typography>
+                            <Chip 
+                              label={getEventTypeText(event.type)} 
+                              size="small" 
+                              variant="outlined"
+                            />
+                          </Box>
+                        }
+                        secondary={
+                          <Box sx={{ mt: 0.5 }}>
+                            <Typography variant="body2">
+                              {event.allDay 
+                                ? 'Весь день'
+                                : `${format(new Date(event.startDate), 'HH:mm')} - ${format(new Date(event.endDate), 'HH:mm')}`
+                              }
+                            </Typography>
+                            {event.location && (
+                              <Typography variant="body2" color="text.secondary">
+                                📍 {event.location}
+                              </Typography>
+                            )}
+                            {event.description && (
+                              <Typography variant="body2" color="text.secondary">
+                                {event.description}
+                              </Typography>
+                            )}
+                          </Box>
+                        }
+                      />
+                      
+                      <ListItemSecondaryAction>
+                        <ButtonGroup size="small">
+                          <Tooltip title="Редактировать">
+                            <IconButton onClick={() => openEventDialog(event)}>
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Удалить">
+                            <IconButton onClick={() => handleDeleteEvent(event.id)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </ButtonGroup>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                    {index < dayEvents.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+    );
   };
 
   const renderMonthView = () => {
@@ -430,6 +498,100 @@ const CalendarPage: React.FC = () => {
         ))}
       </Box>
     );
+  };
+
+  const openEventDialog = (event?: CalendarEvent, date?: Date) => {
+    if (event) {
+      setSelectedEvent(event);
+      reset(event);
+    } else {
+      setSelectedEvent(null);
+      reset({
+        startDate: date || new Date(),
+        endDate: addDays(date || new Date(), 0),
+        allDay: false,
+        type: 'task',
+        priority: 'medium',
+      });
+    }
+    setSelectedDate(date || null);
+    setOpenDialog(true);
+  };
+
+  const getEventTypeColor = (type: string) => {
+    const colorMap = {
+      task: '#f44336',
+      meeting: '#2196f3',
+      deadline: '#ff5722',
+      delivery: '#ff9800',
+      inspection: '#9c27b0',
+      holiday: '#4caf50',
+      training: '#00bcd4',
+    };
+    return colorMap[type as keyof typeof colorMap] || '#757575';
+  };
+
+  const getEventTypeIcon = (type: string) => {
+    switch (type) {
+      case 'task':
+        return <TaskIcon />;
+      case 'meeting':
+        return <MeetingIcon />;
+      case 'delivery':
+        return <DeliveryIcon />;
+      case 'inspection':
+        return <InspectionIcon />;
+      case 'training':
+        return <TrainingIcon />;
+      default:
+        return <EventIcon />;
+    }
+  };
+
+  const getEventTypeText = (type: string) => {
+    const typeMap = {
+      task: 'Задача',
+      meeting: 'Встреча',
+      deadline: 'Дедлайн',
+      delivery: 'Поставка',
+      inspection: 'Инспекция',
+      holiday: 'Праздник',
+      training: 'Обучение',
+    };
+    return typeMap[type as keyof typeof typeMap] || type;
+  };
+
+  const filteredEvents = events.filter(event => {
+    if (filterType === 'all') return true;
+    return event.type === filterType;
+  });
+
+  const getEventsForDate = (date: Date) => {
+    return filteredEvents.filter(event => {
+      if (event.allDay) {
+        return isSameDay(new Date(event.startDate), date);
+      }
+      return (
+        isSameDay(new Date(event.startDate), date) ||
+        isSameDay(new Date(event.endDate), date) ||
+        (new Date(event.startDate) <= date && new Date(event.endDate) >= date)
+      );
+    });
+  };
+
+  const getTodayEvents = () => {
+    const today = new Date();
+    return getEventsForDate(today);
+  };
+
+  const getUpcomingEvents = () => {
+    const today = startOfDay(new Date());
+    const nextWeek = endOfDay(addDays(today, 7));
+    
+    return filteredEvents.filter(event => {
+      const eventDate = new Date(event.startDate);
+      return eventDate >= today && eventDate <= nextWeek;
+    }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   };
 
   const renderUpcomingEvents = () => {
@@ -601,7 +763,6 @@ const CalendarPage: React.FC = () => {
                       variant={viewType === 'week' ? 'contained' : 'outlined'}
                       startIcon={<WeekViewIcon />}
                       onClick={() => setViewType('week')}
-                      disabled
                     >
                       Неделя
                     </Button>
@@ -609,7 +770,6 @@ const CalendarPage: React.FC = () => {
                       variant={viewType === 'day' ? 'contained' : 'outlined'}
                       startIcon={<DayViewIcon />}
                       onClick={() => setViewType('day')}
-                      disabled
                     >
                       День
                     </Button>
@@ -648,6 +808,8 @@ const CalendarPage: React.FC = () => {
 
               {/* Календарное представление */}
               {viewType === 'month' && renderMonthView()}
+              {viewType === 'week' && renderWeekView()}
+              {viewType === 'day' && renderDayView()}
             </CardContent>
           </Card>
         </Grid>

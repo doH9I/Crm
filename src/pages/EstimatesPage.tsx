@@ -50,7 +50,6 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { exportData, generateFilename, ExportOptions } from '../utils/exportUtils';
-import { ru } from 'date-fns/locale';
 import { useProjectStore, useMaterialStore, useAuthStore } from '../store';
 import { formatCurrency } from '../utils';
 
@@ -123,19 +122,35 @@ const EstimatesPage: React.FC = () => {
   });
 
   const watchedItems = watch('items');
-  const watchedLaborCost = watch('laborCost');
-  const watchedOverheadPercentage = watch('overheadPercentage');
-  const watchedProfitMargin = watch('profitMargin');
-  const watchedVatRate = watch('vatRate');
+  const watchedLaborCost = watch('laborCost') || 0;
+  const watchedOverheadPercentage = watch('overheadPercentage') || 0;
+  const watchedProfitMargin = watch('profitMargin') || 0;
+  const watchedVatRate = watch('vatRate') || 0;
 
   const calculateEstimate = () => {
-    const materialsCost = watchedItems?.reduce((sum, item) => sum + (item.totalPrice || 0), 0) || 0;
+    // Расчет стоимости материалов
+    const materialsCost = watchedItems?.reduce((sum, item) => {
+      const itemTotal = (item?.quantity || 0) * (item?.unitPrice || 0);
+      return sum + itemTotal;
+    }, 0) || 0;
+    
+    // Базовая сумма (материалы + работы)
     const laborCost = watchedLaborCost || 0;
     const subtotal = materialsCost + laborCost;
-    const overhead = subtotal * ((watchedOverheadPercentage || 0) / 100);
-    const profit = (subtotal + overhead) * ((watchedProfitMargin || 0) / 100);
-    const vat = (subtotal + overhead + profit) * ((watchedVatRate || 0) / 100);
-    const total = subtotal + overhead + profit + vat;
+    
+    // Накладные расходы (от промежуточной суммы)
+    const overhead = subtotal * (watchedOverheadPercentage / 100);
+    
+    // Прибыль (от суммы с накладными)
+    const beforeProfit = subtotal + overhead;
+    const profit = beforeProfit * (watchedProfitMargin / 100);
+    
+    // НДС (от итоговой суммы без НДС)
+    const beforeVat = beforeProfit + profit;
+    const vat = beforeVat * (watchedVatRate / 100);
+    
+    // Итоговая сумма
+    const total = beforeVat + vat;
 
     return {
       materialsCost,
@@ -248,18 +263,27 @@ const EstimatesPage: React.FC = () => {
       setValue(`items.${index}.materialId`, materialId);
       setValue(`items.${index}.name`, material.name);
       setValue(`items.${index}.unit`, material.unit);
-      setValue(`items.${index}.unitPrice`, material.costPerUnit);
+      setValue(`items.${index}.unitPrice`, material.unitPrice || 0);
       setValue(`items.${index}.category`, material.category);
       
       const quantity = watchedItems[index]?.quantity || 1;
-      setValue(`items.${index}.totalPrice`, quantity * material.costPerUnit);
+      const totalPrice = quantity * (material.unitPrice || 0);
+      setValue(`items.${index}.totalPrice`, totalPrice);
     }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
     setValue(`items.${index}.quantity`, quantity);
     const unitPrice = watchedItems[index]?.unitPrice || 0;
-    setValue(`items.${index}.totalPrice`, quantity * unitPrice);
+    const totalPrice = quantity * unitPrice;
+    setValue(`items.${index}.totalPrice`, totalPrice);
+  };
+
+  const handleUnitPriceChange = (index: number, unitPrice: number) => {
+    setValue(`items.${index}.unitPrice`, unitPrice);
+    const quantity = watchedItems[index]?.quantity || 1;
+    const totalPrice = quantity * unitPrice;
+    setValue(`items.${index}.totalPrice`, totalPrice);
   };
 
   const getStatusColor = (status: Estimate['status']) => {
@@ -674,6 +698,10 @@ const EstimatesPage: React.FC = () => {
                           type="number"
                           label="Цена за ед."
                           fullWidth
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleUnitPriceChange(index, Number(e.target.value));
+                          }}
                         />
                       )}
                     />

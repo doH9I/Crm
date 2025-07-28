@@ -102,7 +102,7 @@ const ToolsPage: React.FC = () => {
   const { user } = useAuthStore();
 
   const { control, handleSubmit, reset } = useForm<Tool>();
-  const { control: assignControl } = useForm();
+  const { control: assignControl, handleSubmit: handleAssignSubmit, reset: resetAssign } = useForm();
 
   useEffect(() => {
     fetchTools();

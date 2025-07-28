@@ -38,7 +38,8 @@ import {
   InputAdornment,
   Fab,
   Menu,
-  ListItemButton
+  ListItemButton,
+  Avatar
 } from '@mui/material';
 import {
   Add as AddIcon,
