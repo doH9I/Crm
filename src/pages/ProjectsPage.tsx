@@ -25,7 +25,6 @@ import {
   IconButton,
   Chip,
   Grid,
-  Fab,
   Tooltip,
   Avatar,
   Alert,
@@ -41,7 +40,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useProjectStore, useAuthStore } from '../store';
+import { useProjectStore, useAuthStore, useProjectSelectionStore } from '../store';
 import { Project, ProjectStatus, ProjectType } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -62,6 +61,7 @@ interface ProjectFormData {
 const ProjectsPage: React.FC = () => {
   const { projects, loading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
   const { user } = useAuthStore();
+  const { selectedProjectId, addAvailableProject, updateAvailableProject, removeAvailableProject } = useProjectSelectionStore();
   const [searchParams] = useSearchParams();
   
   const [openDialog, setOpenDialog] = useState(false);
@@ -86,27 +86,40 @@ const ProjectsPage: React.FC = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+  }, [fetchProjects, selectedProjectId]); // Перезагружаем данные при изменении выбранного проекта
 
   const handleCreateProject = async (data: ProjectFormData) => {
     try {
-      await createProject({
+      const newProject = {
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         progress: 0,
-        tasks: [],
-        documents: [],
-        expenses: [],
-        team: [],
-        timeline: [],
-        risks: [],
-        qualityChecks: [],
-        safetyIncidents: [],
-        materials: [],
-        equipment: [],
+        client: data.clientName,
+        clientContact: data.clientContact,
+        address: data.location,
+        spentAmount: 0,
+        approvedBudget: data.budget,
+        contingencyFund: Math.floor(data.budget * 0.1),
+        teamMembers: [],
+        priority: 'medium' as const,
+        riskLevel: 'low' as const,
+        weatherSensitive: false,
+        safetyRequirements: [],
         notes: '',
-      });
+      };
+      
+      await createProject(newProject);
+      
+      // Добавляем проект в список доступных проектов
+      const createdProject = {
+        ...newProject,
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      addAvailableProject(createdProject);
+      
       toast.success('Проект успешно создан');
       setOpenDialog(false);
       reset();
@@ -119,11 +132,20 @@ const ProjectsPage: React.FC = () => {
     if (!editingProject) return;
     
     try {
-      await updateProject(editingProject.id, {
+      const updatedData = {
         ...data,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-      });
+        client: data.clientName,
+        clientContact: data.clientContact,
+        address: data.location,
+      };
+      
+      await updateProject(editingProject.id, updatedData);
+      
+      // Обновляем проект в списке доступных проектов
+      updateAvailableProject(editingProject.id, updatedData);
+      
       toast.success('Проект успешно обновлен');
       setOpenDialog(false);
       setEditingProject(null);
@@ -136,6 +158,10 @@ const ProjectsPage: React.FC = () => {
   const handleDeleteProject = async (id: string) => {
     try {
       await deleteProject(id);
+      
+      // Удаляем проект из списка доступных проектов
+      removeAvailableProject(id);
+      
       toast.success('Проект удален');
       setDeleteConfirmId(null);
     } catch (error) {
@@ -166,13 +192,13 @@ const ProjectsPage: React.FC = () => {
     reset({
       name: project.name,
       description: project.description,
-      clientName: project.clientName,
-      clientContact: project.clientContact,
-      location: project.location,
+      clientName: project.client,
+      clientContact: project.clientContact || '',
+      location: project.address,
       type: project.type,
       status: project.status,
-      startDate: format(project.startDate, 'yyyy-MM-dd'),
-      endDate: format(project.endDate, 'yyyy-MM-dd'),
+              startDate: format(project.startDate, 'yyyy-MM-dd'),
+        endDate: project.endDate ? format(project.endDate, 'yyyy-MM-dd') : '',
       budget: project.budget,
       managerId: project.managerId,
     });
@@ -279,13 +305,13 @@ const ProjectsPage: React.FC = () => {
                           {project.name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {project.location}
+                          {project.address}
                         </Typography>
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">{project.clientName}</Typography>
+                    <Typography variant="body2">{project.client}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {project.clientContact}
                     </Typography>
@@ -324,7 +350,7 @@ const ProjectsPage: React.FC = () => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    {format(project.endDate, 'dd.MM.yyyy', { locale: ru })}
+                    {project.endDate ? format(project.endDate, 'dd.MM.yyyy', { locale: ru }) : 'Не указана'}
                   </TableCell>
                   <TableCell align="right">
                     <Tooltip title="Просмотр">

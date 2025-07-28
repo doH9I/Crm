@@ -13,6 +13,9 @@ import {
   Collapse,
 } from '@mui/material';
 import { usePermissions, MODULES } from '../../hooks/usePermissions';
+import { useProjectSelectionStore } from '../../store';
+import ProjectCreationModal from '../ProjectCreationModal';
+import toast from 'react-hot-toast';
 import {
   Dashboard as DashboardIcon,
   Business as ProjectIcon,
@@ -31,6 +34,10 @@ import {
   ExpandMore,
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
+  CheckCircle as ActiveProjectIcon,
+  RadioButtonUnchecked as InactiveProjectIcon,
+  ViewModule as AllProjectsIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 
 interface NavigationItem {
@@ -186,7 +193,14 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { canAccess, isAdmin, user } = usePermissions();
-  const [openSections, setOpenSections] = React.useState<string[]>(['projects', 'warehouse']);
+  const { 
+    selectedProjectId, 
+    availableProjects, 
+    setSelectedProject,
+    addAvailableProject 
+  } = useProjectSelectionStore();
+  const [openSections, setOpenSections] = React.useState<string[]>(['projects', 'warehouse', 'project-selection']);
+  const [projectModalOpen, setProjectModalOpen] = React.useState(false);
 
   const handleNavigation = (path: string) => {
     if (path !== '#') {
@@ -200,6 +214,41 @@ const Sidebar: React.FC = () => {
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     );
+  };
+
+  const handleCreateProject = (data: any) => {
+    try {
+      const newProject = {
+        ...data,
+        id: Date.now().toString(),
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        progress: 0,
+        client: data.clientName,
+        clientContact: data.clientContact,
+        address: data.location,
+        spentAmount: 0,
+        approvedBudget: data.budget,
+        contingencyFund: Math.floor(data.budget * 0.1),
+        managerId: user?.id || '1',
+        architectId: '2',
+        engineerId: '3',
+        teamMembers: [],
+        priority: 'medium' as const,
+        riskLevel: 'low' as const,
+        weatherSensitive: false,
+        safetyRequirements: [],
+        notes: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      addAvailableProject(newProject);
+      setSelectedProject(newProject.id); // Автоматически выбираем новый проект
+      toast.success('Проект успешно создан');
+    } catch (error) {
+      toast.error('Ошибка при создании проекта');
+    }
   };
 
   const isActiveItem = (path: string) => {
@@ -352,8 +401,147 @@ const Sidebar: React.FC = () => {
     );
   };
 
+  // Компонент для выбора проекта
+  const ProjectSelector: React.FC = () => (
+    <Box sx={{ p: 2, mx: 2, my: 1 }}>
+      <Typography 
+        variant="caption" 
+        color="text.secondary" 
+        sx={{ 
+          px: 1, 
+          py: 0.5, 
+          display: 'block',
+          fontWeight: 600,
+          letterSpacing: 0.5,
+          mb: 1,
+        }}
+      >
+        ВЫБОР ПРОЕКТА
+      </Typography>
+      
+      {/* Все проекты */}
+      <ListItemButton
+        onClick={() => setSelectedProject(null)}
+        sx={{
+          minHeight: 40,
+          justifyContent: 'initial',
+          px: 2,
+          py: 1,
+          mb: 0.5,
+          borderRadius: 2,
+          background: selectedProjectId === null ? 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.05))' : 'transparent',
+          border: selectedProjectId === null ? '1px solid rgba(25, 118, 210, 0.2)' : '1px solid transparent',
+          '&:hover': {
+            backgroundColor: selectedProjectId === null ? 'rgba(25, 118, 210, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+          },
+        }}
+      >
+        <ListItemIcon sx={{ minWidth: 0, mr: 1.5 }}>
+          {selectedProjectId === null ? (
+            <ActiveProjectIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+          ) : (
+            <AllProjectsIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+          )}
+        </ListItemIcon>
+        <ListItemText 
+          primary="Все проекты" 
+          sx={{
+            '& .MuiTypography-root': {
+              fontWeight: selectedProjectId === null ? 600 : 500,
+              fontSize: '0.875rem',
+              color: selectedProjectId === null ? 'primary.main' : 'text.primary',
+            },
+          }}
+        />
+      </ListItemButton>
+
+      {/* Список доступных проектов */}
+      {availableProjects.map((project) => (
+        <ListItemButton
+          key={project.id}
+          onClick={() => setSelectedProject(project.id)}
+          sx={{
+            minHeight: 40,
+            justifyContent: 'initial',
+            px: 2,
+            py: 1,
+            mb: 0.5,
+            borderRadius: 2,
+            background: selectedProjectId === project.id ? 'linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.05))' : 'transparent',
+            border: selectedProjectId === project.id ? '1px solid rgba(25, 118, 210, 0.2)' : '1px solid transparent',
+            '&:hover': {
+              backgroundColor: selectedProjectId === project.id ? 'rgba(25, 118, 210, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 0, mr: 1.5 }}>
+            {selectedProjectId === project.id ? (
+              <ActiveProjectIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+            ) : (
+              <InactiveProjectIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+            )}
+          </ListItemIcon>
+          <ListItemText 
+            primary={project.name}
+            secondary={project.client}
+            sx={{
+              '& .MuiTypography-root': {
+                fontWeight: selectedProjectId === project.id ? 600 : 500,
+                fontSize: '0.875rem',
+                color: selectedProjectId === project.id ? 'primary.main' : 'text.primary',
+              },
+              '& .MuiListItemText-secondary': {
+                fontSize: '0.75rem',
+                color: 'text.secondary',
+              },
+            }}
+          />
+          <Chip
+            label={`${project.progress}%`}
+            size="small"
+            color={project.progress > 70 ? 'success' : project.progress > 30 ? 'warning' : 'error'}
+            sx={{
+              height: 18,
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              '& .MuiChip-label': {
+                px: 0.5,
+              },
+            }}
+          />
+        </ListItemButton>
+      ))}
+
+      {/* Кнопка создания нового проекта */}
+      <Button
+        fullWidth
+        variant="outlined"
+        startIcon={<AddIcon />}
+        onClick={() => setProjectModalOpen(true)}
+        sx={{
+          mt: 1,
+          borderRadius: 2,
+          borderStyle: 'dashed',
+          borderColor: 'primary.main',
+          color: 'primary.main',
+          '&:hover': {
+            backgroundColor: 'rgba(25, 118, 210, 0.04)',
+            borderStyle: 'dashed',
+          },
+        }}
+      >
+        Новый проект
+      </Button>
+
+      <Divider sx={{ my: 1 }} />
+    </Box>
+  );
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Project Selector */}
+      <ProjectSelector />
+
       {/* Quick Stats */}
       <Box sx={{ p: 2, mx: 2, my: 1 }}>
         <Box
@@ -463,6 +651,13 @@ const Sidebar: React.FC = () => {
           }
         `}
       </style>
+
+      {/* Модальное окно создания проекта */}
+      <ProjectCreationModal
+        open={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+        onSubmit={handleCreateProject}
+      />
     </Box>
   );
 };

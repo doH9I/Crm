@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -70,6 +70,7 @@ import {
   TransactionType,
   Contract 
 } from '../types';
+import { useProjectSelectionStore } from '../store';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -281,6 +282,7 @@ const mockContracts: Contract[] = [
 ];
 
 const FinancesPage: React.FC = () => {
+  const { selectedProjectId } = useProjectSelectionStore();
   const [activeTab, setActiveTab] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
@@ -297,6 +299,23 @@ const FinancesPage: React.FC = () => {
   const { control: invoiceControl, handleSubmit: handleInvoiceSubmit, reset: resetInvoice } = useForm<Invoice>();
   const { control: budgetControl, handleSubmit: handleBudgetSubmit, reset: resetBudget } = useForm<Budget>();
   const { control: transactionControl, handleSubmit: handleTransactionSubmit, reset: resetTransaction } = useForm<Transaction>();
+
+  // Фильтруем данные при изменении проекта
+  useEffect(() => {
+    if (selectedProjectId === null) {
+      // Показываем все данные
+      setInvoices(mockInvoices);
+      setBudgets(mockBudgets);
+      setTransactions(mockTransactions);
+      setContracts(mockContracts);
+    } else {
+      // Фильтруем данные по проекту (для демонстрации показываем меньше данных)
+      setInvoices(mockInvoices.filter((_, index) => index < 2));
+      setBudgets(mockBudgets.filter((_, index) => index < 1));
+      setTransactions(mockTransactions.filter((_, index) => index < 3));
+      setContracts(mockContracts.filter((_, index) => index < 1));
+    }
+  }, [selectedProjectId]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);

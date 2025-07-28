@@ -62,7 +62,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format as formatDate } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useMaterialStore, useAuthStore } from '../store';
+import { useMaterialStore, useAuthStore, useProjectSelectionStore } from '../store';
 import { Material, Supplier } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -90,6 +90,7 @@ function TabPanel(props: TabPanelProps) {
 const MaterialsPage: React.FC = () => {
   const { materials, suppliers, orders, loading, fetchMaterials, fetchSuppliers, fetchOrders, createMaterial, updateMaterial, deleteMaterial, createSupplier, createOrder } = useMaterialStore();
   const { user } = useAuthStore();
+  const { selectedProjectId } = useProjectSelectionStore();
   
   const [tabValue, setTabValue] = useState(0);
   const [openMaterialDialog, setOpenMaterialDialog] = useState(false);
@@ -108,7 +109,7 @@ const MaterialsPage: React.FC = () => {
     fetchMaterials();
     fetchSuppliers();
     fetchOrders();
-  }, [fetchMaterials, fetchSuppliers, fetchOrders]);
+  }, [fetchMaterials, fetchSuppliers, fetchOrders, selectedProjectId]); // Перезагружаем при изменении проекта
 
   const handleCreateMaterial = async (data: any) => {
     try {

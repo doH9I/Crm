@@ -43,7 +43,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useHRStore, useAuthStore } from '../store';
+import { useHRStore, useAuthStore, useProjectSelectionStore } from '../store';
 import { User, UserRole } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -66,6 +66,7 @@ interface EmployeeFormData {
 const EmployeesPage: React.FC = () => {
   const { employees, loading, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useHRStore();
   const { user } = useAuthStore();
+  const { selectedProjectId } = useProjectSelectionStore();
   
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
@@ -76,7 +77,7 @@ const EmployeesPage: React.FC = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [fetchEmployees]);
+  }, [fetchEmployees, selectedProjectId]); // Перезагружаем при изменении проекта
 
   const handleCreateEmployee = async (data: EmployeeFormData) => {
     try {

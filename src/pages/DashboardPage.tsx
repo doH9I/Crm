@@ -38,19 +38,25 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useDashboardStore } from '../store';
+import { useDashboardStore, useProjectSelectionStore } from '../store';
 import { formatCurrency } from '../utils';
 import WeatherWidget from '../components/Advanced/WeatherWidget';
 import QRCodeScanner from '../components/Advanced/QRCodeScanner';
 
 const DashboardPage: React.FC = () => {
   const { stats, loading, fetchStats } = useDashboardStore();
+  const { selectedProjectId, availableProjects } = useProjectSelectionStore();
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Получаем информацию о выбранном проекте
+  const selectedProject = selectedProjectId 
+    ? availableProjects.find(p => p.id === selectedProjectId)
+    : null;
+
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+  }, [fetchStats, selectedProjectId]); // Перезагружаем статистику при изменении выбранного проекта
 
   // Данные для графиков
   const financialData = [
@@ -447,9 +453,34 @@ const DashboardPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Заголовок */}
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
-        Дашборд управления
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+          {selectedProject ? `Проект: ${selectedProject.name}` : 'Дашборд управления'}
+        </Typography>
+        {selectedProject && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip
+              label={selectedProject.client}
+              variant="outlined"
+              color="primary"
+              size="small"
+            />
+            <Chip
+              label={`${selectedProject.progress}% завершено`}
+              color={selectedProject.progress > 70 ? 'success' : selectedProject.progress > 30 ? 'warning' : 'error'}
+              size="small"
+            />
+            <Typography variant="body2" color="text.secondary">
+              {selectedProject.address}
+            </Typography>
+          </Box>
+        )}
+        {!selectedProject && (
+          <Typography variant="body1" color="text.secondary">
+            Общая информация по всем проектам
+          </Typography>
+        )}
+      </Box>
 
       {/* Основные показатели */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

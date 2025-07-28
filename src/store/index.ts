@@ -30,6 +30,16 @@ import {
   Contract,
 } from '../types';
 
+// Интерфейс для управления активным проектом
+interface ProjectSelectionState {
+  selectedProjectId: string | null; // null означает "все проекты"
+  availableProjects: Project[];
+  setSelectedProject: (projectId: string | null) => void;
+  addAvailableProject: (project: Project) => void;
+  removeAvailableProject: (projectId: string) => void;
+  updateAvailableProject: (projectId: string, updates: Partial<Project>) => void;
+}
+
 // Интерфейс для состояния аутентификации
 interface AuthState {
   user: User | null;
@@ -355,39 +365,25 @@ export const useProjectStore = create<ProjectState>()(
         try {
           // Симуляция API запроса
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const mockProjects: Project[] = [
-            {
-              id: '1',
-              name: 'Жилой комплекс "Солнечный"',
-              description: 'Строительство жилого комплекса из 3 домов',
-              client: 'ООО "Инвест Строй"',
-              clientContact: 'Иванов И.И.',
-              clientPhone: '+7 (999) 123-45-67',
-              clientEmail: 'ivanov@investstroy.ru',
-              address: 'г. Москва, ул. Солнечная, 15',
-              status: 'in_progress' as any,
-              type: 'residential' as any,
-              startDate: new Date('2024-01-15'),
-              endDate: new Date('2024-12-15'),
-              plannedEndDate: new Date('2024-12-01'),
-              budget: 50000000,
-              spentAmount: 25000000,
-              approvedBudget: 52000000,
-              contingencyFund: 2000000,
-              managerId: '1',
-              architectId: '2',
-              engineerId: '3',
-              teamMembers: ['1', '2', '3', '4', '5'],
-              progress: 50,
-              priority: 'high',
-              notes: 'Проект идет по плану',
-              riskLevel: 'medium',
-              weatherSensitive: true,
-              safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          ];
+          
+          // Получаем выбранный проект из store
+          const projectSelectionStore = useProjectSelectionStore.getState();
+          const selectedProjectId = projectSelectionStore.selectedProjectId;
+          const availableProjects = projectSelectionStore.availableProjects;
+          
+          // Фильтруем проекты в зависимости от выбранного
+          let mockProjects: Project[] = [];
+          
+          if (selectedProjectId === null) {
+            // Показываем все проекты
+            mockProjects = availableProjects;
+          } else {
+            // Показываем только выбранный проект
+            const selectedProject = availableProjects.find(p => p.id === selectedProjectId);
+            if (selectedProject) {
+              mockProjects = [selectedProject];
+            }
+          }
           
           set(state => {
             state.projects = mockProjects;
@@ -478,7 +474,13 @@ export const useMaterialStore = create<MaterialState>()(
         set(state => { state.loading = true; });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const mockMaterials: Material[] = [
+          
+          // Получаем выбранный проект из store
+          const projectSelectionStore = useProjectSelectionStore.getState();
+          const selectedProjectId = projectSelectionStore.selectedProjectId;
+          
+          // Базовые материалы для всех проектов
+          const allMaterials: Material[] = [
             {
               id: '1',
               name: 'Цемент М400',
@@ -508,8 +510,27 @@ export const useMaterialStore = create<MaterialState>()(
             },
           ];
           
+          // Фильтруем материалы в зависимости от выбранного проекта
+          let filteredMaterials: Material[] = [];
+          
+          if (selectedProjectId === null) {
+            // Показываем все материалы
+            filteredMaterials = allMaterials;
+          } else {
+            // Показываем материалы, связанные с конкретным проектом
+            // В реальном приложении здесь будет фильтрация по projectId
+            // Пока что показываем все материалы для любого выбранного проекта
+            filteredMaterials = allMaterials.map(material => ({
+              ...material,
+              // Уменьшаем количество для конкретного проекта (симуляция)
+              currentStock: Math.floor(material.currentStock / 3),
+              reservedStock: Math.floor(material.reservedStock / 2),
+              availableStock: Math.floor(material.availableStock / 3),
+            }));
+          }
+          
           set(state => {
-            state.materials = mockMaterials;
+            state.materials = filteredMaterials;
             state.loading = false;
           });
         } catch (error) {
@@ -673,35 +694,91 @@ export const useDashboardStore = create<DashboardState>()(
         set(state => { state.loading = true; });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const mockStats: DashboardStats = {
-            totalProjects: 12,
-            activeProjects: 8,
-            completedProjects: 4,
-            onHoldProjects: 0,
-            totalRevenue: 120000000,
-            monthlyRevenue: 8500000,
-            totalExpenses: 95000000,
-            monthlyExpenses: 6200000,
-            profit: 25000000,
-            profitMargin: 20.8,
-            employeeCount: 45,
-            activeEmployees: 43,
-            materialCount: 1250,
-            lowStockMaterials: 8,
-            toolCount: 180,
-            brokenTools: 3,
-            toolsInMaintenance: 5,
-            pendingInvoices: 12,
-            overdueInvoices: 2,
-            cashFlow: 2300000,
-            projectsOnSchedule: 6,
-            projectsDelayed: 2,
-            averageProjectDuration: 8.5,
-            clientSatisfactionScore: 4.7,
-            safetyIncidentsThisMonth: 1,
-            qualityScore: 92,
-            utilizationRate: 85,
-          };
+          
+          // Получаем выбранный проект из store
+          const projectSelectionStore = useProjectSelectionStore.getState();
+          const selectedProjectId = projectSelectionStore.selectedProjectId;
+          const availableProjects = projectSelectionStore.availableProjects;
+          
+          let mockStats: DashboardStats;
+          
+          if (selectedProjectId === null) {
+            // Статистика по всем проектам
+            mockStats = {
+              totalProjects: availableProjects.length,
+              activeProjects: availableProjects.filter(p => p.status === 'in_progress').length,
+              completedProjects: availableProjects.filter(p => p.status === 'completed').length,
+              onHoldProjects: availableProjects.filter(p => p.status === 'on_hold').length,
+              totalRevenue: availableProjects.reduce((sum, p) => sum + p.spentAmount, 0),
+              monthlyRevenue: 8500000,
+              totalExpenses: availableProjects.reduce((sum, p) => sum + p.spentAmount * 0.8, 0),
+              monthlyExpenses: 6200000,
+              profit: availableProjects.reduce((sum, p) => sum + (p.spentAmount * 0.2), 0),
+              profitMargin: 20.8,
+              employeeCount: 45,
+              activeEmployees: 43,
+              materialCount: 1250,
+              lowStockMaterials: 8,
+              toolCount: 180,
+              brokenTools: 3,
+              toolsInMaintenance: 5,
+              pendingInvoices: 12,
+              overdueInvoices: 2,
+              cashFlow: 2300000,
+              projectsOnSchedule: availableProjects.filter(p => p.progress >= 50).length,
+              projectsDelayed: availableProjects.filter(p => p.progress < 30).length,
+              averageProjectDuration: 8.5,
+              clientSatisfactionScore: 4.7,
+              safetyIncidentsThisMonth: 1,
+              qualityScore: 92,
+              utilizationRate: 85,
+            };
+          } else {
+            // Статистика по конкретному проекту
+            const selectedProject = availableProjects.find(p => p.id === selectedProjectId);
+            if (selectedProject) {
+              mockStats = {
+                totalProjects: 1,
+                activeProjects: selectedProject.status === 'in_progress' ? 1 : 0,
+                completedProjects: selectedProject.status === 'completed' ? 1 : 0,
+                onHoldProjects: selectedProject.status === 'on_hold' ? 1 : 0,
+                totalRevenue: selectedProject.spentAmount,
+                monthlyRevenue: Math.floor(selectedProject.spentAmount / 6), // примерно за 6 месяцев
+                totalExpenses: Math.floor(selectedProject.spentAmount * 0.8),
+                monthlyExpenses: Math.floor(selectedProject.spentAmount * 0.8 / 6),
+                profit: Math.floor(selectedProject.spentAmount * 0.2),
+                profitMargin: 20,
+                employeeCount: selectedProject.teamMembers.length,
+                activeEmployees: selectedProject.teamMembers.length,
+                materialCount: 250, // меньше материалов для одного проекта
+                lowStockMaterials: 2,
+                toolCount: 35,
+                brokenTools: 1,
+                toolsInMaintenance: 1,
+                pendingInvoices: 3,
+                overdueInvoices: 0,
+                cashFlow: Math.floor(selectedProject.budget - selectedProject.spentAmount),
+                projectsOnSchedule: selectedProject.progress >= 50 ? 1 : 0,
+                projectsDelayed: selectedProject.progress < 30 ? 1 : 0,
+                averageProjectDuration: 8,
+                clientSatisfactionScore: 4.8,
+                safetyIncidentsThisMonth: 0,
+                qualityScore: 95,
+                utilizationRate: selectedProject.progress,
+              };
+            } else {
+              // Fallback если проект не найден
+              mockStats = {
+                totalProjects: 0, activeProjects: 0, completedProjects: 0, onHoldProjects: 0,
+                totalRevenue: 0, monthlyRevenue: 0, totalExpenses: 0, monthlyExpenses: 0,
+                profit: 0, profitMargin: 0, employeeCount: 0, activeEmployees: 0,
+                materialCount: 0, lowStockMaterials: 0, toolCount: 0, brokenTools: 0,
+                toolsInMaintenance: 0, pendingInvoices: 0, overdueInvoices: 0, cashFlow: 0,
+                projectsOnSchedule: 0, projectsDelayed: 0, averageProjectDuration: 0,
+                clientSatisfactionScore: 0, safetyIncidentsThisMonth: 0, qualityScore: 0, utilizationRate: 0,
+              };
+            }
+          }
           
           set(state => {
             state.stats = mockStats;
@@ -1013,3 +1090,140 @@ export const useIntegrationStore = create<IntegrationState>()(devtools(immer(() 
   createBackup: async (name: string, type: 'manual' | 'automatic') => {},
   restoreBackup: async (id: string) => {},
 }))));
+
+// Store для управления выбором проекта
+export const useProjectSelectionStore = create<ProjectSelectionState>()(
+  devtools(
+    persist(
+      immer((set, get) => ({
+        selectedProjectId: null, // По умолчанию показываем все проекты
+        availableProjects: [
+          // Инициализируем с тестовыми проектами
+          {
+            id: '1',
+            name: 'Жилой комплекс "Солнечный"',
+            description: 'Строительство жилого комплекса из 3 домов',
+            client: 'ООО "Инвест Строй"',
+            clientContact: 'Иванов И.И.',
+            clientPhone: '+7 (999) 123-45-67',
+            clientEmail: 'ivanov@investstroy.ru',
+            address: 'г. Москва, ул. Солнечная, 15',
+            status: 'in_progress' as any,
+            type: 'residential' as any,
+            startDate: new Date('2024-01-15'),
+            endDate: new Date('2024-12-15'),
+            plannedEndDate: new Date('2024-12-01'),
+            budget: 50000000,
+            spentAmount: 25000000,
+            approvedBudget: 52000000,
+            contingencyFund: 2000000,
+            managerId: '1',
+            architectId: '2',
+            engineerId: '3',
+            teamMembers: ['1', '2', '3', '4', '5'],
+            progress: 50,
+            priority: 'high',
+            notes: 'Проект идет по плану',
+            riskLevel: 'medium',
+            weatherSensitive: true,
+            safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: '2',
+            name: 'Торговый центр "Метрополис"',
+            description: 'Строительство крупного торгового центра',
+            client: 'АО "Торговые Инвестиции"',
+            clientContact: 'Петров П.П.',
+            clientPhone: '+7 (999) 234-56-78',
+            clientEmail: 'petrov@tradeinvest.ru',
+            address: 'г. Москва, ул. Торговая, 42',
+            status: 'planning' as any,
+            type: 'commercial' as any,
+            startDate: new Date('2024-03-01'),
+            endDate: new Date('2025-06-01'),
+            plannedEndDate: new Date('2025-05-15'),
+            budget: 150000000,
+            spentAmount: 5000000,
+            approvedBudget: 155000000,
+            contingencyFund: 5000000,
+            managerId: '2',
+            architectId: '3',
+            engineerId: '4',
+            teamMembers: ['2', '3', '4', '5', '6'],
+            progress: 10,
+            priority: 'high',
+            notes: 'На стадии планирования и согласований',
+            riskLevel: 'low',
+            weatherSensitive: false,
+            safetyRequirements: ['Защитные каски', 'Страховочные пояса', 'Спецодежда'],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: '3',
+            name: 'Офисное здание "Бизнес Парк"',
+            description: 'Строительство современного офисного здания',
+            client: 'ООО "Офис Девелопмент"',
+            clientContact: 'Сидоров С.С.',
+            clientPhone: '+7 (999) 345-67-89',
+            clientEmail: 'sidorov@officedev.ru',
+            address: 'г. Москва, ул. Деловая, 88',
+            status: 'in_progress' as any,
+            type: 'commercial' as any,
+            startDate: new Date('2024-02-01'),
+            endDate: new Date('2024-11-01'),
+            plannedEndDate: new Date('2024-10-15'),
+            budget: 80000000,
+            spentAmount: 45000000,
+            approvedBudget: 82000000,
+            contingencyFund: 2000000,
+            managerId: '1',
+            architectId: '2',
+            engineerId: '3',
+            teamMembers: ['1', '3', '4', '6'],
+            progress: 65,
+            priority: 'medium',
+            notes: 'Отделочные работы в процессе',
+            riskLevel: 'low',
+            weatherSensitive: true,
+            safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        setSelectedProject: (projectId: string | null) => {
+          set(state => {
+            state.selectedProjectId = projectId;
+          });
+        },
+        addAvailableProject: (project: Project) => {
+          set(state => {
+            state.availableProjects.push(project);
+          });
+        },
+        removeAvailableProject: (projectId: string) => {
+          set(state => {
+            state.availableProjects = state.availableProjects.filter(p => p.id !== projectId);
+            // Если удаляем выбранный проект, сбрасываем выбор
+            if (state.selectedProjectId === projectId) {
+              state.selectedProjectId = null;
+            }
+          });
+        },
+        updateAvailableProject: (projectId: string, updates: Partial<Project>) => {
+          set(state => {
+            const index = state.availableProjects.findIndex(p => p.id === projectId);
+            if (index !== -1) {
+              Object.assign(state.availableProjects[index], updates, { updatedAt: new Date() });
+            }
+          });
+        },
+      })),
+      { 
+        name: 'project-selection-store',
+      }
+    )
+  )
+);
