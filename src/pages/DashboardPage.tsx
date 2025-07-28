@@ -38,15 +38,20 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useDashboardStore } from '../store';
+import { useDashboardStore, useProjectFilterStore, useProjectStore } from '../store';
 import { formatCurrency } from '../utils';
 import WeatherWidget from '../components/Advanced/WeatherWidget';
 import QRCodeScanner from '../components/Advanced/QRCodeScanner';
 
 const DashboardPage: React.FC = () => {
   const { stats, loading, fetchStats } = useDashboardStore();
+  const { selectedProjectId, getProjectById } = useProjectFilterStore();
+  const { projects } = useProjectStore();
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const navigate = useNavigate();
+  
+  // Получаем информацию о выбранном проекте
+  const selectedProject = selectedProjectId ? getProjectById(selectedProjectId) : null;
 
   useEffect(() => {
     fetchStats();
@@ -447,9 +452,16 @@ const DashboardPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Заголовок */}
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
-        Дашборд управления
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          {selectedProject ? `Дашборд: ${selectedProject.name}` : 'Дашборд управления'}
+        </Typography>
+        {selectedProject && (
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
+            Показаны данные только для выбранного проекта
+          </Typography>
+        )}
+      </Box>
 
       {/* Основные показатели */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

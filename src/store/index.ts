@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
 import {
   User,
   UserRole,
@@ -10,24 +9,6 @@ import {
   DashboardStats,
   Notification,
   AppSettings,
-  Supplier,
-  SafetyIncident,
-  Training,
-  Invoice,
-  QualityCheck,
-  WeatherForecast,
-  Equipment,
-  CalendarEvent,
-  Report,
-  Template,
-  Integration,
-  Backup,
-  ProjectTask,
-  TimeEntry,
-  Budget,
-  Client,
-  MaterialOrder,
-  Contract,
 } from '../types';
 
 // Интерфейс для состояния аутентификации
@@ -42,160 +23,50 @@ interface AuthState {
 // Интерфейс для состояния проектов
 interface ProjectState {
   projects: Project[];
-  tasks: ProjectTask[];
   loading: boolean;
   selectedProject: Project | null;
   fetchProjects: () => Promise<void>;
-  fetchProjectTasks: (projectId: string) => Promise<void>;
   createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   selectProject: (project: Project) => void;
-  createTask: (task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTask: (id: string, updates: Partial<ProjectTask>) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
 }
 
-// Интерфейс для состояния материалов и склада
+// Интерфейс для состояния выбранного проекта
+interface ProjectFilterState {
+  selectedProjectId: string | null;
+  setSelectedProject: (projectId: string | null) => void;
+  getFilteredData: <T extends { projectId?: string }>(data: T[]) => T[];
+  getProjectById: (id: string) => Project | undefined;
+}
+
+// Интерфейс для состояния материалов
 interface MaterialState {
   materials: Material[];
-  suppliers: Supplier[];
-  orders: MaterialOrder[];
   loading: boolean;
   fetchMaterials: () => Promise<void>;
-  fetchSuppliers: () => Promise<void>;
-  fetchOrders: () => Promise<void>;
   createMaterial: (material: Omit<Material, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateMaterial: (id: string, updates: Partial<Material>) => Promise<void>;
   deleteMaterial: (id: string) => Promise<void>;
-  createSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  createOrder: (order: Omit<MaterialOrder, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateOrderStatus: (id: string, status: string) => Promise<void>;
 }
 
-// Интерфейс для состояния инструментов и оборудования
+// Интерфейс для состояния инструментов
 interface ToolState {
   tools: Tool[];
-  equipment: Equipment[];
   loading: boolean;
   fetchTools: () => Promise<void>;
-  fetchEquipment: () => Promise<void>;
   createTool: (tool: Omit<Tool, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTool: (id: string, updates: Partial<Tool>) => Promise<void>;
   deleteTool: (id: string) => Promise<void>;
-  createEquipment: (equipment: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateEquipment: (id: string, updates: Partial<Equipment>) => Promise<void>;
   assignTool: (toolId: string, userId: string) => Promise<void>;
   returnTool: (toolId: string) => Promise<void>;
-}
-
-// Интерфейс для состояния HR и сотрудников
-interface HRState {
-  employees: User[];
-  timeEntries: TimeEntry[];
-  trainings: Training[];
-  loading: boolean;
-  fetchEmployees: () => Promise<void>;
-  fetchTimeEntries: () => Promise<void>;
-  fetchTrainings: () => Promise<void>;
-  createEmployee: (employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateEmployee: (id: string, updates: Partial<User>) => Promise<void>;
-  deleteEmployee: (id: string) => Promise<void>;
-  createTimeEntry: (entry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  approveTimeEntry: (id: string) => Promise<void>;
-  rejectTimeEntry: (id: string, reason: string) => Promise<void>;
-  createTraining: (training: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  enrollInTraining: (trainingId: string, userId: string) => Promise<void>;
-}
-
-// Интерфейс для состояния финансов
-interface FinanceState {
-  invoices: Invoice[];
-  budgets: Budget[];
-  contracts: Contract[];
-  loading: boolean;
-  fetchInvoices: () => Promise<void>;
-  fetchBudgets: () => Promise<void>;
-  fetchContracts: () => Promise<void>;
-  createInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateInvoiceStatus: (id: string, status: string) => Promise<void>;
-  createBudget: (budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
-  createContract: (contract: Omit<Contract, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-}
-
-// Интерфейс для состояния клиентов
-interface ClientState {
-  clients: Client[];
-  loading: boolean;
-  fetchClients: () => Promise<void>;
-  createClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
-  deleteClient: (id: string) => Promise<void>;
-}
-
-// Интерфейс для состояния безопасности
-interface SafetyState {
-  incidents: SafetyIncident[];
-  loading: boolean;
-  fetchIncidents: () => Promise<void>;
-  createIncident: (incident: Omit<SafetyIncident, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateIncident: (id: string, updates: Partial<SafetyIncident>) => Promise<void>;
-  resolveIncident: (id: string, resolution: string) => Promise<void>;
-}
-
-// Интерфейс для состояния качества
-interface QualityState {
-  checks: QualityCheck[];
-  loading: boolean;
-  fetchQualityChecks: () => Promise<void>;
-  createQualityCheck: (check: Omit<QualityCheck, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateQualityCheck: (id: string, updates: Partial<QualityCheck>) => Promise<void>;
-}
-
-// Интерфейс для состояния календаря
-interface CalendarState {
-  events: CalendarEvent[];
-  loading: boolean;
-  fetchEvents: () => Promise<void>;
-  createEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateEvent: (id: string, updates: Partial<CalendarEvent>) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
-}
-
-// Интерфейс для состояния отчетов
-interface ReportState {
-  reports: Report[];
-  templates: Template[];
-  loading: boolean;
-  fetchReports: () => Promise<void>;
-  fetchTemplates: () => Promise<void>;
-  generateReport: (reportId: string, parameters: Record<string, any>) => Promise<void>;
-  createTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTemplate: (id: string, updates: Partial<Template>) => Promise<void>;
-}
-
-// Интерфейс для состояния интеграций
-interface IntegrationState {
-  integrations: Integration[];
-  backups: Backup[];
-  loading: boolean;
-  fetchIntegrations: () => Promise<void>;
-  fetchBackups: () => Promise<void>;
-  enableIntegration: (type: string, config: Record<string, any>) => Promise<void>;
-  disableIntegration: (id: string) => Promise<void>;
-  syncIntegration: (id: string) => Promise<void>;
-  createBackup: (name: string, type: 'manual' | 'automatic') => Promise<void>;
-  restoreBackup: (id: string) => Promise<void>;
 }
 
 // Интерфейс для состояния дашборда
 interface DashboardState {
   stats: DashboardStats | null;
   loading: boolean;
-  weather: WeatherForecast | null;
   fetchStats: () => Promise<void>;
-  fetchWeather: (location: string) => Promise<void>;
 }
 
 // Интерфейс для состояния уведомлений
@@ -227,14 +98,12 @@ interface AppState {
 export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      (set, get) => ({
         user: null,
         isAuthenticated: false,
         login: async (email: string, password: string) => {
-          // Симуляция логики аутентификации
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Предустановленные пользователи системы
           const users = [
             {
               id: '1',
@@ -244,7 +113,7 @@ export const useAuthStore = create<AuthState>()(
               role: UserRole.ADMIN,
               avatar: '',
               isActive: true,
-              permissions: ['*'], // Полный доступ ко всем разделам
+              permissions: ['*'],
               department: 'Управление',
               position: 'Системный администратор',
               phone: '+7 (999) 123-45-67',
@@ -308,31 +177,23 @@ export const useAuthStore = create<AuthState>()(
               updatedAt: new Date(),
             };
             
-            set(state => {
-              state.user = user;
-              state.isAuthenticated = true;
-            });
+            set({ user, isAuthenticated: true });
             return true;
           }
           return false;
         },
         logout: () => {
-          set(state => {
-            state.user = null;
-            state.isAuthenticated = false;
-          });
+          set({ user: null, isAuthenticated: false });
         },
         updateProfile: (updates: Partial<User>) => {
-          set(state => {
-            if (state.user) {
-              Object.assign(state.user, updates);
-            }
-          });
+          const { user } = get();
+          if (user) {
+            set({ user: { ...user, ...updates } });
+          }
         },
-      })),
+      }),
       { 
         name: 'auth-store',
-        // Исключаем функции из сохранения
         partialize: (state) => ({
           user: state.user,
           isAuthenticated: state.isAuthenticated,
@@ -342,18 +203,47 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
+// Store для фильтрации по проектам
+export const useProjectFilterStore = create<ProjectFilterState>()(
+  devtools(
+    persist(
+      (set, get) => ({
+        selectedProjectId: null,
+        setSelectedProject: (projectId: string | null) => {
+          set({ selectedProjectId: projectId });
+        },
+        getFilteredData: <T extends { projectId?: string }>(data: T[]): T[] => {
+          const { selectedProjectId } = get();
+          if (!selectedProjectId) {
+            return data;
+          }
+          return data.filter(item => item.projectId === selectedProjectId);
+        },
+        getProjectById: (id: string) => {
+          const { projects } = useProjectStore.getState();
+          return projects.find(p => p.id === id);
+        },
+      }),
+      { 
+        name: 'project-filter-store',
+        partialize: (state) => ({
+          selectedProjectId: state.selectedProjectId,
+        }),
+      }
+    )
+  )
+);
+
 // Store для проектов
 export const useProjectStore = create<ProjectState>()(
   devtools(
-    immer((set, get) => ({
+    (set, get) => ({
       projects: [],
-      tasks: [],
-      loading: false as boolean,
+      loading: false,
       selectedProject: null,
       fetchProjects: async () => {
-        set(state => { state.loading = true; });
+        set({ loading: true });
         try {
-          // Симуляция API запроса
           await new Promise(resolve => setTimeout(resolve, 1000));
           const mockProjects: Project[] = [
             {
@@ -387,24 +277,135 @@ export const useProjectStore = create<ProjectState>()(
               createdAt: new Date(),
               updatedAt: new Date(),
             },
+            {
+              id: '2',
+              name: 'Торговый центр "Атриум"',
+              description: 'Строительство торгового центра площадью 15,000 м²',
+              client: 'ООО "Ритейл Девелопмент"',
+              clientContact: 'Петров П.П.',
+              clientPhone: '+7 (499) 234-56-78',
+              clientEmail: 'petrov@retail-dev.ru',
+              address: 'г. Санкт-Петербург, Невский пр., 100',
+              status: 'planning' as any,
+              type: 'commercial' as any,
+              startDate: new Date('2024-03-01'),
+              endDate: new Date('2025-02-28'),
+              plannedEndDate: new Date('2025-02-15'),
+              budget: 120000000,
+              spentAmount: 5000000,
+              approvedBudget: 125000000,
+              contingencyFund: 5000000,
+              managerId: '2',
+              architectId: '3',
+              engineerId: '4',
+              teamMembers: ['2', '3', '4', '6', '7'],
+              progress: 10,
+              priority: 'high',
+              notes: 'На стадии проектирования',
+              riskLevel: 'medium',
+              weatherSensitive: false,
+              safetyRequirements: ['Защитные каски', 'Страховочные пояса', 'Защитная обувь'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Промышленный склад "Логистик"',
+              description: 'Строительство складского комплекса с автоматизированной системой',
+              client: 'ЗАО "Логистические решения"',
+              clientContact: 'Сидоров С.С.',
+              clientPhone: '+7 (812) 345-67-89',
+              clientEmail: 'sidorov@logistics.ru',
+              address: 'г. Екатеринбург, Промзона "Восток"',
+              status: 'in_progress' as any,
+              type: 'industrial' as any,
+              startDate: new Date('2023-11-01'),
+              endDate: new Date('2024-08-31'),
+              plannedEndDate: new Date('2024-08-15'),
+              budget: 80000000,
+              spentAmount: 60000000,
+              approvedBudget: 82000000,
+              contingencyFund: 2000000,
+              managerId: '3',
+              architectId: '4',
+              engineerId: '5',
+              teamMembers: ['3', '4', '5', '8', '9'],
+              progress: 75,
+              priority: 'medium',
+              notes: 'Близится к завершению',
+              riskLevel: 'low',
+              weatherSensitive: true,
+              safetyRequirements: ['Защитные каски', 'Страховочные пояса', 'Респираторы'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '4',
+              name: 'Офисное здание "Бизнес Плаза"',
+              description: 'Строительство многофункционального офисного центра класса А',
+              client: 'ООО "Корпоративная недвижимость"',
+              clientContact: 'Козлов К.К.',
+              clientPhone: '+7 (495) 456-78-90',
+              clientEmail: 'kozlov@corp-real.ru',
+              address: 'г. Москва, ул. Деловая, 42',
+              status: 'planning' as any,
+              type: 'commercial' as any,
+              startDate: new Date('2024-05-01'),
+              endDate: new Date('2025-10-31'),
+              plannedEndDate: new Date('2025-10-15'),
+              budget: 200000000,
+              spentAmount: 0,
+              approvedBudget: 205000000,
+              contingencyFund: 15000000,
+              managerId: '1',
+              architectId: '2',
+              engineerId: '3',
+              teamMembers: ['1', '2', '3'],
+              progress: 5,
+              priority: 'high',
+              notes: 'Получение разрешений',
+              riskLevel: 'medium',
+              weatherSensitive: false,
+              safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '5',
+              name: 'Реконструкция исторического здания',
+              description: 'Реставрация и модернизация здания XIX века',
+              client: 'Министерство культуры',
+              clientContact: 'Федоров Ф.Ф.',
+              clientPhone: '+7 (495) 567-89-01',
+              clientEmail: 'fedorov@culture.gov.ru',
+              address: 'г. Санкт-Петербург, наб. Фонтанки, 25',
+              status: 'completed' as any,
+              type: 'renovation' as any,
+              startDate: new Date('2023-04-01'),
+              endDate: new Date('2024-01-31'),
+              plannedEndDate: new Date('2024-01-15'),
+              budget: 35000000,
+              spentAmount: 34500000,
+              approvedBudget: 35000000,
+              contingencyFund: 1500000,
+              managerId: '2',
+              architectId: '5',
+              engineerId: '6',
+              teamMembers: ['2', '5', '6', '10'],
+              progress: 100,
+              priority: 'medium',
+              notes: 'Проект успешно завершен',
+              riskLevel: 'low',
+              weatherSensitive: true,
+              safetyRequirements: ['Защитные каски', 'Страховочные пояса', 'Специальная обувь'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
           ];
           
-          set(state => {
-            state.projects = mockProjects;
-            state.loading = false;
-          });
+          set({ projects: mockProjects, loading: false });
         } catch (error) {
-          set(state => { state.loading = false; });
-        }
-      },
-      fetchProjectTasks: async (projectId: string) => {
-        set(state => { state.loading = true; });
-        try {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          // Здесь будет загрузка задач проекта
-          set(state => { state.loading = false; });
-        } catch (error) {
-          set(state => { state.loading = false; });
+          set({ loading: false });
         }
       },
       createProject: async (project) => {
@@ -415,67 +416,37 @@ export const useProjectStore = create<ProjectState>()(
           updatedAt: new Date(),
         };
         
-        set(state => {
-          state.projects.push(newProject);
-        });
+        const { projects } = get();
+        set({ projects: [...projects, newProject] });
       },
       updateProject: async (id, updates) => {
-        set(state => {
-          const index = state.projects.findIndex((p: Project) => p.id === id);
-          if (index !== -1) {
-            Object.assign(state.projects[index], updates, { updatedAt: new Date() });
-          }
-        });
+        const { projects } = get();
+        const index = projects.findIndex(p => p.id === id);
+        if (index !== -1) {
+          const updatedProjects = [...projects];
+          updatedProjects[index] = { ...updatedProjects[index], ...updates, updatedAt: new Date() };
+          set({ projects: updatedProjects });
+        }
       },
       deleteProject: async (id) => {
-        set(state => {
-          state.projects = state.projects.filter((p: Project) => p.id !== id);
-        });
+        const { projects } = get();
+        set({ projects: projects.filter(p => p.id !== id) });
       },
       selectProject: (project) => {
-        set(state => {
-          state.selectedProject = project;
-        });
+        set({ selectedProject: project });
       },
-      createTask: async (task) => {
-        const newTask: ProjectTask = {
-          ...task,
-          id: Date.now().toString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        
-        set(state => {
-          state.tasks.push(newTask);
-        });
-      },
-      updateTask: async (id, updates) => {
-        set(state => {
-          const index = state.tasks.findIndex((t: ProjectTask) => t.id === id);
-          if (index !== -1) {
-            Object.assign(state.tasks[index], updates, { updatedAt: new Date() });
-          }
-        });
-      },
-      deleteTask: async (id) => {
-        set(state => {
-          state.tasks = state.tasks.filter((t: ProjectTask) => t.id !== id);
-        });
-      },
-    }))
+    })
   )
 );
 
 // Store для материалов
 export const useMaterialStore = create<MaterialState>()(
   devtools(
-    immer((set, get) => ({
+    (set, get) => ({
       materials: [],
-      suppliers: [],
-      orders: [],
-      loading: false as boolean,
+      loading: false,
       fetchMaterials: async () => {
-        set(state => { state.loading = true; });
+        set({ loading: true });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
           const mockMaterials: Material[] = [
@@ -506,21 +477,66 @@ export const useMaterialStore = create<MaterialState>()(
               createdAt: new Date(),
               updatedAt: new Date(),
             },
+            {
+              id: '2',
+              name: 'Кирпич облицовочный',
+              description: 'Кирпич керамический лицевой',
+              category: 'Стеновые материалы',
+              subcategory: 'Кирпич',
+              sku: 'BRK-OBL-250',
+              unit: 'шт',
+              currentStock: 5000,
+              reservedStock: 1000,
+              availableStock: 4000,
+              minStock: 500,
+              maxStock: 10000,
+              reorderPoint: 800,
+              unitPrice: 45,
+              avgPrice: 43,
+              lastPurchasePrice: 45,
+              supplier: 'Кирпичный завод №1',
+              location: 'Склад Б',
+              zone: 'Б2',
+              shelf: 'Б2-05',
+              isActive: true,
+              isHazardous: false,
+              weight: 2.5,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Арматура А500С',
+              description: 'Арматура стальная рифленая',
+              category: 'Металлоконструкции',
+              subcategory: 'Арматура',
+              sku: 'ARM-A500-12',
+              unit: 'м',
+              currentStock: 2000,
+              reservedStock: 500,
+              availableStock: 1500,
+              minStock: 200,
+              maxStock: 5000,
+              reorderPoint: 300,
+              unitPrice: 65,
+              avgPrice: 62,
+              lastPurchasePrice: 65,
+              supplier: 'МеталлТорг',
+              location: 'Склад В',
+              zone: 'В1',
+              shelf: 'В1-01',
+              isActive: true,
+              isHazardous: false,
+              weight: 0.888,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
           ];
           
-          set(state => {
-            state.materials = mockMaterials;
-            state.loading = false;
-          });
+          set({ materials: mockMaterials, loading: false });
         } catch (error) {
-          set(state => { state.loading = false; });
+          set({ loading: false });
         }
-      },
-      fetchSuppliers: async () => {
-        // Реализация загрузки поставщиков
-      },
-      fetchOrders: async () => {
-        // Реализация загрузки заказов
       },
       createMaterial: async (material) => {
         const newMaterial: Material = {
@@ -530,45 +546,34 @@ export const useMaterialStore = create<MaterialState>()(
           updatedAt: new Date(),
         };
         
-        set(state => {
-          state.materials.push(newMaterial);
-        });
+        const { materials } = get();
+        set({ materials: [...materials, newMaterial] });
       },
       updateMaterial: async (id, updates) => {
-        set(state => {
-          const index = state.materials.findIndex((m: Material) => m.id === id);
-          if (index !== -1) {
-            Object.assign(state.materials[index], updates, { updatedAt: new Date() });
-          }
-        });
+        const { materials } = get();
+        const index = materials.findIndex(m => m.id === id);
+        if (index !== -1) {
+          const updatedMaterials = [...materials];
+          updatedMaterials[index] = { ...updatedMaterials[index], ...updates, updatedAt: new Date() };
+          set({ materials: updatedMaterials });
+        }
       },
       deleteMaterial: async (id) => {
-        set(state => {
-          state.materials = state.materials.filter((m: Material) => m.id !== id);
-        });
+        const { materials } = get();
+        set({ materials: materials.filter(m => m.id !== id) });
       },
-      createSupplier: async (supplier) => {
-        // Реализация создания поставщика
-      },
-      createOrder: async (order) => {
-        // Реализация создания заказа
-      },
-      updateOrderStatus: async (id, status) => {
-        // Реализация обновления статуса заказа
-      },
-    }))
+    })
   )
 );
 
 // Store для инструментов
 export const useToolStore = create<ToolState>()(
   devtools(
-    immer((set, get) => ({
+    (set, get) => ({
       tools: [],
-      equipment: [],
-      loading: false as boolean,
+      loading: false,
       fetchTools: async () => {
-        set(state => { state.loading = true; });
+        set({ loading: true });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
           const mockTools: Tool[] = [
@@ -596,16 +601,10 @@ export const useToolStore = create<ToolState>()(
             },
           ];
           
-          set(state => {
-            state.tools = mockTools;
-            state.loading = false;
-          });
+          set({ tools: mockTools, loading: false });
         } catch (error) {
-          set(state => { state.loading = false; });
+          set({ loading: false });
         }
-      },
-      fetchEquipment: async () => {
-        // Реализация загрузки оборудования
       },
       createTool: async (tool) => {
         const newTool: Tool = {
@@ -615,62 +614,52 @@ export const useToolStore = create<ToolState>()(
           updatedAt: new Date(),
         };
         
-        set(state => {
-          state.tools.push(newTool);
-        });
+        const { tools } = get();
+        set({ tools: [...tools, newTool] });
       },
       updateTool: async (id, updates) => {
-        set(state => {
-          const index = state.tools.findIndex((t: Tool) => t.id === id);
-          if (index !== -1) {
-            Object.assign(state.tools[index], updates, { updatedAt: new Date() });
-          }
-        });
+        const { tools } = get();
+        const index = tools.findIndex(t => t.id === id);
+        if (index !== -1) {
+          const updatedTools = [...tools];
+          updatedTools[index] = { ...updatedTools[index], ...updates, updatedAt: new Date() };
+          set({ tools: updatedTools });
+        }
       },
       deleteTool: async (id) => {
-        set(state => {
-          state.tools = state.tools.filter((t: Tool) => t.id !== id);
-        });
-      },
-      createEquipment: async (equipment) => {
-        // Реализация создания оборудования
-      },
-      updateEquipment: async (id, updates) => {
-        // Реализация обновления оборудования
+        const { tools } = get();
+        set({ tools: tools.filter(t => t.id !== id) });
       },
       assignTool: async (toolId, userId) => {
-        set(state => {
-          const tool = state.tools.find((t: Tool) => t.id === toolId);
-          if (tool) {
-            tool.assignedTo = userId;
-            tool.status = 'in_use' as any;
-            tool.updatedAt = new Date();
-          }
-        });
+        const { tools } = get();
+        const updatedTools = tools.map(tool => 
+          tool.id === toolId 
+            ? { ...tool, assignedTo: userId, status: 'in_use' as any, updatedAt: new Date() }
+            : tool
+        );
+        set({ tools: updatedTools });
       },
       returnTool: async (toolId) => {
-        set(state => {
-          const tool = state.tools.find((t: Tool) => t.id === toolId);
-          if (tool) {
-            tool.assignedTo = undefined;
-            tool.status = 'available' as any;
-            tool.updatedAt = new Date();
-          }
-        });
+        const { tools } = get();
+        const updatedTools = tools.map(tool => 
+          tool.id === toolId 
+            ? { ...tool, assignedTo: undefined, status: 'available' as any, updatedAt: new Date() }
+            : tool
+        );
+        set({ tools: updatedTools });
       },
-    }))
+    })
   )
 );
 
 // Store для дашборда
 export const useDashboardStore = create<DashboardState>()(
   devtools(
-    immer((set, get) => ({
+    (set, get) => ({
       stats: null,
-      loading: false as boolean,
-      weather: null,
+      loading: false,
       fetchStats: async () => {
-        set(state => { state.loading = true; });
+        set({ loading: true });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
           const mockStats: DashboardStats = {
@@ -703,51 +692,22 @@ export const useDashboardStore = create<DashboardState>()(
             utilizationRate: 85,
           };
           
-          set(state => {
-            state.stats = mockStats;
-            state.loading = false;
-          });
+          set({ stats: mockStats, loading: false });
         } catch (error) {
-          set(state => { state.loading = false; });
+          set({ loading: false });
         }
       },
-      fetchWeather: async (location: string) => {
-        try {
-          const mockWeather: WeatherForecast = {
-            id: '1',
-            location,
-            date: new Date(),
-            temperature: { min: -2, max: 5 },
-            humidity: 65,
-            windSpeed: 8,
-            precipitation: 20,
-            condition: 'cloudy',
-            visibility: 10,
-            uvIndex: 2,
-            workRecommendation: 'good',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-          
-          set(state => {
-            state.weather = mockWeather;
-          });
-        } catch (error) {
-          console.error('Failed to fetch weather:', error);
-        }
-      },
-    }))
+    })
   )
 );
 
 // Store для уведомлений
 export const useNotificationStore = create<NotificationState>()(
   devtools(
-    immer((set, get) => ({
+    (set, get) => ({
       notifications: [],
       unreadCount: 0,
       fetchNotifications: async () => {
-        // Симуляция загрузки уведомлений
         await new Promise(resolve => setTimeout(resolve, 500));
         const mockNotifications: Notification[] = [
           {
@@ -776,37 +736,29 @@ export const useNotificationStore = create<NotificationState>()(
           },
         ];
         
-        set(state => {
-          state.notifications = mockNotifications;
-          state.unreadCount = mockNotifications.filter(n => !n.isRead).length;
+        set({ 
+          notifications: mockNotifications,
+          unreadCount: mockNotifications.filter(n => !n.isRead).length
         });
       },
       markAsRead: (id: string) => {
-        set(state => {
-          const notification = state.notifications.find((n: Notification) => n.id === id);
-          if (notification && !notification.isRead) {
-            notification.isRead = true;
-            state.unreadCount = Math.max(0, state.unreadCount - 1);
-          }
-        });
+        const { notifications } = get();
+        const updatedNotifications = notifications.map(n => 
+          n.id === id ? { ...n, isRead: true } : n
+        );
+        const unreadCount = updatedNotifications.filter(n => !n.isRead).length;
+        set({ notifications: updatedNotifications, unreadCount });
       },
       markAllAsRead: () => {
-        set(state => {
-          state.notifications.forEach((n: Notification) => n.isRead = true);
-          state.unreadCount = 0;
-        });
+        const { notifications } = get();
+        const updatedNotifications = notifications.map(n => ({ ...n, isRead: true }));
+        set({ notifications: updatedNotifications, unreadCount: 0 });
       },
       deleteNotification: (id: string) => {
-        set(state => {
-          const index = state.notifications.findIndex((n: Notification) => n.id === id);
-          if (index !== -1) {
-            const notification = state.notifications[index];
-            if (!notification.isRead) {
-              state.unreadCount = Math.max(0, state.unreadCount - 1);
-            }
-            state.notifications.splice(index, 1);
-          }
-        });
+        const { notifications } = get();
+        const updatedNotifications = notifications.filter(n => n.id !== id);
+        const unreadCount = updatedNotifications.filter(n => !n.isRead).length;
+        set({ notifications: updatedNotifications, unreadCount });
       },
       addNotification: (notification) => {
         const newNotification: Notification = {
@@ -817,12 +769,13 @@ export const useNotificationStore = create<NotificationState>()(
           updatedAt: new Date(),
         };
         
-        set(state => {
-          state.notifications.unshift(newNotification);
-          state.unreadCount += 1;
+        const { notifications, unreadCount } = get();
+        set({ 
+          notifications: [newNotification, ...notifications],
+          unreadCount: unreadCount + 1
         });
       },
-    }))
+    })
   )
 );
 
@@ -830,7 +783,7 @@ export const useNotificationStore = create<NotificationState>()(
 export const useAppStore = create<AppState>()(
   devtools(
     persist(
-      immer((set, get) => ({
+      (set, get) => ({
         settings: {
           companyName: 'СтройТех Про',
           companyLogo: '',
@@ -895,121 +848,27 @@ export const useAppStore = create<AppState>()(
           isPinned: true,
         },
         updateSettings: (updates) => {
-          set(state => {
-            Object.assign(state.settings, updates);
-          });
+          const { settings } = get();
+          set({ settings: { ...settings, ...updates } });
         },
         toggleTheme: () => {
-          set(state => {
-            state.theme = state.theme === 'light' ? 'dark' : 'light';
-            state.settings.theme = state.theme;
+          const { theme, settings } = get();
+          const newTheme = theme === 'light' ? 'dark' : 'light';
+          set({ 
+            theme: newTheme,
+            settings: { ...settings, theme: newTheme }
           });
         },
         toggleSidebar: () => {
-          set(state => {
-            state.sidebar.isOpen = !state.sidebar.isOpen;
-          });
+          const { sidebar } = get();
+          set({ sidebar: { ...sidebar, isOpen: !sidebar.isOpen } });
         },
         pinSidebar: (pinned) => {
-          set(state => {
-            state.sidebar.isPinned = pinned;
-          });
+          const { sidebar } = get();
+          set({ sidebar: { ...sidebar, isPinned: pinned } });
         },
-      })),
+      }),
       { name: 'app-store' }
     )
   )
 );
-
-// Дополнительные stores для других модулей
-export const useHRStore = create<HRState>()(devtools(immer(() => ({
-  employees: [] as User[],
-  timeEntries: [] as TimeEntry[],
-  trainings: [] as Training[],
-  loading: false as boolean,
-  fetchEmployees: async () => {},
-  fetchTimeEntries: async () => {},
-  fetchTrainings: async () => {},
-  createEmployee: async (_employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateEmployee: async (_id: string, _updates: Partial<User>) => {},
-  deleteEmployee: async (_id: string) => {},
-  createTimeEntry: async (_entry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  approveTimeEntry: async (_id: string) => {},
-  rejectTimeEntry: async (_id: string, _reason: string) => {},
-  createTraining: async (_training: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  enrollInTraining: async (_trainingId: string, _userId: string) => {},
-}))));
-
-export const useFinanceStore = create<FinanceState>()(devtools(immer(() => ({
-  invoices: [] as Invoice[],
-  budgets: [] as Budget[],
-  contracts: [] as Contract[],
-  loading: false as boolean,
-  fetchInvoices: async () => {},
-  fetchBudgets: async () => {},
-  fetchContracts: async () => {},
-  createInvoice: async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateInvoiceStatus: async (id: string, status: string) => {},
-  createBudget: async (budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateBudget: async (id: string, updates: Partial<Budget>) => {},
-  createContract: async (contract: Omit<Contract, 'id' | 'createdAt' | 'updatedAt'>) => {},
-}))));
-
-export const useClientStore = create<ClientState>()(devtools(immer(() => ({
-  clients: [] as Client[],
-  loading: false as boolean,
-  fetchClients: async () => {},
-  createClient: async (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateClient: async (id: string, updates: Partial<Client>) => {},
-  deleteClient: async (id: string) => {},
-}))));
-
-export const useSafetyStore = create<SafetyState>()(devtools(immer(() => ({
-  incidents: [] as SafetyIncident[],
-  loading: false as boolean,
-  fetchIncidents: async () => {},
-  createIncident: async (incident: Omit<SafetyIncident, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateIncident: async (id: string, updates: Partial<SafetyIncident>) => {},
-  resolveIncident: async (id: string, resolution: string) => {},
-}))));
-
-export const useQualityStore = create<QualityState>()(devtools(immer(() => ({
-  checks: [] as QualityCheck[],
-  loading: false as boolean,
-  fetchQualityChecks: async () => {},
-  createQualityCheck: async (check: Omit<QualityCheck, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateQualityCheck: async (id: string, updates: Partial<QualityCheck>) => {},
-}))));
-
-export const useCalendarStore = create<CalendarState>()(devtools(immer(() => ({
-  events: [] as CalendarEvent[],
-  loading: false as boolean,
-  fetchEvents: async () => {},
-  createEvent: async (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateEvent: async (id: string, updates: Partial<CalendarEvent>) => {},
-  deleteEvent: async (id: string) => {},
-}))));
-
-export const useReportStore = create<ReportState>()(devtools(immer(() => ({
-  reports: [] as Report[],
-  templates: [] as Template[],
-  loading: false as boolean,
-  fetchReports: async () => {},
-  fetchTemplates: async () => {},
-  generateReport: async (reportId: string, parameters: Record<string, any>) => {},
-  createTemplate: async (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateTemplate: async (id: string, updates: Partial<Template>) => {},
-}))));
-
-export const useIntegrationStore = create<IntegrationState>()(devtools(immer(() => ({
-  integrations: [] as Integration[],
-  backups: [] as Backup[],
-  loading: false as boolean,
-  fetchIntegrations: async () => {},
-  fetchBackups: async () => {},
-  enableIntegration: async (type: string, config: Record<string, any>) => {},
-  disableIntegration: async (id: string) => {},
-  syncIntegration: async (id: string) => {},
-  createBackup: async (name: string, type: 'manual' | 'automatic') => {},
-  restoreBackup: async (id: string) => {},
-}))));

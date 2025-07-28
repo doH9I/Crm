@@ -11,8 +11,14 @@ import {
   Divider,
   Chip,
   Collapse,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
 import { usePermissions, MODULES } from '../../hooks/usePermissions';
+import { useProjectStore, useProjectFilterStore } from '../../store';
 import {
   Dashboard as DashboardIcon,
   Business as ProjectIcon,
@@ -31,6 +37,7 @@ import {
   ExpandMore,
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
+  AllInclusive as AllProjectsIcon,
 } from '@mui/icons-material';
 
 interface NavigationItem {
@@ -44,149 +51,20 @@ interface NavigationItem {
   permission?: string; // Какой модуль нужен для доступа
 }
 
-const navigationItems: NavigationItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Главная панель',
-    path: '/dashboard',
-    icon: <DashboardIcon />,
-    permission: MODULES.DASHBOARD,
-  },
-  {
-    id: 'projects',
-    label: 'Проекты',
-    path: '/projects',
-    icon: <ProjectIcon />,
-    badge: 8,
-    badgeColor: 'primary',
-    permission: MODULES.PROJECTS,
-    children: [
-      {
-        id: 'active-projects',
-        label: 'Активные проекты',
-        path: '/projects?status=active',
-        icon: <TrendingUpIcon />,
-        badge: 5,
-        badgeColor: 'success',
-        permission: MODULES.PROJECTS,
-      },
-      {
-        id: 'planning-projects',
-        label: 'В планировании',
-        path: '/projects?status=planning',
-        icon: <FolderIcon />,
-        badge: 3,
-        badgeColor: 'warning',
-        permission: MODULES.PROJECTS,
-      },
-    ],
-  },
-  {
-    id: 'estimates',
-    label: 'Сметы',
-    path: '/estimates',
-    icon: <EstimateIcon />,
-    badge: 12,
-    badgeColor: 'info',
-    permission: MODULES.ESTIMATES,
-  },
-  {
-    id: 'warehouse',
-    label: 'Склад',
-    path: '#',
-    icon: <MaterialIcon />,
-    children: [
-      {
-        id: 'materials',
-        label: 'Материалы',
-        path: '/materials',
-        icon: <MaterialIcon />,
-        badge: 156,
-        badgeColor: 'primary',
-        permission: MODULES.MATERIALS,
-      },
-      {
-        id: 'tools',
-        label: 'Инструменты',
-        path: '/tools',
-        icon: <ToolIcon />,
-        badge: '!',
-        badgeColor: 'warning',
-        permission: MODULES.TOOLS,
-      },
-    ],
-  },
-  {
-    id: 'employees',
-    label: 'Сотрудники',
-    path: '/employees',
-    icon: <EmployeeIcon />,
-    badge: 24,
-    badgeColor: 'success',
-    permission: MODULES.EMPLOYEES,
-  },
-  {
-    id: 'suppliers',
-    label: 'Поставщики',
-    path: '/suppliers',
-    icon: <SupplierIcon />,
-    badge: 8,
-    badgeColor: 'info',
-    permission: MODULES.MATERIALS,
-  },
-  {
-    id: 'clients',
-    label: 'Заказчики',
-    path: '/clients',
-    icon: <ClientIcon />,
-    badge: 15,
-    badgeColor: 'primary',
-    permission: MODULES.PROJECTS,
-  },
-  {
-    id: 'contractors',
-    label: 'Подрядчики',
-    path: '/contractors',
-    icon: <BusinessIcon />,
-    badge: 8,
-    badgeColor: 'secondary',
-    permission: MODULES.PROJECTS,
-  },
-  {
-    id: 'finances',
-    label: 'Финансы',
-    path: '/finances',
-    icon: <FinanceIcon />,
-    permission: MODULES.FINANCES,
-  },
-  {
-    id: 'calendar',
-    label: 'Календарь',
-    path: '/calendar',
-    icon: <CalendarIcon />,
-    permission: MODULES.CALENDAR,
-  },
-  {
-    id: 'reports',
-    label: 'Отчеты',
-    path: '/reports',
-    icon: <ReportIcon />,
-    permission: MODULES.REPORTS,
-  },
-  {
-    id: 'settings',
-    label: 'Настройки',
-    path: '/settings',
-    icon: <SettingsIcon />,
-    permission: MODULES.SETTINGS,
-  },
-];
-
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { canAccess, isAdmin, user } = usePermissions();
   const [openSections, setOpenSections] = React.useState<string[]>(['projects', 'warehouse']);
+  
+  // Стор проектов и фильтрации
+  const { projects, fetchProjects } = useProjectStore();
+  const { selectedProjectId, setSelectedProject, getProjectById } = useProjectFilterStore();
+  
+  // Загружаем проекты при монтировании компонента
+  React.useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleNavigation = (path: string) => {
     if (path !== '#') {
@@ -201,6 +79,156 @@ const Sidebar: React.FC = () => {
         : [...prev, sectionId]
     );
   };
+
+  const handleProjectChange = (event: SelectChangeEvent<string>) => {
+    const projectId = event.target.value === 'all' ? null : event.target.value;
+    setSelectedProject(projectId);
+  };
+
+  // Получаем информацию о выбранном проекте
+  const selectedProject = selectedProjectId ? getProjectById(selectedProjectId) : null;
+  
+  // Фильтруем проекты для счетчиков
+  const activeProjectsCount = projects.filter(p => p.status === 'in_progress').length;
+  const planningProjectsCount = projects.filter(p => p.status === 'planning').length;
+
+  const navigationItems: NavigationItem[] = [
+    {
+      id: 'dashboard',
+      label: 'Главная панель',
+      path: '/dashboard',
+      icon: <DashboardIcon />,
+      permission: MODULES.DASHBOARD,
+    },
+    {
+      id: 'projects',
+      label: 'Проекты',
+      path: '/projects',
+      icon: <ProjectIcon />,
+      badge: projects.length,
+      badgeColor: 'primary',
+      permission: MODULES.PROJECTS,
+      children: [
+        {
+          id: 'active-projects',
+          label: 'Активные проекты',
+          path: '/projects?status=active',
+          icon: <TrendingUpIcon />,
+          badge: activeProjectsCount,
+          badgeColor: 'success',
+          permission: MODULES.PROJECTS,
+        },
+        {
+          id: 'planning-projects',
+          label: 'В планировании',
+          path: '/projects?status=planning',
+          icon: <FolderIcon />,
+          badge: planningProjectsCount,
+          badgeColor: 'warning',
+          permission: MODULES.PROJECTS,
+        },
+      ],
+    },
+    {
+      id: 'estimates',
+      label: 'Сметы',
+      path: '/estimates',
+      icon: <EstimateIcon />,
+      badge: 12,
+      badgeColor: 'info',
+      permission: MODULES.ESTIMATES,
+    },
+    {
+      id: 'warehouse',
+      label: 'Склад',
+      path: '#',
+      icon: <MaterialIcon />,
+      children: [
+        {
+          id: 'materials',
+          label: 'Материалы',
+          path: '/materials',
+          icon: <MaterialIcon />,
+          badge: 156,
+          badgeColor: 'primary',
+          permission: MODULES.MATERIALS,
+        },
+        {
+          id: 'tools',
+          label: 'Инструменты',
+          path: '/tools',
+          icon: <ToolIcon />,
+          badge: '!',
+          badgeColor: 'warning',
+          permission: MODULES.TOOLS,
+        },
+      ],
+    },
+    {
+      id: 'employees',
+      label: 'Сотрудники',
+      path: '/employees',
+      icon: <EmployeeIcon />,
+      badge: 24,
+      badgeColor: 'success',
+      permission: MODULES.EMPLOYEES,
+    },
+    {
+      id: 'suppliers',
+      label: 'Поставщики',
+      path: '/suppliers',
+      icon: <SupplierIcon />,
+      badge: 8,
+      badgeColor: 'info',
+      permission: MODULES.MATERIALS,
+    },
+    {
+      id: 'clients',
+      label: 'Заказчики',
+      path: '/clients',
+      icon: <ClientIcon />,
+      badge: 15,
+      badgeColor: 'primary',
+      permission: MODULES.PROJECTS,
+    },
+    {
+      id: 'contractors',
+      label: 'Подрядчики',
+      path: '/contractors',
+      icon: <BusinessIcon />,
+      badge: 8,
+      badgeColor: 'secondary',
+      permission: MODULES.PROJECTS,
+    },
+    {
+      id: 'finances',
+      label: 'Финансы',
+      path: '/finances',
+      icon: <FinanceIcon />,
+      permission: MODULES.FINANCES,
+    },
+    {
+      id: 'calendar',
+      label: 'Календарь',
+      path: '/calendar',
+      icon: <CalendarIcon />,
+      permission: MODULES.CALENDAR,
+    },
+    {
+      id: 'reports',
+      label: 'Отчеты',
+      path: '/reports',
+      icon: <ReportIcon />,
+      permission: MODULES.REPORTS,
+    },
+    {
+      id: 'settings',
+      label: 'Настройки',
+      path: '/settings',
+      icon: <SettingsIcon />,
+      permission: MODULES.SETTINGS,
+    },
+  ];
 
   const isActiveItem = (path: string) => {
     if (path === '#') return false;
@@ -354,6 +382,54 @@ const Sidebar: React.FC = () => {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Project Selector */}
+      <Box sx={{ p: 2, mx: 2, my: 1 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Выбор проекта</InputLabel>
+          <Select
+            value={selectedProjectId || 'all'}
+            label="Выбор проекта"
+            onChange={handleProjectChange}
+            sx={{
+              '& .MuiSelect-select': {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              },
+            }}
+          >
+            <MenuItem value="all">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AllProjectsIcon fontSize="small" />
+                Все проекты
+              </Box>
+            </MenuItem>
+            {projects.map((project) => (
+              <MenuItem key={project.id} value={project.id}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ProjectIcon fontSize="small" />
+                  {project.name}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        
+        {selectedProject && (
+          <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
+            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
+              ВЫБРАННЫЙ ПРОЕКТ
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
+              {selectedProject.name}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Прогресс: {selectedProject.progress}%
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
       {/* Quick Stats */}
       <Box sx={{ p: 2, mx: 2, my: 1 }}>
         <Box
@@ -370,7 +446,7 @@ const Sidebar: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
             <Box textAlign="center">
               <Typography variant="h6" color="success.main" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                8
+                {selectedProjectId ? 1 : projects.length}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Проекты

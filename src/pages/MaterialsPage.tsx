@@ -62,7 +62,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format as formatDate } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useMaterialStore, useAuthStore } from '../store';
+import { useMaterialStore, useAuthStore, useProjectFilterStore } from '../store';
 import { Material, Supplier } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -90,6 +90,7 @@ function TabPanel(props: TabPanelProps) {
 const MaterialsPage: React.FC = () => {
   const { materials, suppliers, orders, loading, fetchMaterials, fetchSuppliers, fetchOrders, createMaterial, updateMaterial, deleteMaterial, createSupplier, createOrder } = useMaterialStore();
   const { user } = useAuthStore();
+  const { selectedProjectId } = useProjectFilterStore();
   
   const [tabValue, setTabValue] = useState(0);
   const [openMaterialDialog, setOpenMaterialDialog] = useState(false);
@@ -248,9 +249,16 @@ const MaterialsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление складом
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            {selectedProjectId ? 'Склад выбранного проекта' : 'Управление складом'}
+          </Typography>
+          {selectedProjectId && (
+            <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
+              Показаны материалы только для выбранного проекта
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"

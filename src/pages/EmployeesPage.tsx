@@ -43,7 +43,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useHRStore, useAuthStore } from '../store';
+import { useAuthStore } from '../store';
 import { User, UserRole } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -64,7 +64,13 @@ interface EmployeeFormData {
 }
 
 const EmployeesPage: React.FC = () => {
-  const { employees, loading, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useHRStore();
+  // Заглушка для HR функций - в упрощенной версии
+  const employees: User[] = [];
+  const loading = false;
+  const fetchEmployees = async () => {};
+  const createEmployee = async (employee: any) => {};
+  const updateEmployee = async (id: string, updates: any) => {};
+  const deleteEmployee = async (id: string) => {};
   const { user } = useAuthStore();
   
   const [openDialog, setOpenDialog] = useState(false);
