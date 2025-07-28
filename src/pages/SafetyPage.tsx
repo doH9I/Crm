@@ -37,6 +37,7 @@ import {
   Divider,
   FormControlLabel,
   Checkbox,
+  LinearProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -55,12 +56,16 @@ import {
   Build as EquipmentIcon,
   Nature as EnvironmentalIcon,
   Person as PersonIcon,
+  Book as BookIcon,
+  PlayCircle as PlayCircleIcon,
+  EmojiEvents as EmojiEventsIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { SafetyIncident } from '../types';
+import { SafetyIncident, Training, Document } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -156,6 +161,160 @@ const mockIncidents: SafetyIncident[] = [
   },
 ];
 
+// Моковые данные для обучения
+const mockTrainings: Training[] = [
+  {
+    id: '1',
+    name: 'Основы техники безопасности на стройплощадке',
+    type: 'safety',
+    description: 'Базовый курс по технике безопасности для всех работников строительной площадки',
+    duration: 8,
+    instructor: 'Иванов А.П.',
+    location: 'Конференц-зал, офис',
+    isOnline: false,
+    maxParticipants: 20,
+    startDate: new Date('2024-02-10'),
+    endDate: new Date('2024-02-10'),
+    status: 'completed',
+    materials: ['Презентация', 'Видеоматериалы', 'Тестовые задания'],
+    participants: [
+      { userId: '1', status: 'completed', score: 95, certificateUrl: '/certificates/cert1.pdf', completedAt: new Date('2024-02-10') },
+      { userId: '2', status: 'completed', score: 88, certificateUrl: '/certificates/cert2.pdf', completedAt: new Date('2024-02-10') },
+      { userId: '3', status: 'completed', score: 92, certificateUrl: '/certificates/cert3.pdf', completedAt: new Date('2024-02-10') },
+    ],
+    cost: 15000,
+    isRequired: true,
+    certificate: true,
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-02-10'),
+  },
+  {
+    id: '2',
+    name: 'Работа на высоте',
+    type: 'safety',
+    description: 'Специализированный курс для работников, выполняющих работы на высоте',
+    duration: 12,
+    instructor: 'Петров В.И.',
+    location: 'Учебный полигон',
+    isOnline: false,
+    maxParticipants: 15,
+    startDate: new Date('2024-02-15'),
+    endDate: new Date('2024-02-16'),
+    status: 'ongoing',
+    materials: ['Практические занятия', 'Проверка оборудования', 'Экзамен'],
+    participants: [
+      { userId: '4', status: 'enrolled' },
+      { userId: '5', status: 'enrolled' },
+      { userId: '6', status: 'enrolled' },
+    ],
+    cost: 25000,
+    isRequired: true,
+    certificate: true,
+    createdAt: new Date('2024-01-20'),
+    updatedAt: new Date('2024-02-15'),
+  },
+  {
+    id: '3',
+    name: 'Пожарная безопасность',
+    type: 'safety',
+    description: 'Обучение мерам пожарной безопасности и действиям при пожаре',
+    duration: 4,
+    instructor: 'Сидоров М.К.',
+    location: '',
+    isOnline: true,
+    maxParticipants: 50,
+    startDate: new Date('2024-02-20'),
+    endDate: new Date('2024-02-20'),
+    status: 'planned',
+    materials: ['Онлайн-курс', 'Тестирование'],
+    participants: [],
+    cost: 8000,
+    isRequired: true,
+    certificate: true,
+    createdAt: new Date('2024-01-25'),
+    updatedAt: new Date('2024-01-25'),
+  },
+];
+
+// Моковые данные для документов ТБ
+const mockSafetyDocuments: Document[] = [
+  {
+    id: '1',
+    name: 'Инструкция по технике безопасности при работе на высоте',
+    type: 'other',
+    category: 'instruction',
+    description: 'Подробная инструкция по безопасному выполнению работ на высоте',
+    fileUrl: '/documents/safety/work_at_height.pdf',
+    fileName: 'work_at_height_instruction.pdf',
+    fileSize: 2456789,
+    mimeType: 'application/pdf',
+    uploadedBy: 'admin',
+    version: 3,
+    isLatest: true,
+    tags: ['высота', 'безопасность', 'инструкция'],
+    expiryDate: new Date('2024-12-31'),
+    accessLevel: 'internal',
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15'),
+  },
+  {
+    id: '2',
+    name: 'Сертификат соответствия СИЗ',
+    type: 'certificate',
+    category: 'standard',
+    description: 'Сертификат на средства индивидуальной защиты',
+    fileUrl: '/documents/certificates/siz_cert.pdf',
+    fileName: 'siz_certificate_2024.pdf',
+    fileSize: 1234567,
+    mimeType: 'application/pdf',
+    uploadedBy: 'admin',
+    version: 1,
+    isLatest: true,
+    tags: ['СИЗ', 'сертификат', 'безопасность'],
+    expiryDate: new Date('2025-06-30'),
+    accessLevel: 'public',
+    createdAt: new Date('2024-01-10'),
+    updatedAt: new Date('2024-01-10'),
+  },
+  {
+    id: '3',
+    name: 'Политика безопасности компании',
+    type: 'other',
+    category: 'policy',
+    description: 'Основные принципы и политика безопасности',
+    fileUrl: '/documents/policies/safety_policy.pdf',
+    fileName: 'company_safety_policy_v2.pdf',
+    fileSize: 987654,
+    mimeType: 'application/pdf',
+    uploadedBy: 'admin',
+    version: 2,
+    isLatest: true,
+    tags: ['политика', 'безопасность', 'компания'],
+    accessLevel: 'internal',
+    createdAt: new Date('2024-01-05'),
+    updatedAt: new Date('2024-01-20'),
+  },
+  {
+    id: '4',
+    name: 'Разрешение на огневые работы',
+    type: 'permit',
+    category: 'procedure',
+    description: 'Типовое разрешение на проведение огневых работ',
+    fileUrl: '/documents/permits/fire_work_permit.pdf',
+    fileName: 'fire_work_permit_template.pdf',
+    fileSize: 567890,
+    mimeType: 'application/pdf',
+    uploadedBy: 'admin',
+    version: 1,
+    isLatest: true,
+    tags: ['огневые работы', 'разрешение', 'безопасность'],
+    expiryDate: new Date('2024-03-15'),
+    accessLevel: 'restricted',
+    createdAt: new Date('2024-01-12'),
+    updatedAt: new Date('2024-01-12'),
+  },
+];
+
 const SafetyPage: React.FC = () => {
   const [incidents, setIncidents] = useState<SafetyIncident[]>(mockIncidents);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -165,6 +324,10 @@ const SafetyPage: React.FC = () => {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSeverity, setFilterSeverity] = useState('all');
+  const [trainings, setTrainings] = useState<Training[]>(mockTrainings);
+  const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
+  const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
+  const [safetyDocuments, setSafetyDocuments] = useState<Document[]>(mockSafetyDocuments);
 
   const { control, handleSubmit, reset, watch } = useForm<SafetyIncident>();
 
@@ -374,6 +537,302 @@ const SafetyPage: React.FC = () => {
       const currentYear = new Date().getFullYear();
       return incidentDate.getMonth() === currentMonth && incidentDate.getFullYear() === currentYear;
     }).length,
+  };
+
+  const filteredTrainings = trainings.filter(training => {
+    const matchesSearch = training.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      training.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || training.type === filterType;
+    const matchesStatus = filterStatus === 'all' || training.status === filterStatus;
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const openTrainingDialog = (training?: Training) => {
+    setSelectedTraining(training || null);
+    setTrainingDialogOpen(true);
+  };
+
+  const closeTrainingDialog = () => {
+    setTrainingDialogOpen(false);
+    setSelectedTraining(null);
+  };
+
+  const getTrainingTypeText = (type: string) => {
+    switch (type) {
+      case 'safety': return 'Безопасность';
+      case 'technical': return 'Техническое';
+      case 'compliance': return 'Соответствие';
+      case 'software': return 'ПО';
+      case 'soft_skills': return 'Навыки';
+      default: return type;
+    }
+  };
+
+  const getTrainingStatusText = (status: string) => {
+    switch (status) {
+      case 'planned': return 'Запланировано';
+      case 'ongoing': return 'В процессе';
+      case 'completed': return 'Завершено';
+      case 'cancelled': return 'Отменено';
+      default: return status;
+    }
+  };
+
+  const getTrainingStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+    switch (status) {
+      case 'planned': return 'info';
+      case 'ongoing': return 'primary';
+      case 'completed': return 'success';
+      case 'cancelled': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const getIncidentTypeText = (type: string) => {
+    const typeMap = {
+      injury: 'Травма',
+      near_miss: 'Почти авария',
+      property_damage: 'Повреждение имущества',
+      environmental: 'Экологический',
+      security: 'Безопасность',
+    };
+    return typeMap[type as keyof typeof typeMap] || type;
+  };
+
+  const getIncidentSeverityText = (severity: string) => {
+    const severityMap = {
+      critical: 'Критическая',
+      high: 'Высокая',
+      medium: 'Средняя',
+      low: 'Низкая',
+    };
+    return severityMap[severity as keyof typeof severityMap] || severity;
+  };
+
+  const filteredSafetyDocuments = safetyDocuments.filter(document => {
+    const matchesSearch = document.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      document.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      document.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === 'all' || document.type === filterType;
+    const matchesCategory = filterStatus === 'all' || document.category === filterStatus;
+
+    return matchesSearch && matchesType && matchesCategory;
+  });
+
+  const getDocumentTypeText = (type: string) => {
+    switch (type) {
+      case 'certificate': return 'Сертификат';
+      case 'permit': return 'Разрешение';
+      case 'report': return 'Отчет';
+      case 'drawing': return 'Чертеж';
+      case 'photo': return 'Фото';
+      case 'invoice': return 'Счет';
+      case 'contract': return 'Договор';
+      case 'other': return 'Другое';
+      default: return type;
+    }
+  };
+
+  const renderSafetyStatistics = () => {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    
+    // Статистика по инцидентам
+    const incidentsByType = incidents.reduce((acc: any, incident) => {
+      acc[incident.type] = (acc[incident.type] || 0) + 1;
+      return acc;
+    }, {});
+
+    const incidentsBySeverity = incidents.reduce((acc: any, incident) => {
+      acc[incident.severity] = (acc[incident.severity] || 0) + 1;
+      return acc;
+    }, {});
+
+    const monthlyIncidents = Array.from({ length: 12 }, (_, i) => {
+      const month = i;
+      const count = incidents.filter(incident => {
+        const incidentDate = new Date(incident.date);
+        return incidentDate.getFullYear() === currentYear && incidentDate.getMonth() === month;
+      }).length;
+      return { month: i + 1, count };
+    });
+
+    // Статистика по обучению
+    const totalParticipants = trainings.reduce((acc, training) => acc + training.participants.length, 0);
+    const completedCertificates = trainings.reduce((acc, training) => 
+      acc + training.participants.filter(p => p.status === 'completed').length, 0);
+
+    return (
+      <Box>
+        <Typography variant="h6" sx={{ mb: 3 }}>Статистика и аналитика ТБ</Typography>
+
+        {/* Общая статистика */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom variant="body2">
+                      Инциденты за год
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {incidents.filter(i => new Date(i.date).getFullYear() === currentYear).length}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'error.main', width: 56, height: 56 }}>
+                    <WarningIcon />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom variant="body2">
+                      Дней без инцидентов
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {Math.floor((Date.now() - Math.max(...incidents.map(i => new Date(i.date).getTime()))) / (1000 * 60 * 60 * 24))}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'success.main', width: 56, height: 56 }}>
+                    <CheckCircleIcon />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom variant="body2">
+                      Обученных сотрудников
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {totalParticipants}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'info.main', width: 56, height: 56 }}>
+                    <BookIcon />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography color="text.secondary" gutterBottom variant="body2">
+                      Выдано сертификатов
+                    </Typography>
+                    <Typography variant="h4" component="div">
+                      {completedCertificates}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: 'warning.main', width: 56, height: 56 }}>
+                    <EmojiEventsIcon />
+                  </Avatar>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Диаграммы */}
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2 }}>Инциденты по типам</Typography>
+                <Box sx={{ height: 300 }}>
+                  {Object.keys(incidentsByType).map((type, index) => (
+                    <Box key={type} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2">{getIncidentTypeText(type)}</Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={(incidentsByType[type] / incidents.length) * 100}
+                          sx={{ height: 8, borderRadius: 4 }}
+                        />
+                      </Box>
+                      <Typography variant="body2" sx={{ ml: 2, minWidth: 30 }}>
+                        {incidentsByType[type]}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2 }}>Инциденты по степени тяжести</Typography>
+                <Box sx={{ height: 300 }}>
+                  {Object.keys(incidentsBySeverity).map((severity, index) => (
+                    <Box key={severity} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2">{getIncidentSeverityText(severity)}</Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={(incidentsBySeverity[severity] / incidents.length) * 100}
+                          sx={{ height: 8, borderRadius: 4 }}
+                          color={severity === 'critical' ? 'error' : severity === 'high' ? 'warning' : 'success'}
+                        />
+                      </Box>
+                      <Typography variant="body2" sx={{ ml: 2, minWidth: 30 }}>
+                        {incidentsBySeverity[severity]}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2 }}>Динамика инцидентов по месяцам</Typography>
+                <Box sx={{ height: 300, display: 'flex', alignItems: 'end', gap: 1 }}>
+                  {monthlyIncidents.map((data, index) => (
+                    <Box
+                      key={data.month}
+                      sx={{
+                        flex: 1,
+                        height: `${Math.max(10, (data.count / Math.max(...monthlyIncidents.map(m => m.count))) * 100)}%`,
+                        backgroundColor: 'primary.main',
+                        borderRadius: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'end',
+                        alignItems: 'center',
+                        p: 1,
+                        color: 'white',
+                        position: 'relative'
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ mb: 1 }}>{data.count}</Typography>
+                      <Typography variant="caption" sx={{ position: 'absolute', bottom: -20, color: 'text.primary' }}>
+                        {data.month}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+    );
   };
 
   const renderIncidentsList = () => (
@@ -704,29 +1163,372 @@ const SafetyPage: React.FC = () => {
     </Box>
   );
 
-  const renderSafetyTraining = () => (
-    <Box sx={{ textAlign: 'center', py: 8 }}>
-      <SecurityIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-      <Typography variant="h6" color="text.secondary">
-        Обучение по технике безопасности
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Модуль обучения и сертификации по ТБ будет добавлен в ближайшее время
-      </Typography>
-    </Box>
-  );
+  const renderSafetyTraining = () => {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">Обучение и сертификация</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => openTrainingDialog()}
+          >
+            Создать курс
+          </Button>
+        </Box>
 
-  const renderSafetyDocuments = () => (
-    <Box sx={{ textAlign: 'center', py: 8 }}>
-      <SecurityIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-      <Typography variant="h6" color="text.secondary">
-        Документы по безопасности
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Управление документами по технике безопасности будет добавлено в ближайшее время
-      </Typography>
-    </Box>
-  );
+        {/* Статистика обучения */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {[
+            { label: 'Всего курсов', value: mockTrainings.length, color: 'primary', icon: <BookIcon /> },
+            { label: 'Активных', value: mockTrainings.filter(t => t.status === 'ongoing').length, color: 'success', icon: <PlayCircleIcon /> },
+            { label: 'Завершенных', value: mockTrainings.filter(t => t.status === 'completed').length, color: 'info', icon: <CheckCircleIcon /> },
+            { label: 'Сертификатов выдано', value: mockTrainings.reduce((acc, t) => acc + t.participants.filter(p => p.status === 'completed').length, 0), color: 'warning', icon: <EmojiEventsIcon /> }
+          ].map((stat, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" gutterBottom variant="body2">
+                        {stat.label}
+                      </Typography>
+                      <Typography variant="h5" component="div">
+                        {stat.value}
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: `${stat.color}.main`, width: 56, height: 56 }}>
+                      {stat.icon}
+                    </Avatar>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Фильтры */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Поиск курсов..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Тип</InputLabel>
+                  <Select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    label="Тип"
+                  >
+                    <MenuItem value="all">Все</MenuItem>
+                    <MenuItem value="safety">Безопасность</MenuItem>
+                    <MenuItem value="technical">Техническое</MenuItem>
+                    <MenuItem value="compliance">Соответствие</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Статус</InputLabel>
+                  <Select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    label="Статус"
+                  >
+                    <MenuItem value="all">Все</MenuItem>
+                    <MenuItem value="planned">Запланировано</MenuItem>
+                    <MenuItem value="ongoing">В процессе</MenuItem>
+                    <MenuItem value="completed">Завершено</MenuItem>
+                    <MenuItem value="cancelled">Отменено</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Список курсов */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Название курса</TableCell>
+                <TableCell>Тип</TableCell>
+                <TableCell>Инструктор</TableCell>
+                <TableCell>Дата проведения</TableCell>
+                <TableCell>Участники</TableCell>
+                <TableCell>Статус</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredTrainings.map((training) => (
+                <TableRow key={training.id} hover>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {training.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {training.duration}ч • {training.isOnline ? 'Онлайн' : training.location}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getTrainingTypeText(training.type)}
+                      size="small"
+                      color={training.type === 'safety' ? 'error' : training.type === 'technical' ? 'primary' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>{training.instructor || 'Не назначен'}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {format(new Date(training.startDate), 'dd.MM.yyyy', { locale: ru })}
+                      {training.endDate && training.startDate !== training.endDate && 
+                        ` - ${format(new Date(training.endDate), 'dd.MM.yyyy', { locale: ru })}`
+                      }
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2">
+                        {training.participants.length}
+                        {training.maxParticipants && `/${training.maxParticipants}`}
+                      </Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={training.maxParticipants ? (training.participants.length / training.maxParticipants) * 100 : 100}
+                        sx={{ flex: 1, maxWidth: 100 }}
+                      />
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getTrainingStatusText(training.status)}
+                      size="small"
+                      color={getTrainingStatusColor(training.status)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="Просмотр">
+                      <IconButton size="small" onClick={() => openTrainingDialog(training)}>
+                        <ViewIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Редактировать">
+                      <IconButton size="small" onClick={() => openTrainingDialog(training)}>
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Удалить">
+                      <IconButton size="small" color="error">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    );
+  };
+
+  const renderSafetyDocuments = () => {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">Документы по безопасности</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => console.log('Добавить документ')}
+          >
+            Добавить документ
+          </Button>
+        </Box>
+
+        {/* Категории документов */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {[
+            { label: 'Всего документов', value: mockSafetyDocuments.length, color: 'primary', icon: <BookIcon /> },
+            { label: 'Сертификаты', value: mockSafetyDocuments.filter(d => d.type === 'certificate').length, color: 'success', icon: <EmojiEventsIcon /> },
+            { label: 'Инструкции', value: mockSafetyDocuments.filter(d => d.category === 'instruction').length, color: 'info', icon: <InfoIcon /> },
+            { label: 'Истекают', value: mockSafetyDocuments.filter(d => d.expiryDate && new Date(d.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).length, color: 'warning', icon: <WarningIcon /> }
+          ].map((stat, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" gutterBottom variant="body2">
+                        {stat.label}
+                      </Typography>
+                      <Typography variant="h5" component="div">
+                        {stat.value}
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: `${stat.color}.main`, width: 56, height: 56 }}>
+                      {stat.icon}
+                    </Avatar>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Фильтры */}
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Поиск документов..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Тип</InputLabel>
+                  <Select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    label="Тип"
+                  >
+                    <MenuItem value="all">Все</MenuItem>
+                    <MenuItem value="certificate">Сертификаты</MenuItem>
+                    <MenuItem value="permit">Разрешения</MenuItem>
+                    <MenuItem value="report">Отчеты</MenuItem>
+                    <MenuItem value="other">Прочее</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Категория</InputLabel>
+                  <Select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    label="Категория"
+                  >
+                    <MenuItem value="all">Все</MenuItem>
+                    <MenuItem value="instruction">Инструкции</MenuItem>
+                    <MenuItem value="policy">Политики</MenuItem>
+                    <MenuItem value="procedure">Процедуры</MenuItem>
+                    <MenuItem value="standard">Стандарты</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Список документов */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Название документа</TableCell>
+                <TableCell>Тип</TableCell>
+                <TableCell>Категория</TableCell>
+                <TableCell>Размер</TableCell>
+                <TableCell>Дата добавления</TableCell>
+                <TableCell>Срок действия</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredSafetyDocuments.map((document) => (
+                <TableRow key={document.id} hover>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {document.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {document.fileName}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getDocumentTypeText(document.type)}
+                      size="small"
+                      color={document.type === 'certificate' ? 'success' : document.type === 'permit' ? 'warning' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>{document.category || 'Не указана'}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {(document.fileSize / 1024 / 1024).toFixed(2)} МБ
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {format(new Date(document.createdAt), 'dd.MM.yyyy', { locale: ru })}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {document.expiryDate ? (
+                      <Box>
+                        <Typography variant="body2">
+                          {format(new Date(document.expiryDate), 'dd.MM.yyyy', { locale: ru })}
+                        </Typography>
+                        {new Date(document.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
+                          <Chip label="Истекает" size="small" color="warning" />
+                        )}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Бессрочно
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="Скачать">
+                      <IconButton size="small">
+                        <ViewIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Редактировать">
+                      <IconButton size="small">
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Удалить">
+                      <IconButton size="small" color="error">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    );
+  };
 
   return (
     <Box>
@@ -768,15 +1570,7 @@ const SafetyPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={selectedTab} index={3}>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <SecurityIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Статистика безопасности
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Детальная статистика и аналитика по ТБ будет добавлена в ближайшее время
-            </Typography>
-          </Box>
+          {renderSafetyStatistics()}
         </TabPanel>
       </Card>
 

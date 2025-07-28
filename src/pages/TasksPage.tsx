@@ -35,6 +35,7 @@ import {
   ListItemText,
   ListItemIcon,
   Divider,
+  Stack,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -50,10 +51,23 @@ import {
   Pause as PausedIcon,
   PlayArrow as InProgressIcon,
   AccessTime as PendingIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { 
+  format, 
+  startOfMonth as startOfMonthDate, 
+  endOfMonth as endOfMonthDate, 
+  startOfWeek, 
+  endOfWeek, 
+  addDays, 
+  isSameDay, 
+  isSameMonth, 
+  subMonths, 
+  addMonths 
+} from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ProjectTask, TaskStatus, WorkType } from '../types';
 
@@ -166,6 +180,7 @@ const TasksPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterAssignee, setFilterAssignee] = useState('all');
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   const { control, handleSubmit, reset } = useForm<ProjectTask>();
 
@@ -783,6 +798,155 @@ const TasksPage: React.FC = () => {
     </Box>
   );
 
+  const renderTaskCalendar = () => {
+    const today = calendarDate;
+    const startOfMonth = startOfMonthDate(today);
+    const endOfMonth = endOfMonthDate(today);
+    const startDate = startOfWeek(startOfMonth, { weekStartsOn: 1 });
+    const endDate = endOfWeek(endOfMonth, { weekStartsOn: 1 });
+    
+    const days = [];
+    let day = startDate;
+    
+    while (day <= endDate) {
+      days.push(day);
+      day = addDays(day, 1);
+    }
+
+    const getTasksForDay = (date: Date) => {
+      return filteredTasks.filter(task => 
+        isSameDay(new Date(task.endDate), date)
+      );
+    };
+
+    const getPriorityColor = (priority: string) => {
+      switch (priority) {
+        case 'high': return '#f44336';
+        case 'medium': return '#ff9800';
+        case 'low': return '#4caf50';
+        default: return '#9e9e9e';
+      }
+    };
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">
+            {format(today, 'LLLL yyyy', { locale: ru })}
+          </Typography>
+          <Box>
+            <IconButton onClick={() => setCalendarDate(subMonths(calendarDate, 1))}>
+              <ChevronLeftIcon />
+            </IconButton>
+            <IconButton onClick={() => setCalendarDate(addMonths(calendarDate, 1))}>
+              <ChevronRightIcon />
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* Заголовки дней недели */}
+        <Grid container spacing={1} sx={{ mb: 1 }}>
+          {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((dayName) => (
+            <Grid item xs key={dayName}>
+              <Box sx={{ textAlign: 'center', p: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                  {dayName}
+                </Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Календарная сетка */}
+        <Grid container spacing={1}>
+          {days.map((day, index) => {
+            const dayTasks = getTasksForDay(day);
+            const isCurrentMonth = isSameMonth(day, today);
+            const isToday = isSameDay(day, new Date());
+            
+            return (
+              <Grid item xs key={index}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    minHeight: 120,
+                    backgroundColor: isCurrentMonth ? 'background.paper' : 'action.hover',
+                    border: isToday ? '2px solid #2196f3' : '1px solid #e0e0e0',
+                    cursor: 'pointer',
+                    '&:hover': { boxShadow: 1 }
+                  }}
+                  onClick={() => {
+                    console.log('Создать задачу на', format(day, 'dd.MM.yyyy'));
+                  }}
+                >
+                  <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        fontWeight: isToday ? 600 : 400,
+                        color: isCurrentMonth ? 'text.primary' : 'text.disabled'
+                      }}
+                    >
+                      {format(day, 'd')}
+                    </Typography>
+                    
+                    <Box sx={{ mt: 0.5 }}>
+                      {dayTasks.slice(0, 3).map((task, taskIndex) => (
+                        <Box
+                          key={task.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openTaskDialog(task);
+                          }}
+                          sx={{
+                            backgroundColor: getPriorityColor(task.priority),
+                            color: 'white',
+                            borderRadius: 1,
+                            p: 0.5,
+                            mb: 0.5,
+                            fontSize: '0.65rem',
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            '&:hover': { opacity: 0.8 }
+                          }}
+                        >
+                          {task.name}
+                        </Box>
+                      ))}
+                      {dayTasks.length > 3 && (
+                        <Typography variant="caption" color="text.secondary">
+                          +{dayTasks.length - 3} еще
+                        </Typography>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+
+        {/* Легенда */}
+        <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#f44336', borderRadius: 1 }} />
+            <Typography variant="caption">Высокий приоритет</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#ff9800', borderRadius: 1 }} />
+            <Typography variant="caption">Средний приоритет</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 12, height: 12, backgroundColor: '#4caf50', borderRadius: 1 }} />
+            <Typography variant="caption">Низкий приоритет</Typography>
+          </Box>
+        </Box>
+      </Box>
+    );
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -817,15 +981,7 @@ const TasksPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <ScheduleIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Календарь задач
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Календарное представление задач будет добавлено в ближайшее время
-            </Typography>
-          </Box>
+          {renderTaskCalendar()}
         </TabPanel>
       </Card>
 

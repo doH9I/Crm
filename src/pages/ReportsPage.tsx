@@ -26,7 +26,8 @@ import {
   Button,
   Tabs,
   Tab,
-  LinearProgress
+  LinearProgress,
+  Avatar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -43,7 +44,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Report } from '../types';
+import { Report, Template } from '../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -172,6 +173,64 @@ const mockReports: Report[] = [
   }
 ];
 
+// Моковые данные шаблонов
+const mockTemplates: Template[] = [
+  {
+    id: '1',
+    name: 'Еженедельный отчет по проектам',
+    type: 'project',
+    category: 'weekly',
+    description: 'Шаблон для еженедельной отчетности по ходу выполнения проектов',
+    content: {
+      sections: ['overview', 'progress', 'issues', 'next_week'],
+      metrics: ['completion_percentage', 'budget_spent', 'tasks_completed'],
+      charts: ['progress_timeline', 'budget_chart']
+    },
+    isDefault: true,
+    isActive: true,
+    createdBy: 'admin',
+    usageCount: 24,
+    createdAt: new Date('2024-01-10'),
+    updatedAt: new Date('2024-01-15'),
+  },
+  {
+    id: '2',
+    name: 'Финансовый отчет',
+    type: 'report',
+    category: 'financial',
+    description: 'Шаблон для ежемесячных финансовых отчетов',
+    content: {
+      sections: ['income', 'expenses', 'profit_loss', 'cash_flow'],
+      metrics: ['total_revenue', 'total_expenses', 'net_profit', 'profit_margin'],
+      charts: ['revenue_chart', 'expense_breakdown', 'profit_trend']
+    },
+    isDefault: false,
+    isActive: true,
+    createdBy: 'admin',
+    usageCount: 12,
+    createdAt: new Date('2024-01-05'),
+    updatedAt: new Date('2024-01-20'),
+  },
+  {
+    id: '3',
+    name: 'Отчет по безопасности',
+    type: 'report',
+    category: 'safety',
+    description: 'Шаблон для отчетности по технике безопасности',
+    content: {
+      sections: ['incidents', 'training', 'equipment', 'compliance'],
+      metrics: ['incident_count', 'training_hours', 'safety_score'],
+      charts: ['incident_trend', 'training_progress']
+    },
+    isDefault: false,
+    isActive: true,
+    createdBy: 'admin',
+    usageCount: 8,
+    createdAt: new Date('2024-01-12'),
+    updatedAt: new Date('2024-01-18'),
+  },
+];
+
 const ReportsPage: React.FC = () => {
   // State
   const [selectedTab, setSelectedTab] = useState(0);
@@ -181,6 +240,7 @@ const ReportsPage: React.FC = () => {
   const [selectedReportType, setSelectedReportType] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Template[]>(mockTemplates);
 
   const { control, handleSubmit, reset, formState, watch } = useForm<Report>();
 
@@ -696,6 +756,172 @@ const ReportsPage: React.FC = () => {
     );
   };
 
+  const renderTemplatesTab = () => {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">Шаблоны отчетов</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => console.log('Создать шаблон')}
+          >
+            Создать шаблон
+          </Button>
+        </Box>
+
+        <Grid container spacing={3}>
+          {templates.map((template) => (
+            <Grid item xs={12} md={6} lg={4} key={template.id}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {template.name}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {template.isDefault && (
+                        <Chip label="По умолчанию" size="small" color="primary" />
+                      )}
+                      {template.isActive && (
+                        <Chip label="Активный" size="small" color="success" />
+                      )}
+                    </Box>
+                  </Box>
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {template.description}
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Chip
+                      label={getTemplateTypeText(template.type)}
+                      size="small"
+                      color={template.type === 'project' ? 'primary' : 'default'}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      Использований: {template.usageCount}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                    Создан: {format(new Date(template.createdAt), 'dd.MM.yyyy', { locale: ru })}
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ViewIcon />}
+                      onClick={() => console.log('Просмотр шаблона', template.id)}
+                    >
+                      Просмотр
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ReportIcon />}
+                      onClick={() => console.log('Использовать шаблон', template.id)}
+                    >
+                      Использовать
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  };
+
+  const renderAnalyticsTab = () => {
+    const analyticsData = [
+      { title: 'Финансовая аналитика', description: 'Детальный анализ доходов и расходов', icon: <BusinessIcon />, color: 'primary' },
+      { title: 'Производительность проектов', description: 'Анализ эффективности выполнения проектов', icon: <TrendingUpIcon />, color: 'success' },
+      { title: 'Аналитика ресурсов', description: 'Использование материалов и инструментов', icon: <ChartIcon />, color: 'info' },
+      { title: 'Прогнозирование', description: 'Прогнозы на основе исторических данных', icon: <ReportIcon />, color: 'warning' },
+    ];
+
+    return (
+      <Box>
+        <Typography variant="h6" sx={{ mb: 3 }}>Расширенная аналитика</Typography>
+        
+        <Grid container spacing={3}>
+          {analyticsData.map((item, index) => (
+            <Grid item xs={12} md={6} key={index}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: `${item.color}.main`, mr: 2 }}>
+                      {item.icon}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {item.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ChartIcon />}
+                    onClick={() => console.log('Открыть аналитику', item.title)}
+                  >
+                    Открыть
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Заглушка для будущих графиков */}
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Интерактивные дашборды
+            </Typography>
+            <Box sx={{ 
+              height: 300, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              backgroundColor: 'action.hover',
+              borderRadius: 1,
+              border: '2px dashed',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <ChartIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">
+                  Интерактивные графики
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Здесь будут расположены интерактивные диаграммы и графики
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  };
+
+  const getTemplateTypeText = (type: string) => {
+    switch (type) {
+      case 'project': return 'Проектный';
+      case 'task': return 'Задачи';
+      case 'estimate': return 'Смета';
+      case 'contract': return 'Контракт';
+      case 'report': return 'Отчет';
+      case 'email': return 'Email';
+      default: return type;
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -740,27 +966,11 @@ const ReportsPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <ReportIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Шаблоны отчетов
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Функция управления шаблонами будет добавлена в ближайшее время
-            </Typography>
-          </Box>
+          {renderTemplatesTab()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={3}>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <ChartIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Расширенная аналитика
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Интерактивные графики и детальная аналитика будут добавлены в ближайшее время
-            </Typography>
-          </Box>
+          {renderAnalyticsTab()}
         </TabPanel>
       </Card>
 

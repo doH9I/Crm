@@ -67,7 +67,8 @@ import {
   Invoice, 
   Budget, 
   Transaction, 
-  TransactionType 
+  TransactionType,
+  Contract 
 } from '../types';
 
 interface TabPanelProps {
@@ -180,16 +181,118 @@ const mockTransactions: Transaction[] = [
   }
 ];
 
+// Моковые данные контрактов
+const mockContracts: Contract[] = [
+  {
+    id: '1',
+    contractNumber: 'ДОГ-2024/001',
+    clientId: 'client1',
+    projectId: 'project1',
+    type: 'main',
+    startDate: new Date('2024-01-15'),
+    endDate: new Date('2024-06-15'),
+    totalAmount: 5000000,
+    paymentTerms: '50% предоплата, 50% по завершении работ',
+    status: 'active',
+    documentUrl: '/contracts/contract_001.pdf',
+    milestones: [
+      {
+        id: 'm1',
+        name: 'Подготовительные работы',
+        description: 'Подготовка строительной площадки',
+        dueDate: new Date('2024-02-15'),
+        isCompleted: true,
+        completedDate: new Date('2024-02-14'),
+        paymentAmount: 500000,
+        isPaid: true,
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date('2024-02-14'),
+      },
+      {
+        id: 'm2',
+        name: 'Фундаментные работы',
+        description: 'Устройство монолитного фундамента',
+        dueDate: new Date('2024-03-30'),
+        isCompleted: true,
+        completedDate: new Date('2024-03-28'),
+        paymentAmount: 1500000,
+        isPaid: true,
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date('2024-03-28'),
+      },
+      {
+        id: 'm3',
+        name: 'Возведение стен',
+        description: 'Кладка стен и установка перекрытий',
+        dueDate: new Date('2024-05-15'),
+        isCompleted: false,
+        paymentAmount: 2000000,
+        isPaid: false,
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date('2024-01-15'),
+      },
+    ],
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-03-28'),
+  },
+  {
+    id: '2',
+    contractNumber: 'ДОГ-2024/002',
+    clientId: 'client2',
+    type: 'subcontract',
+    startDate: new Date('2024-02-01'),
+    endDate: new Date('2024-04-30'),
+    totalAmount: 800000,
+    paymentTerms: 'Ежемесячные платежи по факту выполнения',
+    status: 'active',
+    documentUrl: '/contracts/contract_002.pdf',
+    milestones: [
+      {
+        id: 'm4',
+        name: 'Электромонтажные работы',
+        description: 'Монтаж электропроводки',
+        dueDate: new Date('2024-03-15'),
+        isCompleted: true,
+        completedDate: new Date('2024-03-12'),
+        paymentAmount: 400000,
+        isPaid: true,
+        createdAt: new Date('2024-02-01'),
+        updatedAt: new Date('2024-03-12'),
+      },
+    ],
+    createdAt: new Date('2024-02-01'),
+    updatedAt: new Date('2024-03-12'),
+  },
+  {
+    id: '3',
+    contractNumber: 'ДОГ-2024/003',
+    clientId: 'client3',
+    type: 'supply',
+    startDate: new Date('2024-01-10'),
+    endDate: new Date('2024-12-31'),
+    totalAmount: 2500000,
+    paymentTerms: 'Оплата по факту поставки материалов',
+    status: 'signed',
+    documentUrl: '/contracts/contract_003.pdf',
+    milestones: [],
+    createdAt: new Date('2024-01-10'),
+    updatedAt: new Date('2024-01-10'),
+  },
+];
+
 const FinancesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [contracts, setContracts] = useState<Contract[]>(mockContracts);
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false);
   const [openBudgetDialog, setOpenBudgetDialog] = useState(false);
   const [openTransactionDialog, setOpenTransactionDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 
   const { control: invoiceControl, handleSubmit: handleInvoiceSubmit, reset: resetInvoice } = useForm<Invoice>();
   const { control: budgetControl, handleSubmit: handleBudgetSubmit, reset: resetBudget } = useForm<Budget>();
@@ -322,6 +425,184 @@ const FinancesPage: React.FC = () => {
       .reduce((sum, t) => sum + t.amount, 0),
     pendingInvoices: invoices.filter(inv => inv.status === 'sent' || inv.status === 'viewed').length,
     overdueInvoices: invoices.filter(inv => inv.status === 'overdue').length,
+  };
+
+  const renderContractsTab = () => {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">Управление контрактами</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => openContractDialog()}
+          >
+            Создать контракт
+          </Button>
+        </Box>
+
+        {/* Статистика контрактов */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {[
+            { label: 'Всего контрактов', value: contracts.length, color: 'primary', icon: <ContractIcon /> },
+            { label: 'Активных', value: contracts.filter(c => c.status === 'active').length, color: 'success', icon: <SendIcon /> },
+            { label: 'На подписании', value: contracts.filter(c => c.status === 'signed').length, color: 'warning', icon: <PendingIcon /> },
+            { label: 'Общая сумма', value: `${(contracts.reduce((sum, c) => sum + c.totalAmount, 0) / 1000000).toFixed(1)}М`, color: 'info', icon: <MoneyIcon /> }
+          ].map((stat, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" gutterBottom variant="body2">
+                        {stat.label}
+                      </Typography>
+                      <Typography variant="h5" component="div">
+                        {stat.value}
+                      </Typography>
+                    </Box>
+                    <Avatar sx={{ bgcolor: `${stat.color}.main`, width: 56, height: 56 }}>
+                      {stat.icon}
+                    </Avatar>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Список контрактов */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Номер контракта</TableCell>
+                <TableCell>Клиент</TableCell>
+                <TableCell>Тип</TableCell>
+                <TableCell>Сумма</TableCell>
+                <TableCell>Срок действия</TableCell>
+                <TableCell>Прогресс</TableCell>
+                <TableCell>Статус</TableCell>
+                <TableCell>Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {contracts.map((contract) => {
+                const completedMilestones = contract.milestones?.filter(m => m.isCompleted).length || 0;
+                const totalMilestones = contract.milestones?.length || 0;
+                const progress = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0;
+
+                return (
+                  <TableRow key={contract.id} hover>
+                    <TableCell>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {contract.contractNumber}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        Клиент {contract.clientId}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getContractTypeText(contract.type)}
+                        size="small"
+                        color={contract.type === 'main' ? 'primary' : contract.type === 'subcontract' ? 'secondary' : 'default'}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {(contract.totalAmount / 1000).toFixed(0)} тыс. ₽
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {format(new Date(contract.startDate), 'dd.MM.yyyy', { locale: ru })} - 
+                        {format(new Date(contract.endDate), 'dd.MM.yyyy', { locale: ru })}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={progress}
+                          sx={{ flex: 1, minWidth: 60 }}
+                        />
+                        <Typography variant="caption">
+                          {progress.toFixed(0)}%
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getContractStatusText(contract.status)}
+                        size="small"
+                        color={getContractStatusColor(contract.status)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Просмотр">
+                        <IconButton size="small" onClick={() => openContractDialog(contract)}>
+                          <ViewIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Редактировать">
+                        <IconButton size="small" onClick={() => openContractDialog(contract)}>
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Удалить">
+                        <IconButton size="small" color="error">
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    );
+  };
+
+  const openContractDialog = (contract?: Contract) => {
+    setSelectedContract(contract || null);
+    setContractDialogOpen(true);
+  };
+
+  const getContractTypeText = (type: string) => {
+    switch (type) {
+      case 'main': return 'Основной';
+      case 'subcontract': return 'Субподряд';
+      case 'supply': return 'Поставка';
+      case 'service': return 'Услуги';
+      default: return type;
+    }
+  };
+
+  const getContractStatusText = (status: string) => {
+    switch (status) {
+      case 'draft': return 'Черновик';
+      case 'signed': return 'Подписан';
+      case 'active': return 'Активный';
+      case 'completed': return 'Завершен';
+      case 'terminated': return 'Расторгнут';
+      default: return status;
+    }
+  };
+
+  const getContractStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+    switch (status) {
+      case 'draft': return 'default';
+      case 'signed': return 'warning';
+      case 'active': return 'success';
+      case 'completed': return 'info';
+      case 'terminated': return 'error';
+      default: return 'default';
+    }
   };
 
   return (
@@ -822,15 +1103,7 @@ const FinancesPage: React.FC = () => {
 
         {/* Вкладка "Контракты" */}
         <TabPanel value={activeTab} index={3}>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <ContractIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              Управление контрактами
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Функция управления контрактами будет добавлена в ближайшее время
-            </Typography>
-          </Box>
+          {renderContractsTab()}
         </TabPanel>
       </Card>
 
