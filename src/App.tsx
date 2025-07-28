@@ -19,6 +19,9 @@ import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import SuppliersPage from './pages/SuppliersPage';
 import ClientsPage from './pages/ClientsPage';
+import TasksPage from './pages/TasksPage';
+import SafetyPage from './pages/SafetyPage';
+import ReportDetailPage from './pages/ReportDetailPage';
 
 // Добавляем импорт для страницы подрядчиков
 const ContractorsPage = React.lazy(() => import('./pages/ContractorsPage'));
@@ -221,6 +224,36 @@ const App: React.FC = () => {
                 <React.Suspense fallback={<div>Загрузка...</div>}>
                   <ContractorsPage />
                 </React.Suspense>
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+
+          {/* Задачи */}
+          <Route 
+            path="tasks" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.PROJECTS}>
+                <TasksPage />
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+
+          {/* Безопасность */}
+          <Route 
+            path="safety" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.DASHBOARD}>
+                <SafetyPage />
+              </ProtectedRouteWithPermissions>
+            } 
+          />
+
+          {/* Детальные отчёты */}
+          <Route 
+            path="reports/:reportType" 
+            element={
+              <ProtectedRouteWithPermissions requiredPermission={MODULES.REPORTS}>
+                <ReportDetailPage />
               </ProtectedRouteWithPermissions>
             } 
           />

@@ -162,11 +162,13 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       PaperProps={{
         sx: {
           width: 400,
-          maxHeight: 500,
+          maxHeight: '80vh',
           overflow: 'hidden',
           borderRadius: 2,
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
           border: '1px solid rgba(0, 0, 0, 0.06)',
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
@@ -209,7 +211,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       </Box>
 
       {/* Content */}
-      <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         {mockNotifications.length === 0 ? (
           // Empty state
           <Box
@@ -338,13 +340,17 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       {mockNotifications.length > 0 && (
         <>
           <Divider />
-          <Box sx={{ p: 2 }}>
+          <Box sx={{ p: 2, flexShrink: 0 }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 variant="outlined"
                 size="small"
                 fullWidth
                 sx={{ borderRadius: 1.5 }}
+                onClick={() => {
+                  // Логика отметки всех как прочитанные
+                  console.log('Отметить все как прочитанные');
+                }}
               >
                 Отметить как прочитанные
               </Button>
@@ -353,6 +359,11 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 size="small"
                 fullWidth
                 sx={{ borderRadius: 1.5 }}
+                onClick={() => {
+                  // Логика перехода к полному списку уведомлений
+                  console.log('Показать все уведомления');
+                  window.location.href = '/notifications';
+                }}
               >
                 Показать все
               </Button>

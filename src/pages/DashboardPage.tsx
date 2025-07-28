@@ -54,29 +54,29 @@ const DashboardPage: React.FC = () => {
 
   // Данные для графиков
   const financialData = [
-    { name: 'Янв', income: 2400000, expenses: 1800000 },
-    { name: 'Фев', income: 1398000, expenses: 1200000 },
-    { name: 'Мар', income: 9800000, expenses: 2800000 },
-    { name: 'Апр', income: 3908000, expenses: 2400000 },
-    { name: 'Май', income: 4800000, expenses: 3200000 },
-    { name: 'Июн', income: 3800000, expenses: 2900000 },
+    { name: 'Янв', income: 2400000, expenses: 1800000, month: 'january' },
+    { name: 'Фев', income: 1398000, expenses: 1200000, month: 'february' },
+    { name: 'Мар', income: 9800000, expenses: 2800000, month: 'march' },
+    { name: 'Апр', income: 3908000, expenses: 2400000, month: 'april' },
+    { name: 'Май', income: 4800000, expenses: 3200000, month: 'may' },
+    { name: 'Июн', income: 3800000, expenses: 2900000, month: 'june' },
   ];
 
   const budgetDistribution = [
-    { name: 'Материалы', value: 45, color: '#1976d2' },
-    { name: 'Зарплата', value: 30, color: '#388e3c' },
-    { name: 'Оборудование', value: 15, color: '#f57c00' },
-    { name: 'Прочее', value: 10, color: '#7b1fa2' },
+    { name: 'Материалы', value: 45, color: '#1976d2', category: 'materials' },
+    { name: 'Зарплата', value: 30, color: '#388e3c', category: 'salary' },
+    { name: 'Оборудование', value: 15, color: '#f57c00', category: 'equipment' },
+    { name: 'Прочее', value: 10, color: '#7b1fa2', category: 'other' },
   ];
 
   const projectActivity = [
-    { name: 'Пн', tasks: 12 },
-    { name: 'Вт', tasks: 19 },
-    { name: 'Ср', tasks: 15 },
-    { name: 'Чт', tasks: 22 },
-    { name: 'Пт', tasks: 18 },
-    { name: 'Сб', tasks: 8 },
-    { name: 'Вс', tasks: 5 },
+    { name: 'Пн', tasks: 12, day: 'monday' },
+    { name: 'Вт', tasks: 19, day: 'tuesday' },
+    { name: 'Ср', tasks: 15, day: 'wednesday' },
+    { name: 'Чт', tasks: 22, day: 'thursday' },
+    { name: 'Пт', tasks: 18, day: 'friday' },
+    { name: 'Сб', tasks: 8, day: 'saturday' },
+    { name: 'Вс', tasks: 5, day: 'sunday' },
   ];
 
   const currentTasks = [
@@ -92,6 +92,33 @@ const DashboardPage: React.FC = () => {
     { id: 3, type: 'safety_incident', message: 'Зарегистрирован инцидент на объекте №2', time: '6 часов назад', user: 'Отдел ТБ' },
     { id: 4, type: 'quality_check', message: 'Проведена проверка качества фундамента', time: '1 день назад', user: 'К. Петров' },
   ];
+
+  // Обработчики кликов по графикам
+  const handleBudgetClick = (data: any) => {
+    if (data && data.category) {
+      navigate(`/reports/budget-analysis?category=${data.category}`);
+    }
+  };
+
+  const handleProjectActivityClick = (data: any) => {
+    if (data && data.day) {
+      navigate(`/reports/project-activity?day=${data.day}`);
+    }
+  };
+
+  const handleFinancialChartClick = (data: any) => {
+    if (data && data.month) {
+      navigate(`/reports/monthly-financial?month=${data.month}`);
+    }
+  };
+
+  const handleAllTasksClick = () => {
+    navigate('/tasks');
+  };
+
+  const handleSafetyClick = () => {
+    navigate('/safety');
+  };
 
   const StatCard: React.FC<{
     title: string;
@@ -147,13 +174,13 @@ const DashboardPage: React.FC = () => {
           <Button 
             size="small" 
             variant="outlined"
-            onClick={() => toast.info('Функция "Подробнее" будет реализована позже')}
+            onClick={() => navigate('/reports/financial-overview')}
           >
             Подробнее
           </Button>
         </Box>
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={financialData}>
+          <AreaChart data={financialData} onClick={handleFinancialChartClick}>
             <defs>
               <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#1976d2" stopOpacity={0.3} />
@@ -174,6 +201,7 @@ const DashboardPage: React.FC = () => {
               strokeWidth={3}
               fill="url(#incomeGradient)"
               name="Доходы"
+              style={{ cursor: 'pointer' }}
             />
             <Area
               type="monotone"
@@ -182,6 +210,7 @@ const DashboardPage: React.FC = () => {
               strokeWidth={3}
               fill="url(#expensesGradient)"
               name="Расходы"
+              style={{ cursor: 'pointer' }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -206,9 +235,15 @@ const DashboardPage: React.FC = () => {
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
+              style={{ cursor: 'pointer' }}
+              onClick={handleBudgetClick}
             >
               {budgetDistribution.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.color}
+                  style={{ cursor: 'pointer' }}
+                />
               ))}
             </Pie>
             <Tooltip />
@@ -225,11 +260,16 @@ const DashboardPage: React.FC = () => {
           Активность по проектам
         </Typography>
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={projectActivity}>
+          <BarChart data={projectActivity} onClick={handleProjectActivityClick}>
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="tasks" fill="#1976d2" radius={[4, 4, 0, 0]} />
+            <Bar 
+              dataKey="tasks" 
+              fill="#1976d2" 
+              radius={[4, 4, 0, 0]} 
+              style={{ cursor: 'pointer' }}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -246,7 +286,7 @@ const DashboardPage: React.FC = () => {
           <Button 
             size="small" 
             variant="outlined"
-            onClick={() => toast.info('Функция "Все задачи" будет реализована позже')}
+            onClick={handleAllTasksClick}
           >
             Все задачи
           </Button>
@@ -374,7 +414,7 @@ const DashboardPage: React.FC = () => {
               fullWidth
               variant="outlined"
               startIcon={<SecurityIcon />}
-              onClick={() => navigate('/safety')}
+              onClick={handleSafetyClick}
               sx={{ mb: 1 }}
             >
               Инцидент ТБ
