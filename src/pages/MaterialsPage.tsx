@@ -65,6 +65,7 @@ import { ru } from 'date-fns/locale';
 import { useMaterialStore, useAuthStore } from '../store';
 import { Material, Supplier } from '../types';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -90,6 +91,7 @@ function TabPanel(props: TabPanelProps) {
 const MaterialsPage: React.FC = () => {
   const { materials, suppliers, orders, loading, fetchMaterials, fetchSuppliers, fetchOrders, createMaterial, updateMaterial, deleteMaterial, createSupplier, createOrder } = useMaterialStore();
   const { user } = useAuthStore();
+  const { currentProjectId, isAllProjectsView, selectedProject } = useProjectStore();
   
   const [tabValue, setTabValue] = useState(0);
   const [openMaterialDialog, setOpenMaterialDialog] = useState(false);
@@ -105,10 +107,12 @@ const MaterialsPage: React.FC = () => {
   const { control: orderControl, handleSubmit: handleOrderSubmit, reset: resetOrder, formState: { errors: orderErrors } } = useForm<any>();
 
   useEffect(() => {
-    fetchMaterials();
-    fetchSuppliers();
-    fetchOrders();
-  }, [fetchMaterials, fetchSuppliers, fetchOrders]);
+    // Загружаем данные с учетом выбранного проекта
+    const projectId = isAllProjectsView ? undefined : currentProjectId;
+    fetchMaterials(projectId);
+    fetchSuppliers(projectId);
+    fetchOrders(projectId);
+  }, [fetchMaterials, fetchSuppliers, fetchOrders, currentProjectId, isAllProjectsView]);
 
   const handleCreateMaterial = async (data: any) => {
     try {
@@ -248,9 +252,12 @@ const MaterialsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление складом
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление складом
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"

@@ -42,9 +42,11 @@ import { useDashboardStore } from '../store';
 import { formatCurrency } from '../utils';
 import WeatherWidget from '../components/Advanced/WeatherWidget';
 import QRCodeScanner from '../components/Advanced/QRCodeScanner';
+import ProjectSelector from '../components/ProjectSelector';
 
 const DashboardPage: React.FC = () => {
   const { stats, loading, fetchStats } = useDashboardStore();
+  const { selectedProject, isAllProjectsView } = useProjectStore();
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -447,9 +449,12 @@ const DashboardPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Заголовок */}
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
-        Дашборд управления
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Дашборд управления
+        </Typography>
+        <ProjectSelector />
+      </Box>
 
       {/* Основные показатели */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

@@ -46,6 +46,7 @@ import { ru } from 'date-fns/locale';
 import { useHRStore, useAuthStore } from '../store';
 import { User, UserRole } from '../types';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface EmployeeFormData {
   name: string;
@@ -66,6 +67,7 @@ interface EmployeeFormData {
 const EmployeesPage: React.FC = () => {
   const { employees, loading, fetchEmployees, createEmployee, updateEmployee, deleteEmployee } = useHRStore();
   const { user } = useAuthStore();
+  const { currentProjectId, isAllProjectsView, selectedProject } = useProjectStore();
   
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
@@ -75,8 +77,10 @@ const EmployeesPage: React.FC = () => {
   const { control, handleSubmit, reset, formState: { errors } } = useForm<EmployeeFormData>();
 
   useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
+    // Загружаем данные с учетом выбранного проекта
+    const projectId = isAllProjectsView ? undefined : currentProjectId;
+    fetchEmployees(projectId);
+  }, [fetchEmployees, currentProjectId, isAllProjectsView]);
 
   const handleCreateEmployee = async (data: EmployeeFormData) => {
     try {
@@ -206,9 +210,12 @@ const EmployeesPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление персоналом
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление персоналом
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}

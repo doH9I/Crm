@@ -72,6 +72,8 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { CalendarEvent, EventReminder } from '../types';
+import { useProjectStore } from '../store';
+import ProjectSelector from '../components/ProjectSelector';
 
 // Моковые данные событий
 const mockEvents: CalendarEvent[] = [
@@ -163,6 +165,7 @@ const mockEvents: CalendarEvent[] = [
 ];
 
 const CalendarPage: React.FC = () => {
+  const { currentProjectId, isAllProjectsView, selectedProject, projects } = useProjectStore();
   const [events, setEvents] = useState<CalendarEvent[]>(mockEvents);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'month' | 'week' | 'day'>('month');
@@ -561,7 +564,12 @@ const CalendarPage: React.FC = () => {
     return typeMap[type as keyof typeof typeMap] || type;
   };
 
+  // Фильтрация событий по выбранному проекту
   const filteredEvents = events.filter(event => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return event.projectId === currentProjectId;
+    return true;
+  }).filter(event => {
     if (filterType === 'all') return true;
     return event.type === filterType;
   });
@@ -699,9 +707,12 @@ const CalendarPage: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Календарь
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Календарь
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
@@ -728,6 +739,7 @@ const CalendarPage: React.FC = () => {
           icon={<NotificationIcon />}
         >
           У вас запланировано {todayEvents.length} событий на сегодня
+          {selectedProject && !isAllProjectsView && ` для проекта "${selectedProject.name}"`}
         </Alert>
       )}
 
@@ -822,7 +834,7 @@ const CalendarPage: React.FC = () => {
 
       {/* Диалог создания/редактирования события */}
       <Dialog 
-                open={openDialog}
+        open={openDialog}
         onClose={() => setOpenDialog(false)}
         maxWidth="md"
         fullWidth
@@ -957,14 +969,17 @@ const CalendarPage: React.FC = () => {
                 <Controller
                   name="projectId"
                   control={control}
-                  defaultValue=""
+                  defaultValue={currentProjectId || ""}
                   render={({ field }) => (
                     <FormControl fullWidth>
                       <InputLabel>Связанный проект</InputLabel>
                       <Select {...field} label="Связанный проект">
                         <MenuItem value="">Без проекта</MenuItem>
-                        <MenuItem value="1">Жилой комплекс "Солнечный"</MenuItem>
-                        <MenuItem value="2">Офисный центр "Центральный"</MenuItem>
+                        {projects.map((project) => (
+                          <MenuItem key={project.id} value={project.id}>
+                            {project.name}
+                          </MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
                   )}

@@ -45,12 +45,16 @@ interface ProjectState {
   tasks: ProjectTask[];
   loading: boolean;
   selectedProject: Project | null;
+  currentProjectId: string | null; // ID текущего выбранного проекта
+  isAllProjectsView: boolean; // Флаг для отображения всех проектов
   fetchProjects: () => Promise<void>;
   fetchProjectTasks: (projectId: string) => Promise<void>;
   createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  selectProject: (project: Project) => void;
+  selectProject: (project: Project | null) => void;
+  setCurrentProjectId: (projectId: string | null) => void;
+  setAllProjectsView: (isAllProjects: boolean) => void;
   createTask: (task: Omit<ProjectTask, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTask: (id: string, updates: Partial<ProjectTask>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -62,9 +66,9 @@ interface MaterialState {
   suppliers: Supplier[];
   orders: MaterialOrder[];
   loading: boolean;
-  fetchMaterials: () => Promise<void>;
-  fetchSuppliers: () => Promise<void>;
-  fetchOrders: () => Promise<void>;
+  fetchMaterials: (projectId?: string) => Promise<void>;
+  fetchSuppliers: (projectId?: string) => Promise<void>;
+  fetchOrders: (projectId?: string) => Promise<void>;
   createMaterial: (material: Omit<Material, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateMaterial: (id: string, updates: Partial<Material>) => Promise<void>;
   deleteMaterial: (id: string) => Promise<void>;
@@ -78,8 +82,8 @@ interface ToolState {
   tools: Tool[];
   equipment: Equipment[];
   loading: boolean;
-  fetchTools: () => Promise<void>;
-  fetchEquipment: () => Promise<void>;
+  fetchTools: (projectId?: string) => Promise<void>;
+  fetchEquipment: (projectId?: string) => Promise<void>;
   createTool: (tool: Omit<Tool, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTool: (id: string, updates: Partial<Tool>) => Promise<void>;
   deleteTool: (id: string) => Promise<void>;
@@ -95,9 +99,9 @@ interface HRState {
   timeEntries: TimeEntry[];
   trainings: Training[];
   loading: boolean;
-  fetchEmployees: () => Promise<void>;
-  fetchTimeEntries: () => Promise<void>;
-  fetchTrainings: () => Promise<void>;
+  fetchEmployees: (projectId?: string) => Promise<void>;
+  fetchTimeEntries: (projectId?: string) => Promise<void>;
+  fetchTrainings: (projectId?: string) => Promise<void>;
   createEmployee: (employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateEmployee: (id: string, updates: Partial<User>) => Promise<void>;
   deleteEmployee: (id: string) => Promise<void>;
@@ -114,9 +118,9 @@ interface FinanceState {
   budgets: Budget[];
   contracts: Contract[];
   loading: boolean;
-  fetchInvoices: () => Promise<void>;
-  fetchBudgets: () => Promise<void>;
-  fetchContracts: () => Promise<void>;
+  fetchInvoices: (projectId?: string) => Promise<void>;
+  fetchBudgets: (projectId?: string) => Promise<void>;
+  fetchContracts: (projectId?: string) => Promise<void>;
   createInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateInvoiceStatus: (id: string, status: string) => Promise<void>;
   createBudget: (budget: Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -128,7 +132,7 @@ interface FinanceState {
 interface ClientState {
   clients: Client[];
   loading: boolean;
-  fetchClients: () => Promise<void>;
+  fetchClients: (projectId?: string) => Promise<void>;
   createClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
@@ -138,7 +142,7 @@ interface ClientState {
 interface SafetyState {
   incidents: SafetyIncident[];
   loading: boolean;
-  fetchIncidents: () => Promise<void>;
+  fetchIncidents: (projectId?: string) => Promise<void>;
   createIncident: (incident: Omit<SafetyIncident, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateIncident: (id: string, updates: Partial<SafetyIncident>) => Promise<void>;
   resolveIncident: (id: string, resolution: string) => Promise<void>;
@@ -148,7 +152,7 @@ interface SafetyState {
 interface QualityState {
   checks: QualityCheck[];
   loading: boolean;
-  fetchQualityChecks: () => Promise<void>;
+  fetchQualityChecks: (projectId?: string) => Promise<void>;
   createQualityCheck: (check: Omit<QualityCheck, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateQualityCheck: (id: string, updates: Partial<QualityCheck>) => Promise<void>;
 }
@@ -157,7 +161,7 @@ interface QualityState {
 interface CalendarState {
   events: CalendarEvent[];
   loading: boolean;
-  fetchEvents: () => Promise<void>;
+  fetchEvents: (projectId?: string) => Promise<void>;
   createEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateEvent: (id: string, updates: Partial<CalendarEvent>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
@@ -350,6 +354,8 @@ export const useProjectStore = create<ProjectState>()(
       tasks: [],
       loading: false as boolean,
       selectedProject: null,
+      currentProjectId: null, // ID текущего выбранного проекта
+      isAllProjectsView: false, // Флаг для отображения всех проектов
       fetchProjects: async () => {
         set(state => { state.loading = true; });
         try {
@@ -384,6 +390,130 @@ export const useProjectStore = create<ProjectState>()(
               riskLevel: 'medium',
               weatherSensitive: true,
               safetyRequirements: ['Защитные каски', 'Страховочные пояса'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '2',
+              name: 'Торговый центр "МегаМолл"',
+              description: 'Строительство торгового центра площадью 25,000 м²',
+              client: 'ООО "ТоргСтрой"',
+              clientContact: 'Петров П.П.',
+              clientPhone: '+7 (999) 234-56-78',
+              clientEmail: 'petrov@torgstroy.ru',
+              address: 'г. Санкт-Петербург, пр. Невский, 100',
+              status: 'planning' as any,
+              type: 'commercial' as any,
+              startDate: new Date('2024-03-01'),
+              endDate: new Date('2025-06-30'),
+              plannedEndDate: new Date('2025-06-01'),
+              budget: 80000000,
+              spentAmount: 5000000,
+              approvedBudget: 85000000,
+              contingencyFund: 5000000,
+              managerId: '2',
+              architectId: '3',
+              engineerId: '4',
+              teamMembers: ['2', '3', '4', '5', '6'],
+              progress: 15,
+              priority: 'medium',
+              notes: 'Проект в стадии планирования',
+              riskLevel: 'low',
+              weatherSensitive: false,
+              safetyRequirements: ['Строительные каски', 'Ограждения'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Промышленный комплекс "ТехноПарк"',
+              description: 'Строительство промышленного комплекса для производства',
+              client: 'ООО "ПромСтрой"',
+              clientContact: 'Сидоров С.С.',
+              clientPhone: '+7 (999) 345-67-89',
+              clientEmail: 'sidorov@promstroy.ru',
+              address: 'г. Екатеринбург, ул. Промышленная, 50',
+              status: 'completed' as any,
+              type: 'industrial' as any,
+              startDate: new Date('2023-06-01'),
+              endDate: new Date('2024-02-28'),
+              plannedEndDate: new Date('2024-03-01'),
+              budget: 120000000,
+              spentAmount: 118000000,
+              approvedBudget: 125000000,
+              contingencyFund: 5000000,
+              managerId: '1',
+              architectId: '2',
+              engineerId: '3',
+              teamMembers: ['1', '2', '3', '4', '5', '6', '7'],
+              progress: 100,
+              priority: 'high',
+              notes: 'Проект успешно завершен',
+              riskLevel: 'low',
+              weatherSensitive: true,
+              safetyRequirements: ['Спецодежда', 'Защитные очки', 'Респираторы'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '4',
+              name: 'Мостовой переход через реку',
+              description: 'Строительство автомобильного моста длиной 500м',
+              client: 'ГУП "ДорСтрой"',
+              clientContact: 'Козлов К.К.',
+              clientPhone: '+7 (999) 456-78-90',
+              clientEmail: 'kozlov@dorstroy.ru',
+              address: 'г. Новосибирск, р. Обь',
+              status: 'in_progress' as any,
+              type: 'infrastructure' as any,
+              startDate: new Date('2024-02-01'),
+              endDate: new Date('2025-08-31'),
+              plannedEndDate: new Date('2025-08-01'),
+              budget: 200000000,
+              spentAmount: 75000000,
+              approvedBudget: 210000000,
+              contingencyFund: 10000000,
+              managerId: '3',
+              architectId: '4',
+              engineerId: '5',
+              teamMembers: ['3', '4', '5', '6', '7', '8'],
+              progress: 35,
+              priority: 'critical',
+              notes: 'Критически важный объект инфраструктуры',
+              riskLevel: 'high',
+              weatherSensitive: true,
+              safetyRequirements: ['Страховочные пояса', 'Защитные каски', 'Спасательные жилеты'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '5',
+              name: 'Реконструкция исторического здания',
+              description: 'Реставрация и реконструкция здания XIX века',
+              client: 'ООО "Реставрация"',
+              clientContact: 'Морозов М.М.',
+              clientPhone: '+7 (999) 567-89-01',
+              clientEmail: 'morozov@restoration.ru',
+              address: 'г. Казань, ул. Баумана, 10',
+              status: 'on_hold' as any,
+              type: 'renovation' as any,
+              startDate: new Date('2024-01-01'),
+              endDate: new Date('2024-12-31'),
+              plannedEndDate: new Date('2024-11-30'),
+              budget: 35000000,
+              spentAmount: 15000000,
+              approvedBudget: 36000000,
+              contingencyFund: 1000000,
+              managerId: '2',
+              architectId: '3',
+              engineerId: '4',
+              teamMembers: ['2', '3', '4', '5'],
+              progress: 40,
+              priority: 'medium',
+              notes: 'Проект приостановлен из-за согласований',
+              riskLevel: 'medium',
+              weatherSensitive: false,
+              safetyRequirements: ['Защитные каски', 'Спецодежда'],
               createdAt: new Date(),
               updatedAt: new Date(),
             },
@@ -437,6 +567,16 @@ export const useProjectStore = create<ProjectState>()(
           state.selectedProject = project;
         });
       },
+      setCurrentProjectId: (projectId) => {
+        set(state => {
+          state.currentProjectId = projectId;
+        });
+      },
+      setAllProjectsView: (isAllProjects) => {
+        set(state => {
+          state.isAllProjectsView = isAllProjects;
+        });
+      },
       createTask: async (task) => {
         const newTask: ProjectTask = {
           ...task,
@@ -474,7 +614,7 @@ export const useMaterialStore = create<MaterialState>()(
       suppliers: [],
       orders: [],
       loading: false as boolean,
-      fetchMaterials: async () => {
+      fetchMaterials: async (projectId?: string) => {
         set(state => { state.loading = true; });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -506,21 +646,162 @@ export const useMaterialStore = create<MaterialState>()(
               createdAt: new Date(),
               updatedAt: new Date(),
             },
+            {
+              id: '2',
+              name: 'Арматура А500С',
+              description: 'Арматурная сталь класса А500С',
+              category: 'Металлопрокат',
+              subcategory: 'Арматура',
+              sku: 'ARM-A500C-12',
+              unit: 'тонна',
+              currentStock: 25,
+              reservedStock: 5,
+              availableStock: 20,
+              minStock: 10,
+              maxStock: 50,
+              reorderPoint: 15,
+              unitPrice: 45000,
+              avgPrice: 44000,
+              lastPurchasePrice: 45000,
+              supplier: 'ООО МеталлСтрой',
+              location: 'Склад Б',
+              zone: 'Б1',
+              shelf: 'Б1-02',
+              isActive: true,
+              isHazardous: false,
+              weight: 1000,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Кирпич керамический',
+              description: 'Кирпич керамический полнотелый М150',
+              category: 'Стеновые материалы',
+              subcategory: 'Кирпич',
+              sku: 'KIR-M150-250',
+              unit: 'штука',
+              currentStock: 50000,
+              reservedStock: 5000,
+              availableStock: 45000,
+              minStock: 10000,
+              maxStock: 100000,
+              reorderPoint: 15000,
+              unitPrice: 12,
+              avgPrice: 11.5,
+              lastPurchasePrice: 12,
+              supplier: 'ООО КирпичЗавод',
+              location: 'Склад В',
+              zone: 'В1',
+              shelf: 'В1-03',
+              isActive: true,
+              isHazardous: false,
+              weight: 3.5,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
           ];
           
+          // Фильтруем материалы по проекту, если указан
+          const filteredMaterials = projectId 
+            ? mockMaterials.filter(material => {
+                // В реальном приложении здесь была бы связь с проектом
+                // Пока что показываем все материалы для демонстрации
+                return true;
+              })
+            : mockMaterials;
+          
           set(state => {
-            state.materials = mockMaterials;
+            state.materials = filteredMaterials;
             state.loading = false;
           });
         } catch (error) {
           set(state => { state.loading = false; });
         }
       },
-      fetchSuppliers: async () => {
-        // Реализация загрузки поставщиков
+      fetchSuppliers: async (projectId?: string) => {
+        // Реализация загрузки поставщиков с фильтрацией по проекту
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const mockSuppliers: Supplier[] = [
+            {
+              id: '1',
+              name: 'ООО Цементторг',
+              contactPerson: 'Иванов И.И.',
+              email: 'ivanov@cement.ru',
+              phone: '+7 (999) 111-22-33',
+              address: 'г. Москва, ул. Строительная, 1',
+              website: 'www.cement.ru',
+              inn: '1234567890',
+              kpp: '123456789',
+              paymentTerms: '30 дней',
+              deliveryTerms: 'Самовывоз',
+              rating: 4.5,
+              isActive: true,
+              categories: ['Сухие смеси', 'Цемент'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '2',
+              name: 'ООО МеталлСтрой',
+              contactPerson: 'Петров П.П.',
+              email: 'petrov@metal.ru',
+              phone: '+7 (999) 222-33-44',
+              address: 'г. Санкт-Петербург, ул. Металлическая, 2',
+              website: 'www.metal.ru',
+              inn: '0987654321',
+              kpp: '098765432',
+              paymentTerms: '14 дней',
+              deliveryTerms: 'Доставка',
+              rating: 4.8,
+              isActive: true,
+              categories: ['Металлопрокат', 'Арматура'],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+          
+          set(state => {
+            state.suppliers = mockSuppliers;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
       },
-      fetchOrders: async () => {
-        // Реализация загрузки заказов
+      fetchOrders: async (projectId?: string) => {
+        // Реализация загрузки заказов с фильтрацией по проекту
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const mockOrders: MaterialOrder[] = [
+            {
+              id: '1',
+              orderNumber: 'ORD-001',
+              supplierId: '1',
+              projectId: projectId || '1',
+              items: [],
+              totalAmount: 50000,
+              status: 'confirmed',
+              orderDate: new Date(),
+              expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              urgentOrder: false,
+              deliveryAddress: 'г. Москва, ул. Строительная, 15',
+              createdBy: '1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+          
+          set(state => {
+            state.orders = mockOrders;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
       },
       createMaterial: async (material) => {
         const newMaterial: Material = {
@@ -567,7 +848,7 @@ export const useToolStore = create<ToolState>()(
       tools: [],
       equipment: [],
       loading: false as boolean,
-      fetchTools: async () => {
+      fetchTools: async (projectId?: string) => {
         set(state => { state.loading = true; });
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -594,18 +875,111 @@ export const useToolStore = create<ToolState>()(
               createdAt: new Date(),
               updatedAt: new Date(),
             },
+            {
+              id: '2',
+              name: 'Перфоратор Bosch GBH 2-26',
+              category: 'Электроинструмент',
+              subcategory: 'Перфораторы',
+              brand: 'Bosch',
+              model: 'GBH 2-26',
+              inventoryNumber: 'TOOL-002',
+              condition: 'excellent' as any,
+              status: 'in_use' as any,
+              purchaseDate: new Date('2023-03-10'),
+              purchasePrice: 25000,
+              currentValue: 22000,
+              location: 'Объект №1',
+              zone: 'О-1',
+              maintenanceInterval: 180,
+              usageHours: 80,
+              isActive: true,
+              notes: 'Используется на объекте',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: '3',
+              name: 'Бетономешалка 130л',
+              category: 'Строительное оборудование',
+              subcategory: 'Бетономешалки',
+              brand: 'Строймаш',
+              model: 'БМ-130',
+              inventoryNumber: 'TOOL-003',
+              condition: 'good' as any,
+              status: 'maintenance' as any,
+              purchaseDate: new Date('2022-08-20'),
+              purchasePrice: 35000,
+              currentValue: 28000,
+              location: 'Склад',
+              zone: 'С-1',
+              maintenanceInterval: 90,
+              usageHours: 200,
+              isActive: true,
+              notes: 'Требует обслуживания',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
           ];
           
+          // Фильтруем инструменты по проекту, если указан
+          const filteredTools = projectId 
+            ? mockTools.filter(tool => {
+                // В реальном приложении здесь была бы связь с проектом
+                // Пока что показываем все инструменты для демонстрации
+                return true;
+              })
+            : mockTools;
+          
           set(state => {
-            state.tools = mockTools;
+            state.tools = filteredTools;
             state.loading = false;
           });
         } catch (error) {
           set(state => { state.loading = false; });
         }
       },
-      fetchEquipment: async () => {
-        // Реализация загрузки оборудования
+      fetchEquipment: async (projectId?: string) => {
+        // Реализация загрузки оборудования с фильтрацией по проекту
+        set(state => { state.loading = true; });
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const mockEquipment: Equipment[] = [
+            {
+              id: '1',
+              name: 'Экскаватор JCB 3CX',
+              type: 'excavator',
+              brand: 'JCB',
+              model: '3CX',
+              year: 2020,
+              serialNumber: 'JCB-2020-001',
+              licensePlate: 'А123БВ77',
+              status: 'available' as any,
+              location: 'Объект №1',
+              operatorId: '1',
+              fuelLevel: 85,
+              mileage: 2500,
+              engineHours: 1200,
+              lastService: new Date('2024-01-15'),
+              nextService: new Date('2024-04-15'),
+              insurance: {
+                provider: 'Росгосстрах',
+                policyNumber: 'INS-001',
+                expiryDate: new Date('2024-12-31'),
+              },
+              documents: [],
+              maintenanceLog: [],
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ];
+          
+          set(state => {
+            state.equipment = mockEquipment;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { state.loading = false; });
+        }
       },
       createTool: async (tool) => {
         const newTool: Tool = {
@@ -922,22 +1296,135 @@ export const useAppStore = create<AppState>()(
 );
 
 // Дополнительные stores для других модулей
-export const useHRStore = create<HRState>()(devtools(immer(() => ({
+export const useHRStore = create<HRState>()(devtools(immer((set, get) => ({
   employees: [] as User[],
   timeEntries: [] as TimeEntry[],
   trainings: [] as Training[],
   loading: false as boolean,
-  fetchEmployees: async () => {},
-  fetchTimeEntries: async () => {},
-  fetchTrainings: async () => {},
-  createEmployee: async (_employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  updateEmployee: async (_id: string, _updates: Partial<User>) => {},
-  deleteEmployee: async (_id: string) => {},
-  createTimeEntry: async (_entry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  approveTimeEntry: async (_id: string) => {},
-  rejectTimeEntry: async (_id: string, _reason: string) => {},
-  createTraining: async (_training: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => {},
-  enrollInTraining: async (_trainingId: string, _userId: string) => {},
+  fetchEmployees: async (projectId?: string) => {
+    set(state => { state.loading = true; });
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const mockEmployees: User[] = [
+        {
+          id: '1',
+          email: 'ivanov@company.ru',
+          name: 'Иванов Иван Иванович',
+          role: UserRole.FOREMAN,
+          avatar: '',
+          isActive: true,
+          department: 'Строительный отдел',
+          position: 'Прораб',
+          phone: '+7 (999) 123-45-67',
+          salary: 80000,
+          hireDate: new Date('2022-03-15'),
+          skills: ['Строительство', 'Управление бригадой', 'Чтение чертежей'],
+          lastLogin: new Date(),
+          permissions: ['projects', 'employees', 'materials'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          email: 'petrov@company.ru',
+          name: 'Петров Петр Петрович',
+          role: UserRole.WORKER,
+          avatar: '',
+          isActive: true,
+          department: 'Строительный отдел',
+          position: 'Каменщик',
+          phone: '+7 (999) 234-56-78',
+          salary: 60000,
+          hireDate: new Date('2023-01-10'),
+          skills: ['Кладка кирпича', 'Работа с раствором'],
+          lastLogin: new Date(),
+          permissions: ['projects'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '3',
+          email: 'sidorov@company.ru',
+          name: 'Сидоров Сидор Сидорович',
+          role: UserRole.WORKER,
+          avatar: '',
+          isActive: true,
+          department: 'Строительный отдел',
+          position: 'Плотник',
+          phone: '+7 (999) 345-67-89',
+          salary: 65000,
+          hireDate: new Date('2022-08-20'),
+          skills: ['Плотницкие работы', 'Обработка дерева'],
+          lastLogin: new Date(),
+          permissions: ['projects'],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      
+      // Фильтруем сотрудников по проекту, если указан
+      const filteredEmployees = projectId 
+        ? mockEmployees.filter(employee => {
+            // В реальном приложении здесь была бы связь с проектом
+            // Пока что показываем всех сотрудников для демонстрации
+            return true;
+          })
+        : mockEmployees;
+      
+      set(state => {
+        state.employees = filteredEmployees;
+        state.loading = false;
+      });
+    } catch (error) {
+      set(state => { state.loading = false; });
+    }
+  },
+  fetchTimeEntries: async (projectId?: string) => {
+    // Реализация загрузки учета времени с фильтрацией по проекту
+  },
+  fetchTrainings: async (projectId?: string) => {
+    // Реализация загрузки обучения с фильтрацией по проекту
+  },
+  createEmployee: async (employee: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newEmployee: User = {
+      ...employee,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    set(state => {
+      state.employees.push(newEmployee);
+    });
+  },
+  updateEmployee: async (id: string, updates: Partial<User>) => {
+    set(state => {
+      const index = state.employees.findIndex((e: User) => e.id === id);
+      if (index !== -1) {
+        Object.assign(state.employees[index], updates, { updatedAt: new Date() });
+      }
+    });
+  },
+  deleteEmployee: async (id: string) => {
+    set(state => {
+      state.employees = state.employees.filter((e: User) => e.id !== id);
+    });
+  },
+  createTimeEntry: async (entry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Реализация создания записи времени
+  },
+  approveTimeEntry: async (id: string) => {
+    // Реализация одобрения записи времени
+  },
+  rejectTimeEntry: async (id: string, reason: string) => {
+    // Реализация отклонения записи времени
+  },
+  createTraining: async (training: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Реализация создания обучения
+  },
+  enrollInTraining: async (trainingId: string, userId: string) => {
+    // Реализация записи на обучение
+  },
 }))));
 
 export const useFinanceStore = create<FinanceState>()(devtools(immer(() => ({

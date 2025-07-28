@@ -63,6 +63,8 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Subcontractor, WorkType, Project } from '../types';
+import { useProjectStore } from '../store';
+import ProjectSelector from '../components/ProjectSelector';
 
 // Моковые данные подрядчиков
 const mockContractors: Subcontractor[] = [
@@ -125,9 +127,12 @@ const mockContractors: Subcontractor[] = [
 ];
 
 const ContractorsPage: React.FC = () => {
+  const { currentProjectId, isAllProjectsView, selectedProject, projects } = useProjectStore();
   const [contractors, setContractors] = useState<Subcontractor[]>(mockContractors);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedContractor, setSelectedContractor] = useState<Subcontractor | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [viewContractor, setViewContractor] = useState<Subcontractor | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSpecialization, setFilterSpecialization] = useState('all');
   const [filterRating, setFilterRating] = useState('all');
@@ -232,20 +237,11 @@ const ContractorsPage: React.FC = () => {
     return specializationMap[specialization] || specialization;
   };
 
+  // Фильтрация подрядчиков по выбранному проекту
   const filteredContractors = contractors.filter(contractor => {
-    const matchesSearch = contractor.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contractor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contractor.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesSpecialization = filterSpecialization === 'all' || 
-      contractor.specializations.includes(filterSpecialization as WorkType);
-      
-    const matchesRating = filterRating === 'all' || 
-      (filterRating === '4+' && contractor.rating >= 4) ||
-      (filterRating === '3-4' && contractor.rating >= 3 && contractor.rating < 4) ||
-      (filterRating === '0-3' && contractor.rating < 3);
-    
-    return matchesSearch && matchesSpecialization && matchesRating;
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return contractor.contracts.includes(currentProjectId);
+    return true;
   });
 
   const contractorStats = {
@@ -256,90 +252,95 @@ const ContractorsPage: React.FC = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Подрядчики
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<ImportIcon />}
-            onClick={() => toast.info('Функция импорта будет добавлена')}
-          >
-            Импорт
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<ExportIcon />}
-            onClick={() => toast.info('Функция экспорта будет добавлена')}
-          >
-            Экспорт
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => openContractorDialog()}
-          >
-            Добавить подрядчика
-          </Button>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление подрядчиками
+          </Typography>
+          <ProjectSelector />
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={openContractorDialog}
+          sx={{ borderRadius: 2 }}
+        >
+          Добавить подрядчика
+        </Button>
       </Box>
 
       {/* Статистика */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <BusinessIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                {contractorStats.total}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Всего подрядчиков
-              </Typography>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <BusinessIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{filteredContractors.length}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Всего подрядчиков
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <TeamIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
-                {contractorStats.active}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Активных
-              </Typography>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'success.main' }}>
+                  <VerifiedIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{filteredContractors.filter(c => c.isActive).length}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Активных
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <StarIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                {contractorStats.highRated}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                С высоким рейтингом
-              </Typography>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'warning.main' }}>
+                  <StarIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">
+                    {filteredContractors.length > 0 ? (filteredContractors.reduce((sum, c) => sum + c.rating, 0) / filteredContractors.length).toFixed(1) : '0'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Средний рейтинг
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <Card>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <VerifiedIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
-                {contractorStats.verified}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Сертифицированных
-              </Typography>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'info.main' }}>
+                  <PerformanceIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">
+                    {filteredContractors.reduce((sum, c) => sum + (c.performance?.projectsCompleted || 0), 0)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Завершенных проектов
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -420,14 +421,12 @@ const ContractorsPage: React.FC = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Компания</TableCell>
-                    <TableCell>Контактное лицо</TableCell>
+                    <TableCell>Подрядчик</TableCell>
                     <TableCell>Специализация</TableCell>
                     <TableCell>Рейтинг</TableCell>
                     <TableCell>Проекты</TableCell>
-                    <TableCell>Производительность</TableCell>
                     <TableCell>Статус</TableCell>
-                    <TableCell>Действия</TableCell>
+                    <TableCell align="right">Действия</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -435,152 +434,76 @@ const ContractorsPage: React.FC = () => {
                     <TableRow key={contractor.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
                             <BusinessIcon />
                           </Avatar>
                           <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            <Typography variant="subtitle2" fontWeight={600}>
                               {contractor.companyName}
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                              <PhoneIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                {contractor.phone}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {contractor.contactPerson}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                            <EmailIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {contractor.email}
+                            <Typography variant="caption" color="text.secondary">
+                              {contractor.contactPerson}
                             </Typography>
                           </Box>
                         </Box>
                       </TableCell>
-                      
                       <TableCell>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {contractor.specializations.slice(0, 2).map((spec) => (
-                            <Chip 
-                              key={spec}
-                              label={getSpecializationText(spec)} 
-                              size="small" 
+                          {contractor.specializations.slice(0, 2).map((spec, index) => (
+                            <Chip
+                              key={index}
+                              label={getSpecializationText(spec)}
+                              size="small"
                               variant="outlined"
                             />
                           ))}
                           {contractor.specializations.length > 2 && (
-                            <Chip 
-                              label={`+${contractor.specializations.length - 2}`} 
-                              size="small" 
+                            <Chip
+                              label={`+${contractor.specializations.length - 2}`}
+                              size="small"
                               variant="outlined"
-                              color="primary"
                             />
                           )}
                         </Box>
                       </TableCell>
-                      
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Rating 
-                            value={contractor.rating} 
-                            readOnly 
-                            size="small" 
-                            precision={0.1}
-                          />
-                          <Typography variant="body2" color="text.secondary">
-                            ({contractor.rating.toFixed(1)})
-                          </Typography>
+                          <Rating value={contractor.rating} readOnly size="small" />
+                          <Typography variant="caption">({contractor.rating})</Typography>
                         </Box>
                       </TableCell>
-                      
                       <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {contractor.performance.projectsCompleted}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          завершено
+                        <Typography variant="body2" fontWeight={600}>
+                          {contractor.performance?.projectsCompleted || 0}
                         </Typography>
                       </TableCell>
-                      
                       <TableCell>
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                            <ScheduleIcon sx={{ fontSize: 14, color: 'success.main' }} />
-                            <Typography variant="body2">
-                              {contractor.performance.onTimeDelivery}% в срок
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <PerformanceIcon sx={{ fontSize: 14, color: 'info.main' }} />
-                            <Typography variant="body2">
-                              {contractor.performance.qualityScore}% качество
-                            </Typography>
-                          </Box>
-                        </Box>
+                        <Chip
+                          label={contractor.isActive ? 'Активен' : 'Неактивен'}
+                          color={contractor.isActive ? 'success' : 'default'}
+                          size="small"
+                        />
                       </TableCell>
-                      
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip 
-                            label={contractor.isActive ? 'Активен' : 'Неактивен'} 
-                            color={contractor.isActive ? 'success' : 'default'}
+                      <TableCell align="right">
+                        <Tooltip title="Просмотр">
+                          <IconButton size="small" onClick={() => setViewContractor(contractor)}>
+                            <ViewIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Редактировать">
+                          <IconButton size="small" onClick={() => openContractorDialog(contractor)}>
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Удалить">
+                          <IconButton
                             size="small"
-                          />
-                          {contractor.certifications.length > 0 && (
-                            <Tooltip title="Сертифицирован">
-                              <VerifiedIcon sx={{ fontSize: 16, color: 'success.main' }} />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <ButtonGroup variant="outlined" size="small">
-                          <Tooltip title="Просмотр">
-                            <IconButton 
-                              size="small"
-                              onClick={() => toast.info('Функция просмотра будет добавлена')}
-                            >
-                              <ViewIcon />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          <Tooltip title="Редактировать">
-                            <IconButton 
-                              size="small"
-                              onClick={() => openContractorDialog(contractor)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          <Tooltip title="Контракты">
-                            <IconButton 
-                              size="small"
-                              onClick={() => toast.info('Функция управления контрактами будет добавлена')}
-                            >
-                              <ContractIcon />
-                            </IconButton>
-                          </Tooltip>
-                          
-                          <Tooltip title="Удалить">
-                            <IconButton 
-                              size="small"
-                              color="error"
-                              onClick={() => handleDeleteContractor(contractor.id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </ButtonGroup>
+                            color="error"
+                            onClick={() => setDeleteConfirmId(contractor.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))}

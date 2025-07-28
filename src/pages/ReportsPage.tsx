@@ -45,6 +45,8 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Report, Template } from '../types';
+import { useProjectStore } from '../store';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -232,6 +234,7 @@ const mockTemplates: Template[] = [
 ];
 
 const ReportsPage: React.FC = () => {
+  const { currentProjectId, isAllProjectsView, selectedProject, projects } = useProjectStore();
   // State
   const [selectedTab, setSelectedTab] = useState(0);
   const [reports, setReports] = useState<Report[]>(mockReports);
@@ -241,6 +244,13 @@ const ReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Template[]>(mockTemplates);
+
+  // Фильтрация отчетов по выбранному проекту
+  const filteredReports = reports.filter(report => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return report.projectId === currentProjectId;
+    return true;
+  });
 
   const { control, handleSubmit, reset, formState, watch } = useForm<Report>();
 
@@ -337,15 +347,15 @@ const ReportsPage: React.FC = () => {
   };
 
   const getReportsByType = (type: string) => {
-    return reports.filter(report => report.type === type);
+    return filteredReports.filter(report => report.type === type);
   };
 
   const renderDashboard = () => {
     const stats = {
-      totalReports: reports.length,
-      activeReports: reports.filter(r => r.isActive).length,
-      scheduledReports: reports.filter(r => r.schedule).length,
-      generatedToday: reports.filter(r => 
+      totalReports: filteredReports.length,
+      activeReports: filteredReports.filter(r => r.isActive).length,
+      scheduledReports: filteredReports.filter(r => r.schedule).length,
+      generatedToday: filteredReports.filter(r => 
         r.lastGenerated && 
         format(r.lastGenerated, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
       ).length,
@@ -503,7 +513,7 @@ const ReportsPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {reports.slice(0, 5).map((report) => {
+              {filteredReports.slice(0, 5).map((report) => {
                 const typeInfo = getReportTypeInfo(report.type);
                 return (
                   <TableRow key={report.id} hover>
@@ -602,7 +612,7 @@ const ReportsPage: React.FC = () => {
 
   const renderReportsList = () => {
     const filteredReports = selectedReportType ? 
-      getReportsByType(selectedReportType) : reports;
+      getReportsByType(selectedReportType) : filteredReports;
 
     return (
       <Box>
@@ -925,9 +935,12 @@ const ReportsPage: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Отчеты и аналитика
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Отчеты и аналитика
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
@@ -1059,6 +1072,27 @@ const ReportsPage: React.FC = () => {
                 />
               </Grid>
               
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="projectId"
+                  control={control}
+                  defaultValue={currentProjectId || ""}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>Проект</InputLabel>
+                      <Select {...field} label="Проект">
+                        <MenuItem value="">Все проекты</MenuItem>
+                        {projects.map((project) => (
+                          <MenuItem key={project.id} value={project.id}>
+                            {project.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+              
               <Grid item xs={12}>
                 <Controller
                   name="description"
@@ -1101,7 +1135,7 @@ const ReportsPage: React.FC = () => {
                   )}
                 />
                 
-                                 {watch('schedule.frequency') && (
+                {watch('schedule.frequency') && (
                   <Controller
                     name="schedule.time"
                     control={control}

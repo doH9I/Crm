@@ -45,6 +45,7 @@ import { ru } from 'date-fns/locale';
 import { useAuthStore } from '../store';
 import { UserRole } from '../types';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface ProfileFormData {
   name: string;
@@ -160,9 +161,14 @@ const ProfilePage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
-        Профиль пользователя
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Профиль пользователя
+          </Typography>
+          <ProjectSelector />
+        </Box>
+      </Box>
 
       <Grid container spacing={3}>
         {/* Боковая панель с информацией о пользователе */}

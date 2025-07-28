@@ -66,6 +66,8 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { SafetyIncident, Training, Document } from '../types';
+import { useProjectStore } from '../store';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -237,7 +239,7 @@ const mockTrainings: Training[] = [
 ];
 
 // Моковые данные для документов ТБ
-const mockSafetyDocuments: Document[] = [
+const mockDocuments: Document[] = [
   {
     id: '1',
     name: 'Инструкция по технике безопасности при работе на высоте',
@@ -316,18 +318,20 @@ const mockSafetyDocuments: Document[] = [
 ];
 
 const SafetyPage: React.FC = () => {
-  const [incidents, setIncidents] = useState<SafetyIncident[]>(mockIncidents);
+  const { currentProjectId, isAllProjectsView, selectedProject, projects } = useProjectStore();
   const [selectedTab, setSelectedTab] = useState(0);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openIncidentDialog, setOpenIncidentDialog] = useState(false);
+  const [openTrainingDialog, setOpenTrainingDialog] = useState(false);
+  const [openDocumentDialog, setOpenDocumentDialog] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<SafetyIncident | null>(null);
+  const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [filterSeverity, setFilterSeverity] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [trainings, setTrainings] = useState<Training[]>(mockTrainings);
-  const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
-  const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
-  const [safetyDocuments, setSafetyDocuments] = useState<Document[]>(mockSafetyDocuments);
+  const [safetyDocuments, setSafetyDocuments] = useState<Document[]>(mockDocuments);
 
   const { control, handleSubmit, reset, watch } = useForm<SafetyIncident>();
 
@@ -516,6 +520,10 @@ const SafetyPage: React.FC = () => {
   };
 
   const filteredIncidents = incidents.filter(incident => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return incident.projectId === currentProjectId;
+    return true;
+  }).filter(incident => {
     const matchesSearch = incident.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || incident.type === filterType;
@@ -540,12 +548,9 @@ const SafetyPage: React.FC = () => {
   };
 
   const filteredTrainings = trainings.filter(training => {
-    const matchesSearch = training.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      training.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || training.type === filterType;
-    const matchesStatus = filterStatus === 'all' || training.status === filterStatus;
-
-    return matchesSearch && matchesType && matchesStatus;
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return training.projectId === currentProjectId;
+    return true;
   });
 
   const openTrainingDialog = (training?: Training) => {
@@ -611,6 +616,10 @@ const SafetyPage: React.FC = () => {
   };
 
   const filteredSafetyDocuments = safetyDocuments.filter(document => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return document.projectId === currentProjectId;
+    return true;
+  }).filter(document => {
     const matchesSearch = document.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       document.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       document.fileName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1364,10 +1373,10 @@ const SafetyPage: React.FC = () => {
         {/* Категории документов */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {[
-            { label: 'Всего документов', value: mockSafetyDocuments.length, color: 'primary', icon: <BookIcon /> },
-            { label: 'Сертификаты', value: mockSafetyDocuments.filter(d => d.type === 'certificate').length, color: 'success', icon: <EmojiEventsIcon /> },
-            { label: 'Инструкции', value: mockSafetyDocuments.filter(d => d.category === 'instruction').length, color: 'info', icon: <InfoIcon /> },
-            { label: 'Истекают', value: mockSafetyDocuments.filter(d => d.expiryDate && new Date(d.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).length, color: 'warning', icon: <WarningIcon /> }
+            { label: 'Всего документов', value: mockDocuments.length, color: 'primary', icon: <BookIcon /> },
+            { label: 'Сертификаты', value: mockDocuments.filter(d => d.type === 'certificate').length, color: 'success', icon: <EmojiEventsIcon /> },
+            { label: 'Инструкции', value: mockDocuments.filter(d => d.category === 'instruction').length, color: 'info', icon: <InfoIcon /> },
+            { label: 'Истекают', value: mockDocuments.filter(d => d.expiryDate && new Date(d.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).length, color: 'warning', icon: <WarningIcon /> }
           ].map((stat, index) => (
             <Grid item xs={12} sm={6} md={3} key={index}>
               <Card>
@@ -1458,7 +1467,7 @@ const SafetyPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredSafetyDocuments.map((document) => (
+              {filteredDocuments.map((document) => (
                 <TableRow key={document.id} hover>
                   <TableCell>
                     <Box>
@@ -1531,18 +1540,20 @@ const SafetyPage: React.FC = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Техника безопасности
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Безопасность и охрана труда
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => openIncidentDialog()}
-          color="error"
+          onClick={() => openIncidentDialog(null)}
         >
-          Зарегистрировать инцидент
+          Сообщить инцидент
         </Button>
       </Box>
 
@@ -1550,34 +1561,34 @@ const SafetyPage: React.FC = () => {
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={selectedTab} onChange={handleTabChange} aria-label="safety tabs">
+            <Tab label="Обзор" />
             <Tab label="Инциденты" />
-            <Tab label="Обучение ТБ" />
+            <Tab label="Обучение" />
             <Tab label="Документы" />
-            <Tab label="Статистика" />
           </Tabs>
         </Box>
 
         <TabPanel value={selectedTab} index={0}>
-          {renderIncidentsList()}
+          {renderSafetyStatistics()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={1}>
-          {renderSafetyTraining()}
+          {renderIncidentsList()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>
-          {renderSafetyDocuments()}
+          {renderSafetyTraining()}
         </TabPanel>
 
         <TabPanel value={selectedTab} index={3}>
-          {renderSafetyStatistics()}
+          {renderSafetyDocuments()}
         </TabPanel>
       </Card>
 
       {/* Диалог регистрации/редактирования инцидента */}
       <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        open={openIncidentDialog}
+        onClose={() => setOpenIncidentDialog(false)}
         maxWidth="md"
         fullWidth
       >
@@ -1791,7 +1802,7 @@ const SafetyPage: React.FC = () => {
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>
+            <Button onClick={() => setOpenIncidentDialog(false)}>
               Отмена
             </Button>
             <Button type="submit" variant="contained" color="error">

@@ -52,6 +52,7 @@ import { ru } from 'date-fns/locale';
 import { exportData, generateFilename, ExportOptions } from '../utils/exportUtils';
 import { useProjectStore, useMaterialStore, useAuthStore } from '../store';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface EstimateItem {
   materialId: string;
@@ -100,7 +101,7 @@ interface Estimate {
 }
 
 const EstimatesPage: React.FC = () => {
-  const { projects } = useProjectStore();
+  const { projects, currentProjectId, isAllProjectsView, selectedProject } = useProjectStore();
   const { materials } = useMaterialStore();
   const { user } = useAuthStore();
   
@@ -109,6 +110,13 @@ const EstimatesPage: React.FC = () => {
   const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [viewEstimate, setViewEstimate] = useState<Estimate | null>(null);
+
+  // Фильтрация смет по выбранному проекту
+  const filteredEstimates = estimates.filter(estimate => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return estimate.projectId === currentProjectId;
+    return true;
+  });
 
   const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<EstimateFormData>({
     defaultValues: {
@@ -336,9 +344,12 @@ const EstimatesPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление сметами
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление сметами
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -359,7 +370,7 @@ const EstimatesPage: React.FC = () => {
                   <EstimateIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{estimates.length}</Typography>
+                  <Typography variant="h6">{filteredEstimates.length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Всего смет
                   </Typography>
@@ -376,7 +387,7 @@ const EstimatesPage: React.FC = () => {
                   <CalculateIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{estimates.filter(e => e.status === 'approved').length}</Typography>
+                  <Typography variant="h6">{filteredEstimates.filter(e => e.status === 'approved').length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Одобрено
                   </Typography>
@@ -393,7 +404,7 @@ const EstimatesPage: React.FC = () => {
                   <TemplateIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{estimates.filter(e => e.status === 'draft').length}</Typography>
+                  <Typography variant="h6">{filteredEstimates.filter(e => e.status === 'draft').length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Черновики
                   </Typography>
@@ -407,14 +418,14 @@ const EstimatesPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'info.main' }}>
-                  {formatCurrency(estimates.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.total, 0)).slice(0, -3)}
+                  {formatCurrency(filteredEstimates.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.total, 0)).slice(0, -3)}
                 </Avatar>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     Сумма одобренных
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {formatCurrency(estimates.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.total, 0))}
+                    {formatCurrency(filteredEstimates.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.total, 0))}
                   </Typography>
                 </Box>
               </Box>
@@ -423,7 +434,7 @@ const EstimatesPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {estimates.length === 0 ? (
+      {filteredEstimates.length === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
             <EstimateIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -431,7 +442,12 @@ const EstimatesPage: React.FC = () => {
               Нет смет
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Создайте первую смету для начала работы
+              {isAllProjectsView 
+                ? 'Создайте первую смету для начала работы'
+                : selectedProject 
+                  ? `Создайте смету для проекта "${selectedProject.name}"`
+                  : 'Создайте первую смету для начала работы'
+              }
             </Typography>
             <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
               Создать смету
@@ -453,7 +469,7 @@ const EstimatesPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {estimates.map((estimate) => (
+              {filteredEstimates.map((estimate) => (
                 <TableRow key={estimate.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

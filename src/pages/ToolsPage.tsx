@@ -52,6 +52,7 @@ import { format, addDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useToolStore, useMaterialStore, useAuthStore } from '../store';
 import { Tool, ToolCondition, ToolStatus } from '../types';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -97,6 +98,7 @@ const ToolsPage: React.FC = () => {
     assignTool,
     returnTool
   } = useToolStore();
+  const { currentProjectId, isAllProjectsView, selectedProject } = useProjectStore();
 
   const { suppliers } = useMaterialStore();
   const { user } = useAuthStore();
@@ -105,9 +107,11 @@ const ToolsPage: React.FC = () => {
   const { control: assignControl, handleSubmit: handleAssignSubmit, reset: resetAssign } = useForm();
 
   useEffect(() => {
-    fetchTools();
-    fetchEquipment();
-  }, [fetchTools, fetchEquipment]);
+    // Загружаем данные с учетом выбранного проекта
+    const projectId = isAllProjectsView ? undefined : currentProjectId;
+    fetchTools(projectId);
+    fetchEquipment(projectId);
+  }, [fetchTools, fetchEquipment, currentProjectId, isAllProjectsView]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -289,9 +293,12 @@ const ToolsPage: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Инструменты и оборудование
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Инструменты и оборудование
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"

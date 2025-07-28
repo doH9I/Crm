@@ -46,9 +46,10 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useMaterialStore, useAuthStore } from '../store';
+import { useMaterialStore, useAuthStore, useProjectStore } from '../store';
 import { Supplier } from '../types';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface SupplierFormData {
   name: string;
@@ -68,6 +69,7 @@ interface SupplierFormData {
 const SuppliersPage: React.FC = () => {
   const { suppliers, loading, fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } = useMaterialStore();
   const { user } = useAuthStore();
+  const { currentProjectId, isAllProjectsView, selectedProject } = useProjectStore();
   
   const [openDialog, setOpenDialog] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -77,8 +79,15 @@ const SuppliersPage: React.FC = () => {
   const { control, handleSubmit, reset, formState: { errors } } = useForm<SupplierFormData>();
 
   useEffect(() => {
-    fetchSuppliers();
-  }, [fetchSuppliers]);
+    fetchSuppliers(currentProjectId);
+  }, [fetchSuppliers, currentProjectId]);
+
+  // Фильтрация поставщиков по выбранному проекту
+  const filteredSuppliers = suppliers.filter(supplier => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return supplier.projectId === currentProjectId;
+    return true;
+  });
 
   const handleCreateSupplier = async (data: SupplierFormData) => {
     try {
@@ -178,9 +187,12 @@ const SuppliersPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление поставщиками
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление поставщиками
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -201,7 +213,7 @@ const SuppliersPage: React.FC = () => {
                   <SupplierIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{suppliers.length}</Typography>
+                  <Typography variant="h6">{filteredSuppliers.length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Всего поставщиков
                   </Typography>
@@ -218,7 +230,7 @@ const SuppliersPage: React.FC = () => {
                   <StarIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{suppliers.filter(s => s.isActive).length}</Typography>
+                  <Typography variant="h6">{filteredSuppliers.filter(s => s.isActive).length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Активных
                   </Typography>
@@ -236,7 +248,7 @@ const SuppliersPage: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6">
-                    {suppliers.length > 0 ? (suppliers.reduce((sum, s) => sum + s.rating, 0) / suppliers.length).toFixed(1) : '0'}
+                    {filteredSuppliers.length > 0 ? (filteredSuppliers.reduce((sum, s) => sum + s.rating, 0) / filteredSuppliers.length).toFixed(1) : '0'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Средний рейтинг
@@ -255,7 +267,7 @@ const SuppliersPage: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6">
-                    {suppliers.reduce((sum, s) => sum + (s.performance?.totalOrders || 0), 0)}
+                    {filteredSuppliers.reduce((sum, s) => sum + (s.performance?.totalOrders || 0), 0)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Всего заказов
@@ -267,7 +279,7 @@ const SuppliersPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {suppliers.length === 0 && !loading ? (
+      {filteredSuppliers.length === 0 && !loading ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
             <SupplierIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -275,7 +287,12 @@ const SuppliersPage: React.FC = () => {
               Нет поставщиков
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Добавьте первого поставщика для начала работы
+              {isAllProjectsView 
+                ? 'Добавьте первого поставщика для начала работы'
+                : selectedProject 
+                  ? `Добавьте поставщика для проекта "${selectedProject.name}"`
+                  : 'Добавьте первого поставщика для начала работы'
+              }
             </Typography>
             <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
               Добавить поставщика
@@ -297,7 +314,7 @@ const SuppliersPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {suppliers.map((supplier) => (
+              {filteredSuppliers.map((supplier) => (
                 <TableRow key={supplier.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

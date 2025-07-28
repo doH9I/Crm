@@ -11,8 +11,14 @@ import {
   Divider,
   Chip,
   Collapse,
+  Select,
+  MenuItem,
+  FormControl,
+  Button,
+  Tooltip,
 } from '@mui/material';
 import { usePermissions, MODULES } from '../../hooks/usePermissions';
+import { useProjectStore } from '../../store';
 import {
   Dashboard as DashboardIcon,
   Business as ProjectIcon,
@@ -31,6 +37,7 @@ import {
   ExpandMore,
   Folder as FolderIcon,
   TrendingUp as TrendingUpIcon,
+  AllInclusive as AllProjectsIcon,
 } from '@mui/icons-material';
 
 interface NavigationItem {
@@ -186,6 +193,15 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { canAccess, isAdmin, user } = usePermissions();
+  const { 
+    projects, 
+    selectedProject, 
+    currentProjectId, 
+    isAllProjectsView,
+    selectProject, 
+    setCurrentProjectId, 
+    setAllProjectsView 
+  } = useProjectStore();
   const [openSections, setOpenSections] = React.useState<string[]>(['projects', 'warehouse']);
 
   const handleNavigation = (path: string) => {
@@ -200,6 +216,23 @@ const Sidebar: React.FC = () => {
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     );
+  };
+
+  const handleProjectSelect = (projectId: string | null) => {
+    if (projectId === null) {
+      // Выбрать "Все проекты"
+      setAllProjectsView(true);
+      setCurrentProjectId(null);
+      selectProject(null);
+    } else {
+      // Выбрать конкретный проект
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        setAllProjectsView(false);
+        setCurrentProjectId(projectId);
+        selectProject(project);
+      }
+    }
   };
 
   const isActiveItem = (path: string) => {
@@ -354,6 +387,63 @@ const Sidebar: React.FC = () => {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Project Selector */}
+      <Box sx={{ p: 2, mx: 2, my: 1 }}>
+        <Typography 
+          variant="caption" 
+          color="text.secondary" 
+          sx={{ 
+            mb: 1, 
+            display: 'block',
+            fontWeight: 600,
+            letterSpacing: 0.5,
+          }}
+        >
+          ВЫБОР ПРОЕКТА
+        </Typography>
+        <FormControl fullWidth size="small">
+          <Select
+            value={isAllProjectsView ? 'all' : (currentProjectId || 'all')}
+            onChange={(e) => handleProjectSelect(e.target.value === 'all' ? null : e.target.value)}
+            displayEmpty
+            sx={{
+              '& .MuiSelect-select': {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              },
+            }}
+          >
+            <MenuItem value="all">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AllProjectsIcon fontSize="small" />
+                <Typography variant="body2">Все проекты</Typography>
+              </Box>
+            </MenuItem>
+            <Divider />
+            {projects.map((project) => (
+              <MenuItem key={project.id} value={project.id}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ProjectIcon fontSize="small" />
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {project.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {project.status === 'in_progress' ? 'В работе' : 
+                       project.status === 'planning' ? 'Планирование' : 
+                       project.status === 'completed' ? 'Завершен' : project.status}
+                    </Typography>
+                  </Box>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
       {/* Quick Stats */}
       <Box sx={{ p: 2, mx: 2, my: 1 }}>
         <Box

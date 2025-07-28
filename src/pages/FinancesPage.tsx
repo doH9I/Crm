@@ -70,6 +70,8 @@ import {
   TransactionType,
   Contract 
 } from '../types';
+import { useProjectStore } from '../store';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -281,6 +283,7 @@ const mockContracts: Contract[] = [
 ];
 
 const FinancesPage: React.FC = () => {
+  const { currentProjectId, isAllProjectsView, selectedProject, projects } = useProjectStore();
   const [activeTab, setActiveTab] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
@@ -419,12 +422,12 @@ const FinancesPage: React.FC = () => {
   };
 
   const financialStats = {
-    totalRevenue: invoices.reduce((sum, inv) => sum + inv.paidAmount, 0),
-    totalExpenses: transactions
+    totalRevenue: filteredInvoices.reduce((sum, inv) => sum + inv.paidAmount, 0),
+    totalExpenses: filteredTransactions
       .filter(t => t.type === TransactionType.EXPENSE)
       .reduce((sum, t) => sum + t.amount, 0),
-    pendingInvoices: invoices.filter(inv => inv.status === 'sent' || inv.status === 'viewed').length,
-    overdueInvoices: invoices.filter(inv => inv.status === 'overdue').length,
+    pendingInvoices: filteredInvoices.filter(inv => inv.status === 'sent' || inv.status === 'viewed').length,
+    overdueInvoices: filteredInvoices.filter(inv => inv.status === 'overdue').length,
   };
 
   const renderContractsTab = () => {
@@ -608,9 +611,12 @@ const FinancesPage: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Финансы
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Финансы
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
@@ -727,6 +733,7 @@ const FinancesPage: React.FC = () => {
                 <TableRow>
                   <TableCell>Номер счета</TableCell>
                   <TableCell>Клиент</TableCell>
+                  <TableCell>Проект</TableCell>
                   <TableCell>Дата выставления</TableCell>
                   <TableCell>Срок оплаты</TableCell>
                   <TableCell>Сумма</TableCell>
@@ -736,7 +743,7 @@ const FinancesPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {invoices.map((invoice) => (
+                {filteredInvoices.map((invoice) => (
                   <TableRow key={invoice.id} hover>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
@@ -747,6 +754,12 @@ const FinancesPage: React.FC = () => {
                     <TableCell>
                       <Typography variant="body2">
                         {invoice.clientId || 'Неизвестен'}
+                      </Typography>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <Typography variant="body2">
+                        {projects.find(p => p.id === invoice.projectId)?.name || 'Без проекта'}
                       </Typography>
                     </TableCell>
                     
@@ -823,14 +836,19 @@ const FinancesPage: React.FC = () => {
             </Table>
           </TableContainer>
 
-          {invoices.length === 0 && (
+          {filteredInvoices.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <InvoiceIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
                 Нет созданных счетов
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Создайте первый счет для начала работы
+                {isAllProjectsView 
+                  ? 'Создайте первый счет для начала работы'
+                  : selectedProject 
+                    ? `Создайте счет для проекта "${selectedProject.name}"`
+                    : 'Создайте первый счет для начала работы'
+                }
               </Typography>
               <Button
                 variant="contained"
@@ -860,7 +878,7 @@ const FinancesPage: React.FC = () => {
           </Box>
 
           <Grid container spacing={3}>
-            {budgets.map((budget) => (
+            {filteredBudgets.map((budget) => (
               <Grid item xs={12} md={6} key={budget.id}>
                 <Card>
                   <CardContent>
@@ -948,14 +966,19 @@ const FinancesPage: React.FC = () => {
             ))}
           </Grid>
 
-          {budgets.length === 0 && (
+          {filteredBudgets.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <BudgetIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
                 Нет созданных бюджетов
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Создайте первый бюджет для контроля расходов
+                {isAllProjectsView 
+                  ? 'Создайте первый бюджет для контроля расходов'
+                  : selectedProject 
+                    ? `Создайте бюджет для проекта "${selectedProject.name}"`
+                    : 'Создайте первый бюджет для контроля расходов'
+                }
               </Typography>
               <Button
                 variant="contained"
@@ -992,6 +1015,7 @@ const FinancesPage: React.FC = () => {
                   <TableCell>Тип</TableCell>
                   <TableCell>Описание</TableCell>
                   <TableCell>Категория</TableCell>
+                  <TableCell>Проект</TableCell>
                   <TableCell>Сумма</TableCell>
                   <TableCell>Способ оплаты</TableCell>
                   <TableCell>Статус</TableCell>
@@ -999,7 +1023,7 @@ const FinancesPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <TableRow key={transaction.id} hover>
                     <TableCell>
                       <Typography variant="body2">
@@ -1024,6 +1048,12 @@ const FinancesPage: React.FC = () => {
                     <TableCell>
                       <Typography variant="body2">
                         {transaction.category}
+                      </Typography>
+                    </TableCell>
+                    
+                    <TableCell>
+                      <Typography variant="body2">
+                        {projects.find(p => p.id === transaction.projectId)?.name || 'Без проекта'}
                       </Typography>
                     </TableCell>
                     
@@ -1081,14 +1111,19 @@ const FinancesPage: React.FC = () => {
             </Table>
           </TableContainer>
 
-          {transactions.length === 0 && (
+          {filteredTransactions.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <MoneyIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
                 Нет записей о транзакциях
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Добавьте первую транзакцию для отслеживания финансов
+                {isAllProjectsView 
+                  ? 'Добавьте первую транзакцию для отслеживания финансов'
+                  : selectedProject 
+                    ? `Добавьте транзакцию для проекта "${selectedProject.name}"`
+                    : 'Добавьте первую транзакцию для отслеживания финансов'
+                }
               </Typography>
               <Button
                 variant="contained"

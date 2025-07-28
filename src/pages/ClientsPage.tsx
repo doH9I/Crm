@@ -51,6 +51,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useProjectStore, useAuthStore } from '../store';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface Client {
   id: string;
@@ -86,7 +87,7 @@ interface ClientFormData {
 }
 
 const ClientsPage: React.FC = () => {
-  const { projects } = useProjectStore();
+  const { projects, currentProjectId, isAllProjectsView, selectedProject } = useProjectStore();
   const { user } = useAuthStore();
   
   const [clients, setClients] = useState<Client[]>([]);
@@ -98,6 +99,13 @@ const ClientsPage: React.FC = () => {
 
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<ClientFormData>();
   const watchType = watch('type');
+
+  // Фильтрация клиентов по выбранному проекту
+  const filteredClients = clients.filter(client => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return client.projects.includes(currentProjectId);
+    return true;
+  });
 
   useEffect(() => {
     // Имитация загрузки клиентов
@@ -227,9 +235,12 @@ const ClientsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление заказчиками
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление заказчиками
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -250,7 +261,7 @@ const ClientsPage: React.FC = () => {
                   <ClientIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{clients.length}</Typography>
+                  <Typography variant="h6">{filteredClients.length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Всего заказчиков
                   </Typography>
@@ -267,7 +278,7 @@ const ClientsPage: React.FC = () => {
                   <BusinessIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{clients.filter(c => c.type === 'company').length}</Typography>
+                  <Typography variant="h6">{filteredClients.filter(c => c.type === 'company').length}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Компании
                   </Typography>
@@ -284,7 +295,7 @@ const ClientsPage: React.FC = () => {
                   <ProjectIcon />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{clients.reduce((sum, c) => sum + c.completedProjects, 0)}</Typography>
+                  <Typography variant="h6">{filteredClients.reduce((sum, c) => sum + c.completedProjects, 0)}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Завершенных проектов
                   </Typography>
@@ -302,7 +313,7 @@ const ClientsPage: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6">
-                    {formatCurrency(clients.reduce((sum, c) => sum + c.totalBudget, 0)).slice(0, -3)}
+                    {formatCurrency(filteredClients.reduce((sum, c) => sum + c.totalBudget, 0)).slice(0, -3)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Общий бюджет
@@ -314,7 +325,7 @@ const ClientsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {clients.length === 0 && !loading ? (
+      {filteredClients.length === 0 && !loading ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
             <ClientIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -322,7 +333,12 @@ const ClientsPage: React.FC = () => {
               Нет заказчиков
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Добавьте первого заказчика для начала работы
+              {isAllProjectsView 
+                ? 'Добавьте первого заказчика для начала работы'
+                : selectedProject 
+                  ? `Добавьте заказчика для проекта "${selectedProject.name}"`
+                  : 'Добавьте первого заказчика для начала работы'
+              }
             </Typography>
             <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
               Добавить заказчика
@@ -344,7 +360,7 @@ const ClientsPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <TableRow key={client.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

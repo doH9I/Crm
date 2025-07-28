@@ -70,6 +70,8 @@ import {
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ProjectTask, TaskStatus, WorkType } from '../types';
+import { useProjectStore } from '../store';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -172,6 +174,7 @@ const mockTasks: ProjectTask[] = [
 ];
 
 const TasksPage: React.FC = () => {
+  const { currentProjectId, isAllProjectsView, selectedProject, projects } = useProjectStore();
   const [tasks, setTasks] = useState<ProjectTask[]>(mockTasks);
   const [selectedTab, setSelectedTab] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -337,7 +340,12 @@ const TasksPage: React.FC = () => {
     return typeMap[workType] || workType;
   };
 
+  // Фильтрация задач по выбранному проекту
   const filteredTasks = tasks.filter(task => {
+    if (isAllProjectsView) return true;
+    if (currentProjectId) return task.projectId === currentProjectId;
+    return true;
+  }).filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
@@ -348,12 +356,12 @@ const TasksPage: React.FC = () => {
   });
 
   const taskStats = {
-    total: tasks.length,
-    notStarted: tasks.filter(t => t.status === TaskStatus.NOT_STARTED).length,
-    inProgress: tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
-    completed: tasks.filter(t => t.status === TaskStatus.COMPLETED).length,
-    blocked: tasks.filter(t => t.status === TaskStatus.BLOCKED).length,
-    overdue: tasks.filter(t => t.endDate && new Date(t.endDate) < new Date() && t.status !== TaskStatus.COMPLETED).length,
+    total: filteredTasks.length,
+    notStarted: filteredTasks.filter(t => t.status === TaskStatus.NOT_STARTED).length,
+    inProgress: filteredTasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
+    completed: filteredTasks.filter(t => t.status === TaskStatus.COMPLETED).length,
+    blocked: filteredTasks.filter(t => t.status === TaskStatus.BLOCKED).length,
+    overdue: filteredTasks.filter(t => t.endDate && new Date(t.endDate) < new Date() && t.status !== TaskStatus.COMPLETED).length,
   };
 
   const renderTasksList = () => (
@@ -950,9 +958,12 @@ const TasksPage: React.FC = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Управление задачами
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление задачами
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -1030,6 +1041,27 @@ const TasksPage: React.FC = () => {
                       multiline
                       rows={3}
                     />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="projectId"
+                  control={control}
+                  defaultValue={currentProjectId || ""}
+                  rules={{ required: 'Выберите проект' }}
+                  render={({ field, fieldState }) => (
+                    <FormControl fullWidth error={!!fieldState.error}>
+                      <InputLabel>Проект</InputLabel>
+                      <Select {...field} label="Проект">
+                        {projects.map((project) => (
+                          <MenuItem key={project.id} value={project.id}>
+                            {project.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   )}
                 />
               </Grid>

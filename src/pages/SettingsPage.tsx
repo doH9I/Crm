@@ -46,6 +46,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { useAppStore, useAuthStore } from '../store';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface CompanyFormData {
   companyName: string;
@@ -231,9 +232,14 @@ const SettingsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>
-        Настройки системы
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Настройки системы
+          </Typography>
+          <ProjectSelector />
+        </Box>
+      </Box>
 
       <Paper sx={{ width: '100%' }}>
         <Tabs

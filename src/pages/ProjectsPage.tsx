@@ -44,6 +44,7 @@ import { ru } from 'date-fns/locale';
 import { useProjectStore, useAuthStore } from '../store';
 import { Project, ProjectStatus, ProjectType } from '../types';
 import { formatCurrency } from '../utils';
+import ProjectSelector from '../components/ProjectSelector';
 
 interface ProjectFormData {
   name: string;
@@ -60,7 +61,17 @@ interface ProjectFormData {
 }
 
 const ProjectsPage: React.FC = () => {
-  const { projects, loading, fetchProjects, createProject, updateProject, deleteProject } = useProjectStore();
+  const { 
+    projects, 
+    loading, 
+    fetchProjects, 
+    createProject, 
+    updateProject, 
+    deleteProject,
+    selectedProject,
+    currentProjectId,
+    isAllProjectsView
+  } = useProjectStore();
   const { user } = useAuthStore();
   const [searchParams] = useSearchParams();
   
@@ -68,19 +79,25 @@ const ProjectsPage: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Фильтр проектов по статусу из URL
+  // Фильтр проектов по статусу из URL и выбранному проекту
   const statusFilter = searchParams.get('status');
-  const filteredProjects = statusFilter 
-    ? projects.filter(project => {
-        if (statusFilter === 'active') {
-          return project.status === 'in_progress';
-        }
-        if (statusFilter === 'planning') {
-          return project.status === 'planning';
-        }
-        return true;
-      })
-    : projects;
+  const filteredProjects = projects.filter(project => {
+    // Фильтр по статусу из URL
+    if (statusFilter) {
+      if (statusFilter === 'active') {
+        if (project.status !== 'in_progress') return false;
+      } else if (statusFilter === 'planning') {
+        if (project.status !== 'planning') return false;
+      }
+    }
+    
+    // Если выбран конкретный проект, показываем только его
+    if (currentProjectId && !isAllProjectsView) {
+      return project.id === currentProjectId;
+    }
+    
+    return true;
+  });
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ProjectFormData>();
 
@@ -221,11 +238,14 @@ const ProjectsPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {statusFilter === 'active' ? 'Активные проекты' : 
-           statusFilter === 'planning' ? 'Проекты в планировании' : 
-           'Управление проектами'}
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            {statusFilter === 'active' ? 'Активные проекты' : 
+             statusFilter === 'planning' ? 'Проекты в планировании' : 
+             'Управление проектами'}
+          </Typography>
+          <ProjectSelector />
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}

@@ -44,6 +44,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import ProjectSelector from '../components/ProjectSelector';
 
 // Моковые данные для отчётов
 const reportData = {
@@ -706,9 +707,12 @@ const ReportDetailPage: React.FC = () => {
           >
             Назад
           </Button>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            {getReportTypeIcon()} {data.title}
-          </Typography>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+              {getReportTypeIcon()} {data.title}
+            </Typography>
+            <ProjectSelector />
+          </Box>
         </Box>
         
         <Box sx={{ display: 'flex', gap: 1 }}>
