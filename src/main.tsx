@@ -9,7 +9,7 @@ import { ruRU } from '@mui/material/locale';
 import { ruRU as dataGridRuRU } from '@mui/x-data-grid';
 import { ruRU as datePickersRuRU } from '@mui/x-date-pickers/locales';
 
-import App from './App';
+import App from './App.fixed';
 import './index.css';
 
 // Настройка React Query
