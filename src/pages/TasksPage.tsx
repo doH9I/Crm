@@ -823,7 +823,7 @@ const TasksPage: React.FC = () => {
 
     const getTasksForDay = (date: Date) => {
       return filteredTasks.filter(task => 
-        isSameDay(new Date(task.endDate), date)
+        task.endDate && isSameDay(new Date(task.endDate), date)
       );
     };
 

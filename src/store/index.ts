@@ -73,6 +73,8 @@ interface MaterialState {
   updateMaterial: (id: string, updates: Partial<Material>) => Promise<void>;
   deleteMaterial: (id: string) => Promise<void>;
   createSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateSupplier: (id: string, updates: Partial<Supplier>) => Promise<void>;
+  deleteSupplier: (id: string) => Promise<void>;
   createOrder: (order: Omit<MaterialOrder, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateOrderStatus: (id: string, status: string) => Promise<void>;
 }
@@ -831,6 +833,12 @@ export const useMaterialStore = create<MaterialState>()(
       createSupplier: async (supplier) => {
         // Реализация создания поставщика
       },
+      updateSupplier: async (id, updates) => {
+        // Реализация обновления поставщика
+      },
+      deleteSupplier: async (id) => {
+        // Реализация удаления поставщика
+      },
       createOrder: async (order) => {
         // Реализация создания заказа
       },
@@ -1248,6 +1256,8 @@ export const useAppStore = create<AppState>()(
             },
             sessionTimeout: 480,
             twoFactorEnabled: false,
+            maxLoginAttempts: 5,
+            twoFactorRequired: false,
           },
           integrations: {
             maps: true,

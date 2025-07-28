@@ -38,7 +38,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import { useDashboardStore } from '../store';
+import { useDashboardStore, useProjectStore } from '../store';
 import { formatCurrency } from '../utils';
 import WeatherWidget from '../components/Advanced/WeatherWidget';
 import QRCodeScanner from '../components/Advanced/QRCodeScanner';

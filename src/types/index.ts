@@ -413,6 +413,14 @@ export interface Supplier extends BaseEntity {
   priceList?: SupplierPriceItem[];
   contracts?: Contract[];
   reviews?: SupplierReview[];
+  projectId?: string; // ID проекта для фильтрации
+  specialization?: string; // специализация поставщика
+  notes?: string; // дополнительные заметки
+  performance?: {
+    totalOrders: number;
+    qualityRating: number;
+    onTimeDelivery: number;
+  };
 }
 
 export interface SupplierPriceItem {
@@ -934,6 +942,7 @@ export interface Report extends BaseEntity {
   isActive: boolean;
   lastGenerated?: Date;
   createdBy: string;
+  projectId?: string; // ID проекта для фильтрации
 }
 
 export interface ReportParameter {
@@ -1049,6 +1058,8 @@ export interface AppSettings {
     };
     sessionTimeout: number; // в минутах
     twoFactorEnabled: boolean;
+    maxLoginAttempts: number;
+    twoFactorRequired: boolean;
     ipWhitelist?: string[];
   };
   integrations: {
@@ -1279,6 +1290,7 @@ export interface Training extends BaseEntity {
   cost: number;
   isRequired: boolean;
   certificate: boolean;
+  projectId?: string; // ID проекта для фильтрации
 }
 
 export interface TrainingParticipant {

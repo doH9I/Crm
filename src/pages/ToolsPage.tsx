@@ -50,7 +50,7 @@ import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { format, addDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { useToolStore, useMaterialStore, useAuthStore } from '../store';
+import { useToolStore, useMaterialStore, useAuthStore, useProjectStore } from '../store';
 import { Tool, ToolCondition, ToolStatus } from '../types';
 import ProjectSelector from '../components/ProjectSelector';
 
