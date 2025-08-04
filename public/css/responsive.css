@@ -1,0 +1,689 @@
+/* Mobile and tablet responsive styles */
+
+/* Tablet and smaller desktop screens */
+@media (max-width: 1024px) {
+    .header-center {
+        margin: 0 20px;
+        max-width: 300px;
+    }
+    
+    .sidebar {
+        width: 260px;
+    }
+    
+    .app {
+        grid-template-columns: 260px 1fr;
+    }
+    
+    .app.sidebar-collapsed {
+        grid-template-columns: 70px 1fr;
+    }
+    
+    .content-area {
+        padding: 20px;
+    }
+    
+    .login-container {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+    }
+    
+    .login-info {
+        display: none;
+    }
+    
+    .login-form-wrapper {
+        padding: 40px 30px;
+    }
+}
+
+/* Tablet portrait and large phones */
+@media (max-width: 768px) {
+    /* Show mobile menu toggle */
+    .mobile-menu-toggle {
+        display: block !important;
+    }
+    
+    /* Hide sidebar by default on mobile */
+    .app {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        z-index: 200;
+        transition: var(--transition);
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .sidebar.mobile-open {
+        left: 0;
+    }
+    
+    .app.sidebar-collapsed {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Header adjustments */
+    .header-center {
+        margin: 0 16px;
+        max-width: 200px;
+    }
+    
+    .top-header {
+        padding: 0 16px;
+    }
+    
+    .page-title {
+        font-size: 20px;
+    }
+    
+    /* Content area */
+    .content-area {
+        padding: 16px;
+    }
+    
+    /* Cards */
+    .card-header {
+        padding: 16px 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    /* Modal adjustments */
+    .modal {
+        max-width: 95%;
+        width: 95%;
+    }
+    
+    .modal-header {
+        padding: 16px 20px;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        padding: 16px 20px;
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Table responsive */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .table {
+        min-width: 600px;
+    }
+    
+    /* Form adjustments */
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    /* Button adjustments */
+    .btn {
+        min-height: 44px;
+    }
+    
+    .btn-sm {
+        min-height: 36px;
+    }
+    
+    /* Search box adjustments */
+    .search-box input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Login page mobile */
+    .login-page {
+        padding: 20px 16px;
+    }
+    
+    .login-form-wrapper {
+        padding: 30px 24px;
+    }
+    
+    .login-header h2 {
+        font-size: 24px;
+    }
+    
+    .login-header p {
+        font-size: 14px;
+    }
+    
+    .input-group input {
+        font-size: 16px;
+        padding: 12px 16px 12px 40px;
+    }
+    
+    .input-icon {
+        left: 14px;
+    }
+    
+    .password-toggle {
+        right: 14px;
+    }
+    
+    .login-btn {
+        padding: 14px 20px;
+        min-height: 48px;
+    }
+    
+    /* Notifications on mobile */
+    .notifications-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .notification {
+        max-width: none;
+    }
+    
+    /* User dropdown on mobile */
+    .user-dropdown {
+        right: -16px;
+        left: auto;
+        min-width: 180px;
+    }
+    
+    /* Sidebar collapsed state on mobile */
+    .sidebar.collapsed {
+        width: 70px;
+    }
+    
+    .sidebar.collapsed .logo-text,
+    .sidebar.collapsed .nav-link span,
+    .sidebar.collapsed .user-details {
+        display: none;
+    }
+    
+    .sidebar.collapsed .nav-link {
+        justify-content: center;
+        padding: 12px 8px;
+    }
+    
+    .sidebar.collapsed .user-info {
+        justify-content: center;
+    }
+    
+    /* Hide some elements on very small screens */
+    .header-actions .header-btn:not(.user-menu-btn) {
+        display: none;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    /* Header */
+    .header-center {
+        display: none;
+    }
+    
+    .page-title {
+        font-size: 18px;
+    }
+    
+    .top-header {
+        padding: 0 12px;
+    }
+    
+    /* Content */
+    .content-area {
+        padding: 12px;
+    }
+    
+    /* Cards */
+    .card-header {
+        padding: 12px 16px;
+    }
+    
+    .card-body {
+        padding: 16px;
+    }
+    
+    .card-footer {
+        padding: 12px 16px;
+    }
+    
+    .card-title {
+        font-size: 16px;
+    }
+    
+    /* Modal */
+    .modal-header {
+        padding: 12px 16px;
+    }
+    
+    .modal-body {
+        padding: 16px;
+    }
+    
+    .modal-footer {
+        padding: 12px 16px;
+    }
+    
+    /* Form controls */
+    .form-control,
+    .form-select {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .btn-sm {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .btn-lg {
+        padding: 16px 20px;
+        font-size: 16px;
+    }
+    
+    /* Login */
+    .login-form-wrapper {
+        padding: 24px 20px;
+    }
+    
+    .logo span {
+        font-size: 20px;
+    }
+    
+    .login-header h2 {
+        font-size: 22px;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    /* Table on mobile */
+    .table th,
+    .table td {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    /* Sidebar on mobile */
+    .sidebar {
+        width: 260px;
+    }
+    
+    .nav-link {
+        padding: 10px 16px;
+    }
+    
+    .sidebar-header {
+        padding: 16px 20px;
+    }
+    
+    .sidebar-footer {
+        padding: 16px 20px;
+    }
+    
+    /* Notifications */
+    .notification {
+        margin-bottom: 8px;
+        padding: 12px;
+    }
+    
+    .notification-title {
+        font-size: 14px;
+    }
+    
+    .notification-message {
+        font-size: 12px;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+    .content-area {
+        padding: 8px;
+    }
+    
+    .card-header,
+    .card-body,
+    .card-footer {
+        padding: 12px;
+    }
+    
+    .login-form-wrapper {
+        padding: 20px 16px;
+    }
+    
+    .modal {
+        width: 98%;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 12px;
+    }
+    
+    .logo span {
+        font-size: 18px;
+    }
+    
+    .page-title {
+        font-size: 16px;
+    }
+    
+    .sidebar {
+        width: 240px;
+    }
+}
+
+/* Landscape orientation fixes */
+@media (orientation: landscape) and (max-height: 600px) {
+    .login-container {
+        min-height: auto;
+        margin: 20px 0;
+    }
+    
+    .login-form-wrapper {
+        padding: 30px 40px;
+    }
+    
+    .login-header {
+        margin-bottom: 30px;
+    }
+    
+    .login-header h2 {
+        font-size: 24px;
+    }
+    
+    .logo {
+        margin-bottom: 16px;
+    }
+    
+    .login-form {
+        gap: 20px;
+    }
+    
+    .modal {
+        max-height: 95vh;
+    }
+    
+    .modal-body {
+        max-height: 50vh;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Ensure crisp rendering on retina displays */
+    .spinner {
+        border-width: 2px;
+    }
+    
+    .logo i {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Print styles */
+@media print {
+    /* Hide non-essential elements when printing */
+    .sidebar,
+    .top-header,
+    .mobile-menu-toggle,
+    .modal-overlay,
+    .notifications-container,
+    .context-menu {
+        display: none !important;
+    }
+    
+    .app {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .main-content {
+        margin: 0 !important;
+    }
+    
+    .content-area {
+        padding: 0 !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    /* Ensure good contrast for printing */
+    body {
+        color: #000 !important;
+        background: #fff !important;
+    }
+    
+    .card {
+        background: #fff !important;
+    }
+    
+    .btn {
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+    }
+}
+
+/* Dark mode preference (if implemented later) */
+@media (prefers-color-scheme: dark) {
+    /* This can be expanded to support dark theme */
+    .loading-screen {
+        background: linear-gradient(135deg, #1e40af, #1d4ed8);
+    }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .spinner {
+        animation: none;
+    }
+}
+
+/* Focus visible for accessibility */
+@supports selector(:focus-visible) {
+    .btn:focus {
+        outline: none;
+    }
+    
+    .btn:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .form-control:focus {
+        outline: none;
+    }
+    
+    .form-control:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+    
+    .nav-link:focus {
+        outline: none;
+    }
+    
+    .nav-link:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* Mobile overlay for sidebar */
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 150;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+}
+
+.mobile-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (min-width: 769px) {
+    .mobile-overlay {
+        display: none !important;
+    }
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+/* Firefox scrollbar styling */
+@supports (scrollbar-width: thin) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--gray-300) var(--gray-100);
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+    /* Increase touch targets */
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .header-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .nav-link {
+        min-height: 44px;
+    }
+    
+    .dropdown-item {
+        min-height: 44px;
+    }
+    
+    .context-menu-item {
+        min-height: 44px;
+    }
+    
+    /* Remove hover states on touch devices */
+    .nav-link:hover,
+    .btn:hover,
+    .card:hover {
+        transform: none;
+    }
+}
+
+/* Utility classes for responsive design */
+.hidden-mobile {
+    display: block;
+}
+
+.visible-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .hidden-mobile {
+        display: none !important;
+    }
+    
+    .visible-mobile {
+        display: block !important;
+    }
+    
+    .visible-mobile.d-flex {
+        display: flex !important;
+    }
+    
+    .visible-mobile.d-grid {
+        display: grid !important;
+    }
+}
+
+/* Grid responsive utilities */
+.grid-responsive {
+    display: grid;
+    gap: 24px;
+}
+
+@media (min-width: 768px) {
+    .grid-responsive.cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid-responsive.cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .grid-responsive.cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .grid-responsive {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
