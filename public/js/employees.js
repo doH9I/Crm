@@ -2,373 +2,307 @@
 
 class EmployeesModule {
     constructor() {
-        this.container = null;
         this.employees = [];
-        this.currentEmployee = null;
+        this.timesheets = [];
+        this.currentPage = 1;
+        this.itemsPerPage = 12;
+        this.totalPages = 1;
+        this.totalItems = 0;
         this.filters = {
-            position: '',
-            department: '',
-            status: '',
-            search: ''
+            search: '',
+            department: 'all',
+            position: 'all',
+            status: 'all',
+            sortBy: 'created_at',
+            sortOrder: 'desc'
         };
-        this.pagination = {
-            page: 1,
-            limit: 20,
-            total: 0
-        };
+        this.viewMode = 'grid'; // grid or table
+        this.activeTab = 'employees'; // employees or timesheet
     }
 
-    // Initialize employees module
     async init() {
-        this.container = document.getElementById('content-area');
-        await this.render();
-        await this.loadEmployees();
+        console.log('Initializing Employees module...');
+        this.render();
+        await this.loadData();
         this.initEventListeners();
     }
 
-    // Render employees layout
-    async render() {
-        this.container.innerHTML = `
+    render() {
+        const contentArea = document.querySelector('.content-area');
+        contentArea.innerHTML = `
             <div class="employees-module">
-                <!-- Header with actions -->
+                <!-- Module Header -->
                 <div class="module-header">
-                    <div class="header-left">
-                        <h2 class="module-title">Управление персоналом</h2>
-                        <p class="module-description">Управление сотрудниками и кадровый учет</p>
+                    <div class="module-title">
+                        <h1><i class="fas fa-users-cog"></i> Управление персоналом</h1>
+                        <p>Управление сотрудниками и учет рабочего времени</p>
                     </div>
-                    <div class="header-actions">
-                        <button class="btn btn-outline" onclick="this.exportEmployees()">
-                            <i class="fas fa-download"></i>
-                            Экспорт
+                    <div class="module-actions">
+                        <button class="btn btn-primary" onclick="employeesModule.showCreateEmployeeModal()">
+                            <i class="fas fa-user-plus"></i> Добавить сотрудника
                         </button>
-                        <button class="btn btn-outline" onclick="this.showTimesheet()">
-                            <i class="fas fa-clock"></i>
-                            Табель
-                        </button>
-                        <button class="btn btn-primary" onclick="this.showCreateEmployeeModal()">
-                            <i class="fas fa-plus"></i>
-                            Новый сотрудник
+                        <button class="btn btn-secondary" onclick="employeesModule.exportData()">
+                            <i class="fas fa-download"></i> Экспорт
                         </button>
                     </div>
                 </div>
 
-                <!-- Statistics cards -->
-                <div class="stats-grid grid-responsive cols-4 mb-4">
-                    <div class="stat-card card">
-                        <div class="card-body">
-                            <div class="stat-icon">
-                                <i class="fas fa-users text-primary"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="total-employees">0</h3>
-                                <p>Всего сотрудников</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card card">
-                        <div class="card-body">
-                            <div class="stat-icon">
-                                <i class="fas fa-user-check text-success"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="active-employees">0</h3>
-                                <p>Активные</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card card">
-                        <div class="card-body">
-                            <div class="stat-icon">
-                                <i class="fas fa-briefcase text-info"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="on-project">0</h3>
-                                <p>На проектах</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card card">
-                        <div class="card-body">
-                            <div class="stat-icon">
-                                <i class="fas fa-calendar-times text-warning"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="on-vacation">0</h3>
-                                <p>В отпуске</p>
-                            </div>
-                        </div>
+                <!-- Tabs Navigation -->
+                <div class="module-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn ${this.activeTab === 'employees' ? 'active' : ''}" onclick="employeesModule.switchTab('employees')">
+                            <i class="fas fa-users"></i> Сотрудники
+                        </button>
+                        <button class="tab-btn ${this.activeTab === 'timesheet' ? 'active' : ''}" onclick="employeesModule.switchTab('timesheet')">
+                            <i class="fas fa-clock"></i> Табель учета времени
+                        </button>
                     </div>
                 </div>
 
-                <!-- Filters and search -->
-                <div class="filters-panel card">
-                    <div class="card-body">
-                        <div class="filters-grid">
-                            <div class="filter-group">
-                                <label class="form-label">Поиск</label>
-                                <input type="text" class="form-control" id="employees-search" placeholder="Поиск по ФИО, должности...">
-                            </div>
-                            <div class="filter-group">
-                                <label class="form-label">Должность</label>
-                                <select class="form-select" id="employees-position-filter">
-                                    <option value="">Все должности</option>
-                                    <option value="director">Директор</option>
-                                    <option value="manager">Менеджер</option>
-                                    <option value="engineer">Инженер</option>
-                                    <option value="foreman">Прораб</option>
-                                    <option value="estimator">Сметчик</option>
-                                    <option value="worker">Рабочий</option>
-                                    <option value="driver">Водитель</option>
-                                    <option value="accountant">Бухгалтер</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="form-label">Отдел</label>
-                                <select class="form-select" id="employees-department-filter">
-                                    <option value="">Все отделы</option>
-                                    <option value="management">Руководство</option>
-                                    <option value="construction">Строительство</option>
-                                    <option value="engineering">Инженерный</option>
-                                    <option value="estimation">Сметный</option>
-                                    <option value="procurement">Снабжение</option>
-                                    <option value="accounting">Бухгалтерия</option>
-                                    <option value="hr">Кадры</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="form-label">Статус</label>
-                                <select class="form-select" id="employees-status-filter">
-                                    <option value="">Все статусы</option>
-                                    <option value="active">Активный</option>
-                                    <option value="vacation">В отпуске</option>
-                                    <option value="sick">На больничном</option>
-                                    <option value="fired">Уволен</option>
-                                </select>
-                            </div>
-                            <div class="filter-actions">
-                                <button class="btn btn-secondary" onclick="this.resetFilters()">
-                                    <i class="fas fa-times"></i>
-                                    Сбросить
-                                </button>
-                                <button class="btn btn-primary" onclick="this.applyFilters()">
-                                    <i class="fas fa-search"></i>
-                                    Применить
-                                </button>
+                <!-- Employees Tab -->
+                <div id="employees-tab" class="tab-content ${this.activeTab === 'employees' ? 'active' : ''}">
+                    <!-- Filters Panel -->
+                    <div class="card filters-panel">
+                        <div class="card-body">
+                            <div class="filters-row">
+                                <div class="filter-group">
+                                    <label>Поиск</label>
+                                    <div class="search-box">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="employee-search" placeholder="Поиск по ФИО, должности..." value="${this.filters.search}">
+                                    </div>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Отдел</label>
+                                    <select id="employee-department-filter">
+                                        <option value="all">Все отделы</option>
+                                        <option value="construction">Строительный отдел</option>
+                                        <option value="engineering">Инженерный отдел</option>
+                                        <option value="pto">ПТО</option>
+                                        <option value="procurement">Снабжение</option>
+                                        <option value="finance">Финансовый отдел</option>
+                                        <option value="hr">Отдел кадров</option>
+                                        <option value="management">Руководство</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Должность</label>
+                                    <select id="employee-position-filter">
+                                        <option value="all">Все должности</option>
+                                        <option value="director">Директор</option>
+                                        <option value="manager">Менеджер</option>
+                                        <option value="engineer">Инженер</option>
+                                        <option value="foreman">Прораб</option>
+                                        <option value="worker">Рабочий</option>
+                                        <option value="estimator">Сметчик</option>
+                                        <option value="procurement">Снабженец</option>
+                                        <option value="accountant">Бухгалтер</option>
+                                        <option value="hr">Кадровик</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Статус</label>
+                                    <select id="employee-status-filter">
+                                        <option value="all">Все статусы</option>
+                                        <option value="active">Работает</option>
+                                        <option value="vacation">В отпуске</option>
+                                        <option value="sick_leave">На больничном</option>
+                                        <option value="dismissed">Уволен</option>
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <button class="btn btn-outline-primary" onclick="employeesModule.applyFilters()">
+                                        <i class="fas fa-filter"></i> Применить
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="employeesModule.resetFilters()">
+                                        <i class="fas fa-times"></i> Сбросить
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Employees grid/table -->
-                <div class="employees-content">
+                    <!-- Content Header -->
                     <div class="content-header">
                         <div class="results-info">
                             <span id="employees-count">Загрузка...</span>
                         </div>
                         <div class="view-controls">
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-outline active" data-view="grid">
+                            <div class="view-toggle">
+                                <button class="btn ${this.viewMode === 'grid' ? 'btn-primary' : 'btn-outline-primary'}" 
+                                        onclick="employeesModule.setViewMode('grid')">
                                     <i class="fas fa-th"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline" data-view="table">
+                                <button class="btn ${this.viewMode === 'table' ? 'btn-primary' : 'btn-outline-primary'}" 
+                                        onclick="employeesModule.setViewMode('table')">
                                     <i class="fas fa-list"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Grid view -->
-                    <div class="employees-grid grid-responsive cols-3" id="employees-grid">
-                        <div class="loading-placeholder">
-                            <div class="spinner"></div>
-                            <p>Загрузка сотрудников...</p>
+                    <!-- Employees Content -->
+                    <div class="employees-content">
+                        <div id="loading-employees" class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Загрузка сотрудников...
                         </div>
-                    </div>
+                        
+                        <!-- Grid View -->
+                        <div id="employees-grid" class="employees-grid" style="display: ${this.viewMode === 'grid' ? 'block' : 'none'};">
+                            <!-- Employee cards will be rendered here -->
+                        </div>
 
-                    <!-- Table view -->
-                    <div class="employees-table d-none" id="employees-table">
-                        <div class="table-container">
-                            <table class="table">
+                        <!-- Table View -->
+                        <div id="employees-table-container" class="table-container" style="display: ${this.viewMode === 'table' ? 'block' : 'none'};">
+                            <table id="employees-table" class="table">
                                 <thead>
                                     <tr>
                                         <th>Сотрудник</th>
                                         <th>Должность</th>
                                         <th>Отдел</th>
-                                        <th>Статус</th>
+                                        <th>Контакты</th>
                                         <th>Зарплата</th>
-                                        <th>Проект</th>
-                                        <th>Дата найма</th>
+                                        <th>Статус</th>
                                         <th>Действия</th>
                                     </tr>
                                 </thead>
-                                <tbody id="employees-table-body">
-                                    <tr>
-                                        <td colspan="8" class="text-center">Загрузка...</td>
-                                    </tr>
+                                <tbody>
+                                    <!-- Employee rows will be rendered here -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
                     <!-- Pagination -->
-                    <div class="pagination-container" id="employees-pagination">
-                        <!-- Будет заполнено динамически -->
+                    <div id="employees-pagination" class="pagination-container">
+                        <!-- Pagination will be rendered here -->
                     </div>
                 </div>
-            </div>
 
-            <!-- Employee Modal -->
-            <div class="modal fade" id="employeeModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="employeeModalTitle">Новый сотрудник</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <!-- Timesheet Tab -->
+                <div id="timesheet-tab" class="tab-content ${this.activeTab === 'timesheet' ? 'active' : ''}">
+                    <!-- Timesheet Filters -->
+                    <div class="card filters-panel">
+                        <div class="card-body">
+                            <div class="filters-row">
+                                <div class="filter-group">
+                                    <label>Период</label>
+                                    <select id="timesheet-period-filter">
+                                        <option value="current_month">Текущий месяц</option>
+                                        <option value="last_month">Прошлый месяц</option>
+                                        <option value="current_year">Текущий год</option>
+                                        <option value="custom">Произвольный период</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>Дата с</label>
+                                    <input type="date" id="timesheet-date-from" class="form-control">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Дата по</label>
+                                    <input type="date" id="timesheet-date-to" class="form-control">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Сотрудник</label>
+                                    <select id="timesheet-employee-filter">
+                                        <option value="all">Все сотрудники</option>
+                                        <!-- Will be filled dynamically -->
+                                    </select>
+                                </div>
+                                <div class="filter-actions">
+                                    <button class="btn btn-outline-primary" onclick="employeesModule.loadTimesheets()">
+                                        <i class="fas fa-search"></i> Показать
+                                    </button>
+                                    <button class="btn btn-success" onclick="employeesModule.markAttendance()">
+                                        <i class="fas fa-clock"></i> Отметить время
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="modal-body">
-                            <form id="employeeForm">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Фамилия *</label>
-                                            <input type="text" class="form-control" name="last_name" required placeholder="Фамилия">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Имя *</label>
-                                            <input type="text" class="form-control" name="first_name" required placeholder="Имя">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Отчество</label>
-                                            <input type="text" class="form-control" name="middle_name" placeholder="Отчество">
-                                        </div>
-                                    </div>
-                                </div>
+                    </div>
 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Должность *</label>
-                                            <select class="form-select" name="position" required>
-                                                <option value="">Выберите должность</option>
-                                                <option value="director">Директор</option>
-                                                <option value="manager">Менеджер</option>
-                                                <option value="engineer">Инженер</option>
-                                                <option value="foreman">Прораб</option>
-                                                <option value="estimator">Сметчик</option>
-                                                <option value="worker">Рабочий</option>
-                                                <option value="driver">Водитель</option>
-                                                <option value="accountant">Бухгалтер</option>
-                                            </select>
+                    <!-- Timesheet Summary -->
+                    <div class="timesheet-summary">
+                        <div class="summary-cards">
+                            <div class="summary-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="summary-icon">
+                                            <i class="fas fa-users text-primary"></i>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Отдел *</label>
-                                            <select class="form-select" name="department" required>
-                                                <option value="">Выберите отдел</option>
-                                                <option value="management">Руководство</option>
-                                                <option value="construction">Строительство</option>
-                                                <option value="engineering">Инженерный</option>
-                                                <option value="estimation">Сметный</option>
-                                                <option value="procurement">Снабжение</option>
-                                                <option value="accounting">Бухгалтерия</option>
-                                                <option value="hr">Кадры</option>
-                                            </select>
+                                        <div class="summary-info">
+                                            <h3 id="total-employees">0</h3>
+                                            <p>Всего сотрудников</p>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Телефон *</label>
-                                            <input type="tel" class="form-control" name="phone" required placeholder="+7 (999) 123-45-67">
+                            </div>
+                            <div class="summary-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="summary-icon">
+                                            <i class="fas fa-clock text-success"></i>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Email</label>
-                                            <input type="email" class="form-control" name="email" placeholder="employee@example.com">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Дата рождения</label>
-                                            <input type="date" class="form-control" name="birth_date">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Дата найма *</label>
-                                            <input type="date" class="form-control" name="hire_date" required>
+                                        <div class="summary-info">
+                                            <h3 id="total-hours">0</h3>
+                                            <p>Часов отработано</p>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Зарплата (руб.)</label>
-                                            <input type="number" class="form-control" name="salary" placeholder="50000">
+                            </div>
+                            <div class="summary-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="summary-icon">
+                                            <i class="fas fa-user-check text-info"></i>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Статус</label>
-                                            <select class="form-select" name="status">
-                                                <option value="active">Активный</option>
-                                                <option value="vacation">В отпуске</option>
-                                                <option value="sick">На больничном</option>
-                                                <option value="fired">Уволен</option>
-                                            </select>
+                                        <div class="summary-info">
+                                            <h3 id="present-today">0</h3>
+                                            <p>Присутствует сегодня</p>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">Адрес</label>
-                                            <textarea class="form-control" name="address" rows="2" placeholder="Адрес проживания"></textarea>
+                            </div>
+                            <div class="summary-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="summary-icon">
+                                            <i class="fas fa-user-times text-warning"></i>
+                                        </div>
+                                        <div class="summary-info">
+                                            <h3 id="absent-today">0</h3>
+                                            <p>Отсутствует сегодня</p>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Паспорт серия</label>
-                                            <input type="text" class="form-control" name="passport_series" placeholder="1234">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Паспорт номер</label>
-                                            <input type="text" class="form-control" name="passport_number" placeholder="567890">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">Примечания</label>
-                                            <textarea class="form-control" name="notes" rows="2" placeholder="Дополнительная информация о сотруднике"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                            <button type="button" class="btn btn-primary" onclick="this.saveEmployee()">Сохранить</button>
+                    </div>
+
+                    <!-- Timesheet Table -->
+                    <div class="timesheet-content">
+                        <div id="loading-timesheet" class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Загрузка табеля...
+                        </div>
+                        
+                        <div class="table-container">
+                            <table id="timesheet-table" class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Сотрудник</th>
+                                        <th>Дата</th>
+                                        <th>Время прихода</th>
+                                        <th>Время ухода</th>
+                                        <th>Часов работы</th>
+                                        <th>Переработка</th>
+                                        <th>Статус</th>
+                                        <th>Примечания</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Timesheet rows will be rendered here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -376,217 +310,338 @@ class EmployeesModule {
         `;
     }
 
-    // Load employees from API
-    async loadEmployees() {
-        try {
-            const params = {
-                page: this.pagination.page,
-                limit: this.pagination.limit,
-                ...this.filters
-            };
-
-            const response = await EmployeesAPI.getAll(params);
-            this.employees = response.employees || [];
-            this.pagination.total = response.total || 0;
-
-            this.renderEmployees();
-            this.updateResultsInfo();
-            this.updateStats(response.stats);
-            this.renderPagination();
-
-        } catch (error) {
-            console.error('Employees loading error:', error);
-            showNotification('Ошибка загрузки сотрудников', 'error');
-            this.renderEmptyState();
+    async loadData() {
+        if (this.activeTab === 'employees') {
+            await this.loadEmployees();
+        } else {
+            await this.loadTimesheets();
         }
     }
 
-    // Update statistics
-    updateStats(stats) {
-        if (!stats) return;
-        
-        document.getElementById('total-employees').textContent = stats.total || 0;
-        document.getElementById('active-employees').textContent = stats.active || 0;
-        document.getElementById('on-project').textContent = stats.onProject || 0;
-        document.getElementById('on-vacation').textContent = stats.onVacation || 0;
+    async loadEmployees() {
+        try {
+            this.showLoading('employees');
+            
+            const params = {
+                page: this.currentPage,
+                limit: this.itemsPerPage,
+                search: this.filters.search,
+                department: this.filters.department !== 'all' ? this.filters.department : undefined,
+                position: this.filters.position !== 'all' ? this.filters.position : undefined,
+                status: this.filters.status !== 'all' ? this.filters.status : undefined,
+                sortBy: this.filters.sortBy,
+                sortOrder: this.filters.sortOrder
+            };
+
+            const response = await EmployeesAPI.getAll(params);
+            
+            this.employees = response.data || [];
+            this.totalItems = response.total || 0;
+            this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+            
+            this.renderEmployees();
+            this.updateResultsInfo();
+            this.renderPagination();
+            
+        } catch (error) {
+            console.error('Error loading employees:', error);
+            showNotification('Ошибка загрузки сотрудников', 'error');
+        } finally {
+            this.hideLoading('employees');
+        }
     }
 
-    // Render employees in current view
+    async loadTimesheets() {
+        try {
+            this.showLoading('timesheet');
+            
+            const params = {
+                period: document.getElementById('timesheet-period-filter').value,
+                dateFrom: document.getElementById('timesheet-date-from').value,
+                dateTo: document.getElementById('timesheet-date-to').value,
+                employeeId: document.getElementById('timesheet-employee-filter').value !== 'all' 
+                    ? document.getElementById('timesheet-employee-filter').value : undefined
+            };
+
+            const response = await TimesheetAPI.getTimesheet(params);
+            
+            this.timesheets = response.data || [];
+            this.renderTimesheets();
+            this.updateTimesheetSummary(response.summary);
+            
+        } catch (error) {
+            console.error('Error loading timesheets:', error);
+            showNotification('Ошибка загрузки табеля', 'error');
+        } finally {
+            this.hideLoading('timesheet');
+        }
+    }
+
     renderEmployees() {
-        const viewMode = document.querySelector('.view-controls .btn.active').dataset.view;
-        
-        if (viewMode === 'grid') {
+        if (this.viewMode === 'grid') {
             this.renderEmployeesGrid();
         } else {
             this.renderEmployeesTable();
         }
     }
 
-    // Render employees grid view
     renderEmployeesGrid() {
-        const container = document.getElementById('employees-grid');
+        const gridContainer = document.getElementById('employees-grid');
         
         if (this.employees.length === 0) {
-            container.innerHTML = `
+            gridContainer.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-users"></i>
-                    <h4>Сотрудники не найдены</h4>
-                    <p>Добавьте первого сотрудника или измените параметры поиска</p>
-                    <button class="btn btn-primary" onclick="this.showCreateEmployeeModal()">
-                        <i class="fas fa-plus"></i>
-                        Добавить сотрудника
+                    <i class="fas fa-users-cog"></i>
+                    <h3>Сотрудники не найдены</h3>
+                    <p>Попробуйте изменить параметры фильтрации или добавьте нового сотрудника</p>
+                    <button class="btn btn-primary" onclick="employeesModule.showCreateEmployeeModal()">
+                        <i class="fas fa-user-plus"></i> Добавить сотрудника
                     </button>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = this.employees.map(employee => `
-            <div class="employee-card card" data-employee-id="${employee.id}">
-                <div class="card-header">
-                    <div class="employee-status">
-                        <span class="status-badge status-${employee.status}">${this.getStatusText(employee.status)}</span>
-                    </div>
-                    <div class="employee-actions">
-                        <button class="btn btn-sm btn-outline" onclick="this.viewEmployee(${employee.id})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="this.editEmployee(${employee.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h3 class="employee-name">${employee.last_name} ${employee.first_name}</h3>
-                    <p class="employee-position">
-                        <i class="fas fa-briefcase"></i>
-                        ${this.getPositionText(employee.position)}
-                    </p>
-                    <p class="employee-department">
-                        <i class="fas fa-building"></i>
-                        ${this.getDepartmentText(employee.department)}
-                    </p>
-                    <div class="employee-contact">
-                        <p class="employee-phone">
-                            <i class="fas fa-phone"></i>
-                            ${employee.phone || 'Телефон не указан'}
-                        </p>
-                        <p class="employee-email">
-                            <i class="fas fa-envelope"></i>
-                            ${employee.email || 'Email не указан'}
-                        </p>
-                    </div>
-                    <div class="employee-meta">
-                        <div class="meta-item">
-                            <span class="meta-label">Зарплата:</span>
-                            <span class="meta-value">${NumberUtils.formatCurrency(employee.salary || 0)}</span>
+        const cardsHTML = this.employees.map(employee => `
+            <div class="employee-card" data-id="${employee.id}">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="employee-avatar">
+                            ${employee.photo ? 
+                                `<img src="${employee.photo}" alt="${employee.full_name}">` : 
+                                `<i class="fas fa-user"></i>`
+                            }
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Стаж:</span>
-                            <span class="meta-value">${this.calculateExperience(employee.hire_date)}</span>
+                        <div class="employee-info">
+                            <h3 class="employee-name">${employee.full_name}</h3>
+                            <span class="employee-position">${this.getPositionText(employee.position)}</span>
+                            <span class="employee-department">${this.getDepartmentText(employee.department)}</span>
+                        </div>
+                        <div class="card-actions">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary" data-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="#" onclick="employeesModule.viewEmployee(${employee.id})">
+                                        <i class="fas fa-eye"></i> Просмотр
+                                    </a>
+                                    <a href="#" onclick="employeesModule.editEmployee(${employee.id})">
+                                        <i class="fas fa-edit"></i> Редактировать
+                                    </a>
+                                    <a href="#" onclick="employeesModule.viewEmployeeTimesheet(${employee.id})">
+                                        <i class="fas fa-clock"></i> Табель
+                                    </a>
+                                    <a href="#" onclick="employeesModule.showEmployeeDocuments(${employee.id})">
+                                        <i class="fas fa-file-alt"></i> Документы
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a href="#" onclick="employeesModule.deleteEmployee(${employee.id})" class="text-danger">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer">
-                    <div class="employee-dates">
-                        <small class="text-muted">
-                            Принят: ${DateUtils.format(employee.hire_date)}
-                        </small>
+                    <div class="card-body">
+                        <div class="employee-details">
+                            <div class="detail-row">
+                                <i class="fas fa-phone"></i>
+                                <span>${employee.phone || 'Не указан'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-envelope"></i>
+                                <span>${employee.email || 'Не указан'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-calendar"></i>
+                                <span>Принят: ${DateUtils.format(employee.hire_date)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-ruble-sign"></i>
+                                <span>${NumberUtils.formatCurrency(employee.salary || 0)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="employee-status">
+                            <span class="status-badge status-${employee.status}">
+                                ${this.getStatusText(employee.status)}
+                            </span>
+                        </div>
+                        <div class="work-hours">
+                            <small class="text-muted">
+                                Часов в месяце: ${employee.monthly_hours || 0}
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
         `).join('');
+
+        gridContainer.innerHTML = cardsHTML;
     }
 
-    // Render employees table view
     renderEmployeesTable() {
-        const tbody = document.getElementById('employees-table-body');
+        const tableBody = document.querySelector('#employees-table tbody');
         
         if (this.employees.length === 0) {
-            tbody.innerHTML = `
+            tableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center empty-state">
-                        <i class="fas fa-users"></i>
-                        <div>Сотрудники не найдены</div>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="empty-state">
+                            <i class="fas fa-users-cog"></i>
+                            <p>Сотрудники не найдены</p>
+                        </div>
                     </td>
                 </tr>
             `;
             return;
         }
 
-        tbody.innerHTML = this.employees.map(employee => `
-            <tr data-employee-id="${employee.id}">
+        const rowsHTML = this.employees.map(employee => `
+            <tr data-id="${employee.id}">
                 <td>
-                    <div class="table-employee-info">
-                        <div class="employee-name">${employee.last_name} ${employee.first_name}</div>
-                        <div class="employee-contact text-muted">${employee.phone || 'Телефон не указан'}</div>
+                    <div class="employee-cell">
+                        <div class="employee-avatar">
+                            ${employee.photo ? 
+                                `<img src="${employee.photo}" alt="${employee.full_name}">` : 
+                                `<i class="fas fa-user"></i>`
+                            }
+                        </div>
+                        <div class="employee-info">
+                            <div class="employee-name">${employee.full_name}</div>
+                            <div class="employee-id">ID: ${employee.id}</div>
+                        </div>
                     </div>
                 </td>
                 <td>
-                    <span class="position-badge">${this.getPositionText(employee.position)}</span>
+                    <span class="position-badge">
+                        ${this.getPositionText(employee.position)}
+                    </span>
                 </td>
                 <td>
-                    <span class="department-badge">${this.getDepartmentText(employee.department)}</span>
+                    <span class="department-badge">
+                        ${this.getDepartmentText(employee.department)}
+                    </span>
                 </td>
                 <td>
-                    <span class="status-badge status-${employee.status}">${this.getStatusText(employee.status)}</span>
+                    <div class="contact-info">
+                        ${employee.phone ? `<div><i class="fas fa-phone"></i> ${employee.phone}</div>` : ''}
+                        ${employee.email ? `<div><i class="fas fa-envelope"></i> ${employee.email}</div>` : ''}
+                    </div>
                 </td>
-                <td>${NumberUtils.formatCurrency(employee.salary || 0)}</td>
-                <td>${employee.project_name || '-'}</td>
-                <td>${DateUtils.format(employee.hire_date)}</td>
                 <td>
-                    <div class="table-actions">
-                        <button class="btn btn-sm btn-outline" onclick="this.viewEmployee(${employee.id})" title="Просмотр">
+                    <strong>${NumberUtils.formatCurrency(employee.salary || 0)}</strong>
+                </td>
+                <td>
+                    <span class="status-badge status-${employee.status}">
+                        ${this.getStatusText(employee.status)}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="employeesModule.viewEmployee(${employee.id})" title="Просмотр">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="this.editEmployee(${employee.id})" title="Редактировать">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="employeesModule.editEmployee(${employee.id})" title="Редактировать">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="this.deleteEmployee(${employee.id})" title="Удалить">
+                        <button class="btn btn-sm btn-outline-info" onclick="employeesModule.viewEmployeeTimesheet(${employee.id})" title="Табель">
+                            <i class="fas fa-clock"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="employeesModule.deleteEmployee(${employee.id})" title="Удалить">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
         `).join('');
+
+        tableBody.innerHTML = rowsHTML;
     }
 
-    // Calculate work experience
-    calculateExperience(hireDate) {
-        if (!hireDate) return 'Не указан';
+    renderTimesheets() {
+        const tableBody = document.querySelector('#timesheet-table tbody');
         
-        const hire = new Date(hireDate);
-        const now = new Date();
-        const diffTime = Math.abs(now - hire);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays < 30) {
-            return `${diffDays} дн.`;
-        } else if (diffDays < 365) {
-            const months = Math.floor(diffDays / 30);
-            return `${months} мес.`;
-        } else {
-            const years = Math.floor(diffDays / 365);
-            const months = Math.floor((diffDays % 365) / 30);
-            return months > 0 ? `${years} г. ${months} мес.` : `${years} г.`;
+        if (this.timesheets.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <p>Данные табеля не найдены</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const rowsHTML = this.timesheets.map(record => `
+            <tr data-id="${record.id}">
+                <td>
+                    <div class="employee-cell">
+                        <div class="employee-avatar">
+                            ${record.employee_photo ? 
+                                `<img src="${record.employee_photo}" alt="${record.employee_name}">` : 
+                                `<i class="fas fa-user"></i>`
+                            }
+                        </div>
+                        <div class="employee-info">
+                            <div class="employee-name">${record.employee_name}</div>
+                            <div class="employee-position">${this.getPositionText(record.employee_position)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${DateUtils.format(record.date)}</td>
+                <td>${record.time_in || '-'}</td>
+                <td>${record.time_out || '-'}</td>
+                <td>
+                    <strong>${record.hours_worked || 0}ч</strong>
+                </td>
+                <td>
+                    ${record.overtime ? `<span class="text-warning">${record.overtime}ч</span>` : '-'}
+                </td>
+                <td>
+                    <span class="status-badge status-${record.status}">
+                        ${this.getTimesheetStatusText(record.status)}
+                    </span>
+                </td>
+                <td>
+                    <small class="text-muted">${record.notes || '-'}</small>
+                </td>
+            </tr>
+        `).join('');
+
+        tableBody.innerHTML = rowsHTML;
+    }
+
+    updateTimesheetSummary(summary) {
+        if (summary) {
+            document.getElementById('total-employees').textContent = summary.total_employees || 0;
+            document.getElementById('total-hours').textContent = summary.total_hours || 0;
+            document.getElementById('present-today').textContent = summary.present_today || 0;
+            document.getElementById('absent-today').textContent = summary.absent_today || 0;
         }
     }
 
-    // Update results info
     updateResultsInfo() {
-        const container = document.getElementById('employees-count');
-        const start = (this.pagination.page - 1) * this.pagination.limit + 1;
-        const end = Math.min(start + this.employees.length - 1, this.pagination.total);
+        const countElement = document.getElementById('employees-count');
+        const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+        const end = Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
         
-        container.textContent = `Показано ${start}-${end} из ${this.pagination.total} сотрудников`;
+        if (this.totalItems === 0) {
+            countElement.textContent = 'Сотрудники не найдены';
+        } else {
+            countElement.textContent = `Показано ${start}-${end} из ${this.totalItems} сотрудников`;
+        }
     }
 
-    // Render pagination
     renderPagination() {
         const container = document.getElementById('employees-pagination');
-        const totalPages = Math.ceil(this.pagination.total / this.pagination.limit);
         
-        if (totalPages <= 1) {
+        if (this.totalPages <= 1) {
             container.innerHTML = '';
             return;
         }
@@ -594,271 +649,317 @@ class EmployeesModule {
         let paginationHTML = '<div class="pagination">';
         
         // Previous button
-        if (this.pagination.page > 1) {
-            paginationHTML += `<button class="btn btn-outline" onclick="this.changePage(${this.pagination.page - 1})">Назад</button>`;
+        if (this.currentPage > 1) {
+            paginationHTML += `
+                <button class="btn btn-outline-primary" onclick="employeesModule.changePage(${this.currentPage - 1})">
+                    <i class="fas fa-chevron-left"></i> Предыдущая
+                </button>
+            `;
         }
         
         // Page numbers
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === this.pagination.page) {
-                paginationHTML += `<button class="btn btn-primary">${i}</button>`;
-            } else if (i === 1 || i === totalPages || Math.abs(i - this.pagination.page) <= 2) {
-                paginationHTML += `<button class="btn btn-outline" onclick="this.changePage(${i})">${i}</button>`;
-            } else if (i === this.pagination.page - 3 || i === this.pagination.page + 3) {
+        const startPage = Math.max(1, this.currentPage - 2);
+        const endPage = Math.min(this.totalPages, this.currentPage + 2);
+        
+        if (startPage > 1) {
+            paginationHTML += `<button class="btn btn-outline-primary" onclick="employeesModule.changePage(1)">1</button>`;
+            if (startPage > 2) {
                 paginationHTML += '<span class="pagination-dots">...</span>';
             }
         }
         
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <button class="btn ${i === this.currentPage ? 'btn-primary' : 'btn-outline-primary'}" 
+                        onclick="employeesModule.changePage(${i})">${i}</button>
+            `;
+        }
+        
+        if (endPage < this.totalPages) {
+            if (endPage < this.totalPages - 1) {
+                paginationHTML += '<span class="pagination-dots">...</span>';
+            }
+            paginationHTML += `<button class="btn btn-outline-primary" onclick="employeesModule.changePage(${this.totalPages})">${this.totalPages}</button>`;
+        }
+        
         // Next button
-        if (this.pagination.page < totalPages) {
-            paginationHTML += `<button class="btn btn-outline" onclick="this.changePage(${this.pagination.page + 1})">Далее</button>`;
+        if (this.currentPage < this.totalPages) {
+            paginationHTML += `
+                <button class="btn btn-outline-primary" onclick="employeesModule.changePage(${this.currentPage + 1})">
+                    Следующая <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
         }
         
         paginationHTML += '</div>';
         container.innerHTML = paginationHTML;
     }
 
-    // Initialize event listeners
     initEventListeners() {
-        // Search input
-        document.getElementById('employees-search').addEventListener('input', debounce((e) => {
-            this.filters.search = e.target.value;
-            this.applyFilters();
-        }, 300));
+        // Search input with debounce
+        const searchInput = document.getElementById('employee-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                this.filters.search = e.target.value;
+                this.currentPage = 1;
+                this.loadEmployees();
+            }, 300));
+        }
 
-        // View toggle
-        document.querySelectorAll('.view-controls .btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.view-controls .btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                const view = btn.dataset.view;
-                if (view === 'grid') {
-                    document.getElementById('employees-grid').classList.remove('d-none');
-                    document.getElementById('employees-table').classList.add('d-none');
-                } else {
-                    document.getElementById('employees-grid').classList.add('d-none');
-                    document.getElementById('employees-table').classList.remove('d-none');
-                }
-                
-                this.renderEmployees();
+        // Filter change handlers
+        const departmentFilter = document.getElementById('employee-department-filter');
+        if (departmentFilter) {
+            departmentFilter.addEventListener('change', (e) => {
+                this.filters.department = e.target.value;
+                this.currentPage = 1;
+                this.loadEmployees();
             });
-        });
+        }
 
-        // Set current date as default hire date
-        document.querySelector('[name="hire_date"]').value = new Date().toISOString().split('T')[0];
+        const positionFilter = document.getElementById('employee-position-filter');
+        if (positionFilter) {
+            positionFilter.addEventListener('change', (e) => {
+                this.filters.position = e.target.value;
+                this.currentPage = 1;
+                this.loadEmployees();
+            });
+        }
+
+        const statusFilter = document.getElementById('employee-status-filter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', (e) => {
+                this.filters.status = e.target.value;
+                this.currentPage = 1;
+                this.loadEmployees();
+            });
+        }
     }
 
-    // Apply filters
+    switchTab(tab) {
+        this.activeTab = tab;
+        
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.tab-btn:nth-child(${tab === 'employees' ? 1 : 2})`).classList.add('active');
+        
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+        
+        // Load appropriate data
+        this.loadData();
+    }
+
+    setViewMode(mode) {
+        this.viewMode = mode;
+        
+        // Update view toggle buttons
+        const gridBtn = document.querySelector('.view-toggle button:first-child');
+        const tableBtn = document.querySelector('.view-toggle button:last-child');
+        
+        if (mode === 'grid') {
+            gridBtn.className = 'btn btn-primary';
+            tableBtn.className = 'btn btn-outline-primary';
+            document.getElementById('employees-grid').style.display = 'block';
+            document.getElementById('employees-table-container').style.display = 'none';
+        } else {
+            gridBtn.className = 'btn btn-outline-primary';
+            tableBtn.className = 'btn btn-primary';
+            document.getElementById('employees-grid').style.display = 'none';
+            document.getElementById('employees-table-container').style.display = 'block';
+        }
+        
+        this.renderEmployees();
+    }
+
     applyFilters() {
-        this.filters.position = document.getElementById('employees-position-filter').value;
-        this.filters.department = document.getElementById('employees-department-filter').value;
-        this.filters.status = document.getElementById('employees-status-filter').value;
-        
-        this.pagination.page = 1;
+        this.currentPage = 1;
         this.loadEmployees();
     }
 
-    // Reset filters
     resetFilters() {
-        this.filters = { position: '', department: '', status: '', search: '' };
-        
-        document.getElementById('employees-search').value = '';
-        document.getElementById('employees-position-filter').value = '';
-        document.getElementById('employees-department-filter').value = '';
-        document.getElementById('employees-status-filter').value = '';
-        
-        this.pagination.page = 1;
-        this.loadEmployees();
-    }
-
-    // Change page
-    changePage(page) {
-        this.pagination.page = page;
-        this.loadEmployees();
-    }
-
-    // Get status text
-    getStatusText(status) {
-        const statusMap = {
-            active: 'Активный',
-            vacation: 'В отпуске',
-            sick: 'На больничном',
-            fired: 'Уволен'
+        this.filters = {
+            search: '',
+            department: 'all',
+            position: 'all',
+            status: 'all',
+            sortBy: 'created_at',
+            sortOrder: 'desc'
         };
-        return statusMap[status] || status;
+        
+        // Reset form inputs
+        document.getElementById('employee-search').value = '';
+        document.getElementById('employee-department-filter').value = 'all';
+        document.getElementById('employee-position-filter').value = 'all';
+        document.getElementById('employee-status-filter').value = 'all';
+        
+        this.currentPage = 1;
+        this.loadEmployees();
     }
 
-    // Get position text
+    changePage(page) {
+        this.currentPage = page;
+        this.loadEmployees();
+    }
+
+    getDepartmentText(department) {
+        const departments = {
+            construction: 'Строительный отдел',
+            engineering: 'Инженерный отдел',
+            pto: 'ПТО',
+            procurement: 'Снабжение',
+            finance: 'Финансовый отдел',
+            hr: 'Отдел кадров',
+            management: 'Руководство'
+        };
+        return departments[department] || department;
+    }
+
     getPositionText(position) {
-        const positionMap = {
+        const positions = {
             director: 'Директор',
             manager: 'Менеджер',
             engineer: 'Инженер',
             foreman: 'Прораб',
-            estimator: 'Сметчик',
             worker: 'Рабочий',
-            driver: 'Водитель',
-            accountant: 'Бухгалтер'
+            estimator: 'Сметчик',
+            procurement: 'Снабженец',
+            accountant: 'Бухгалтер',
+            hr: 'Кадровик'
         };
-        return positionMap[position] || position;
+        return positions[position] || position;
     }
 
-    // Get department text
-    getDepartmentText(department) {
-        const departmentMap = {
-            management: 'Руководство',
-            construction: 'Строительство',
-            engineering: 'Инженерный',
-            estimation: 'Сметный',
-            procurement: 'Снабжение',
-            accounting: 'Бухгалтерия',
-            hr: 'Кадры'
+    getStatusText(status) {
+        const statuses = {
+            active: 'Работает',
+            vacation: 'В отпуске',
+            sick_leave: 'На больничном',
+            dismissed: 'Уволен'
         };
-        return departmentMap[department] || department;
+        return statuses[status] || status;
     }
 
-    // View employee details
-    viewEmployee(employeeId) {
-        showNotification('Открытие карточки сотрудника...', 'info');
-        // Здесь будет переход к детальной странице сотрудника
+    getTimesheetStatusText(status) {
+        const statuses = {
+            present: 'Присутствует',
+            absent: 'Отсутствует',
+            late: 'Опоздание',
+            early_leave: 'Ранний уход',
+            overtime: 'Переработка',
+            vacation: 'Отпуск',
+            sick_leave: 'Больничный'
+        };
+        return statuses[status] || status;
     }
 
-    // Edit employee
-    editEmployee(employeeId) {
-        const employee = this.employees.find(e => e.id === employeeId);
-        if (!employee) return;
-
-        this.currentEmployee = employee;
-        
-        // Fill form with employee data
-        const form = document.getElementById('employeeForm');
-        Object.keys(employee).forEach(key => {
-            const input = form.querySelector(`[name="${key}"]`);
-            if (input) {
-                if (input.type === 'date' && employee[key]) {
-                    input.value = employee[key].split('T')[0];
-                } else {
-                    input.value = employee[key] || '';
-                }
-            }
-        });
-
-        document.getElementById('employeeModalTitle').textContent = 'Редактировать сотрудника';
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('employeeModal'));
-        modal.show();
+    showLoading(type) {
+        const loading = document.getElementById(`loading-${type}`);
+        if (loading) loading.style.display = 'block';
     }
 
-    // Delete employee
+    hideLoading(type) {
+        const loading = document.getElementById(`loading-${type}`);
+        if (loading) loading.style.display = 'none';
+    }
+
+    // Employee actions
+    async viewEmployee(employeeId) {
+        try {
+            const employee = await EmployeesAPI.getById(employeeId);
+            this.showEmployeeDetailsModal(employee);
+        } catch (error) {
+            console.error('Error loading employee:', error);
+            showNotification('Ошибка загрузки данных сотрудника', 'error');
+        }
+    }
+
+    showCreateEmployeeModal() {
+        showNotification('Функция создания сотрудника будет реализована', 'info');
+    }
+
+    async editEmployee(employeeId) {
+        try {
+            const employee = await EmployeesAPI.getById(employeeId);
+            this.showEditEmployeeModal(employee);
+        } catch (error) {
+            console.error('Error loading employee:', error);
+            showNotification('Ошибка загрузки данных сотрудника', 'error');
+        }
+    }
+
     async deleteEmployee(employeeId) {
-        if (!confirm('Вы уверены, что хотите удалить этого сотрудника?')) {
+        if (!confirm('Вы действительно хотите удалить этого сотрудника?')) {
             return;
         }
 
         try {
             await EmployeesAPI.delete(employeeId);
-            showNotification('Сотрудник удален', 'success');
+            showNotification('Сотрудник успешно удален', 'success');
             this.loadEmployees();
         } catch (error) {
-            console.error('Employee deletion error:', error);
+            console.error('Error deleting employee:', error);
             showNotification('Ошибка удаления сотрудника', 'error');
         }
     }
 
-    // Show create employee modal
-    showCreateEmployeeModal() {
-        this.currentEmployee = null;
-        
-        // Reset form
-        document.getElementById('employeeForm').reset();
-        document.querySelector('[name="hire_date"]').value = new Date().toISOString().split('T')[0];
-        
-        document.getElementById('employeeModalTitle').textContent = 'Новый сотрудник';
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('employeeModal'));
-        modal.show();
+    viewEmployeeTimesheet(employeeId) {
+        this.switchTab('timesheet');
+        // Set employee filter
+        setTimeout(() => {
+            document.getElementById('timesheet-employee-filter').value = employeeId;
+            this.loadTimesheets();
+        }, 100);
     }
 
-    // Save employee
-    async saveEmployee() {
-        const form = document.getElementById('employeeForm');
-        const formData = new FormData(form);
-        const employeeData = Object.fromEntries(formData.entries());
+    showEmployeeDocuments(employeeId) {
+        app.navigateTo(`documents?employee=${employeeId}`);
+    }
 
-        // Validate required fields
-        if (!employeeData.first_name || !employeeData.last_name || !employeeData.position || 
-            !employeeData.department || !employeeData.phone || !employeeData.hire_date) {
-            showNotification('Заполните обязательные поля', 'error');
-            return;
-        }
+    markAttendance() {
+        showNotification('Функция отметки времени будет реализована', 'info');
+    }
 
+    showEmployeeDetailsModal(employee) {
+        showNotification('Детальная информация о сотруднике будет реализована', 'info');
+    }
+
+    showEditEmployeeModal(employee) {
+        showNotification('Редактирование сотрудника будет реализовано', 'info');
+    }
+
+    async exportData() {
         try {
-            if (this.currentEmployee) {
-                // Update existing employee
-                await EmployeesAPI.update(this.currentEmployee.id, employeeData);
-                showNotification('Сотрудник обновлен', 'success');
-            } else {
-                // Create new employee
-                await EmployeesAPI.create(employeeData);
-                showNotification('Сотрудник создан', 'success');
-            }
-
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('employeeModal'));
-            modal.hide();
-
-            // Reload employees
-            this.loadEmployees();
-
+            const response = await ExportAPI.exportEmployees(this.filters);
+            downloadFile(response.url, 'employees.xlsx');
+            showNotification('Экспорт сотрудников завершен', 'success');
         } catch (error) {
-            console.error('Employee save error:', error);
-            showNotification('Ошибка сохранения сотрудника', 'error');
+            console.error('Error exporting employees:', error);
+            showNotification('Ошибка экспорта сотрудников', 'error');
         }
     }
 
-    // Show timesheet
-    showTimesheet() {
-        showNotification('Открытие табеля учета рабочего времени...', 'info');
-        // Здесь будет переход к модулю табеля
-    }
-
-    // Export employees
-    async exportEmployees() {
-        try {
-            showNotification('Экспорт данных...', 'info');
-            await ExportAPI.exportEmployees('excel');
-            showNotification('Данные экспортированы', 'success');
-        } catch (error) {
-            console.error('Export error:', error);
-            showNotification('Ошибка экспорта', 'error');
-        }
-    }
-
-    // Show module
     show() {
-        if (this.container) {
-            this.container.style.display = 'block';
-            this.loadEmployees();
-        }
+        document.querySelector('.employees-module').style.display = 'block';
     }
 
-    // Hide module
     hide() {
-        if (this.container) {
-            this.container.style.display = 'none';
-        }
-    }
-
-    // Cleanup
-    destroy() {
-        if (this.container) {
-            this.container.innerHTML = '';
-        }
+        document.querySelector('.employees-module').style.display = 'none';
     }
 }
 
-// Export for global use
-window.EmployeesModule = EmployeesModule;
+// Initialize module
+const employeesModule = new EmployeesModule();
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.location.hash === '#employees') {
+            employeesModule.init();
+        }
+    });
+} else {
+    if (window.location.hash === '#employees') {
+        employeesModule.init();
+    }
+}

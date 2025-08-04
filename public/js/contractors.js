@@ -2,524 +2,445 @@
 
 class ContractorsModule {
     constructor() {
-        this.container = null;
         this.contractors = [];
-        this.currentContractor = null;
+        this.currentPage = 1;
+        this.itemsPerPage = 12;
+        this.totalPages = 1;
+        this.totalItems = 0;
         this.filters = {
-            specialty: '',
-            status: '',
-            rating: '',
-            search: ''
+            search: '',
+            type: 'all',
+            specialization: 'all',
+            status: 'all',
+            rating: 'all',
+            sortBy: 'created_at',
+            sortOrder: 'desc'
         };
-        this.pagination = {
-            page: 1,
-            limit: 20,
-            total: 0
-        };
+        this.viewMode = 'grid'; // grid or table
     }
 
-    // Initialize contractors module
     async init() {
-        this.container = document.getElementById('content-area');
-        await this.render();
+        console.log('Initializing Contractors module...');
+        this.render();
         await this.loadContractors();
         this.initEventListeners();
     }
 
-    // Render contractors layout
-    async render() {
-        this.container.innerHTML = `
+    render() {
+        const contentArea = document.querySelector('.content-area');
+        contentArea.innerHTML = `
             <div class="contractors-module">
-                <!-- Header with actions -->
+                <!-- Module Header -->
                 <div class="module-header">
-                    <div class="header-left">
-                        <h2 class="module-title">Управление подрядчиками</h2>
-                        <p class="module-description">База данных подрядчиков и поставщиков</p>
+                    <div class="module-title">
+                        <h1><i class="fas fa-hard-hat"></i> Управление подрядчиками</h1>
+                        <p>База данных подрядчиков, поставщиков и субподрядчиков</p>
                     </div>
-                    <div class="header-actions">
-                        <button class="btn btn-outline" onclick="this.exportContractors()">
-                            <i class="fas fa-download"></i>
-                            Экспорт
+                    <div class="module-actions">
+                        <button class="btn btn-primary" onclick="contractorsModule.showCreateContractorModal()">
+                            <i class="fas fa-plus"></i> Добавить подрядчика
                         </button>
-                        <button class="btn btn-outline" onclick="this.importContractors()">
-                            <i class="fas fa-upload"></i>
-                            Импорт
-                        </button>
-                        <button class="btn btn-primary" onclick="this.showCreateContractorModal()">
-                            <i class="fas fa-plus"></i>
-                            Новый подрядчик
+                        <button class="btn btn-secondary" onclick="contractorsModule.exportContractors()">
+                            <i class="fas fa-download"></i> Экспорт
                         </button>
                     </div>
                 </div>
 
-                <!-- Filters and search -->
-                <div class="filters-panel card">
+                <!-- Filters Panel -->
+                <div class="card filters-panel">
                     <div class="card-body">
-                        <div class="filters-grid">
+                        <div class="filters-row">
                             <div class="filter-group">
-                                <label class="form-label">Поиск</label>
-                                <input type="text" class="form-control" id="contractors-search" placeholder="Поиск по названию, специализации...">
+                                <label>Поиск</label>
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="contractor-search" placeholder="Поиск по названию, контактам..." value="${this.filters.search}">
+                                </div>
                             </div>
                             <div class="filter-group">
-                                <label class="form-label">Специализация</label>
-                                <select class="form-select" id="contractors-specialty-filter">
-                                    <option value="">Все специализации</option>
+                                <label>Тип подрядчика</label>
+                                <select id="contractor-type-filter">
+                                    <option value="all">Все типы</option>
+                                    <option value="contractor">Подрядчик</option>
+                                    <option value="supplier">Поставщик</option>
+                                    <option value="subcontractor">Субподрядчик</option>
+                                    <option value="service">Услуги</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Специализация</label>
+                                <select id="contractor-specialization-filter">
+                                    <option value="all">Все специализации</option>
                                     <option value="construction">Строительство</option>
                                     <option value="electrical">Электромонтаж</option>
                                     <option value="plumbing">Сантехника</option>
-                                    <option value="hvac">Вентиляция и кондиционирование</option>
-                                    <option value="finishing">Отделочные работы</option>
+                                    <option value="heating">Отопление</option>
                                     <option value="roofing">Кровельные работы</option>
-                                    <option value="flooring">Напольные покрытия</option>
-                                    <option value="painting">Малярные работы</option>
-                                    <option value="landscaping">Благоустройство</option>
-                                    <option value="demolition">Демонтаж</option>
-                                    <option value="materials">Поставка материалов</option>
-                                    <option value="equipment">Аренда техники</option>
+                                    <option value="finishing">Отделочные работы</option>
+                                    <option value="materials">Стройматериалы</option>
+                                    <option value="equipment">Оборудование</option>
+                                    <option value="transport">Транспорт</option>
+                                    <option value="security">Охрана</option>
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="form-label">Статус</label>
-                                <select class="form-select" id="contractors-status-filter">
-                                    <option value="">Все статусы</option>
+                                <label>Статус</label>
+                                <select id="contractor-status-filter">
+                                    <option value="all">Все статусы</option>
                                     <option value="active">Активный</option>
+                                    <option value="inactive">Неактивный</option>
                                     <option value="verified">Проверенный</option>
-                                    <option value="preferred">Предпочтительный</option>
-                                    <option value="blocked">Заблокированный</option>
+                                    <option value="blacklisted">Черный список</option>
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="form-label">Рейтинг</label>
-                                <select class="form-select" id="contractors-rating-filter">
-                                    <option value="">Любой рейтинг</option>
-                                    <option value="5">5 звезд</option>
-                                    <option value="4">4+ звезд</option>
-                                    <option value="3">3+ звезд</option>
-                                    <option value="2">2+ звезд</option>
+                                <label>Рейтинг</label>
+                                <select id="contractor-rating-filter">
+                                    <option value="all">Любой рейтинг</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ (5.0)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4.0+)</option>
+                                    <option value="3">⭐⭐⭐ (3.0+)</option>
+                                    <option value="2">⭐⭐ (2.0+)</option>
+                                    <option value="1">⭐ (1.0+)</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Сортировка</label>
+                                <select id="contractor-sort-filter">
+                                    <option value="created_at">По дате создания</option>
+                                    <option value="name">По названию</option>
+                                    <option value="rating">По рейтингу</option>
+                                    <option value="projects_count">По количеству проектов</option>
+                                    <option value="last_project">По дате последнего проекта</option>
                                 </select>
                             </div>
                             <div class="filter-actions">
-                                <button class="btn btn-secondary" onclick="this.resetFilters()">
-                                    <i class="fas fa-times"></i>
-                                    Сбросить
+                                <button class="btn btn-outline-primary" onclick="contractorsModule.applyFilters()">
+                                    <i class="fas fa-filter"></i> Применить
                                 </button>
-                                <button class="btn btn-primary" onclick="this.applyFilters()">
-                                    <i class="fas fa-search"></i>
-                                    Применить
+                                <button class="btn btn-outline-secondary" onclick="contractorsModule.resetFilters()">
+                                    <i class="fas fa-times"></i> Сбросить
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Contractors grid/table -->
+                <!-- Content Header -->
+                <div class="content-header">
+                    <div class="results-info">
+                        <span id="contractors-count">Загрузка...</span>
+                    </div>
+                    <div class="view-controls">
+                        <div class="view-toggle">
+                            <button class="btn ${this.viewMode === 'grid' ? 'btn-primary' : 'btn-outline-primary'}" 
+                                    onclick="contractorsModule.setViewMode('grid')">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="btn ${this.viewMode === 'table' ? 'btn-primary' : 'btn-outline-primary'}" 
+                                    onclick="contractorsModule.setViewMode('table')">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contractors Content -->
                 <div class="contractors-content">
-                    <div class="content-header">
-                        <div class="results-info">
-                            <span id="contractors-count">Загрузка...</span>
-                        </div>
-                        <div class="view-controls">
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-outline active" data-view="grid">
-                                    <i class="fas fa-th"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline" data-view="table">
-                                    <i class="fas fa-list"></i>
-                                </button>
-                            </div>
-                        </div>
+                    <div id="loading-contractors" class="loading-spinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Загрузка подрядчиков...
+                    </div>
+                    
+                    <!-- Grid View -->
+                    <div id="contractors-grid" class="contractors-grid" style="display: ${this.viewMode === 'grid' ? 'block' : 'none'};">
+                        <!-- Contractor cards will be rendered here -->
                     </div>
 
-                    <!-- Grid view -->
-                    <div class="contractors-grid grid-responsive cols-3" id="contractors-grid">
-                        <div class="loading-placeholder">
-                            <div class="spinner"></div>
-                            <p>Загрузка подрядчиков...</p>
-                        </div>
-                    </div>
-
-                    <!-- Table view -->
-                    <div class="contractors-table d-none" id="contractors-table">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Подрядчик</th>
-                                        <th>Специализация</th>
-                                        <th>Контакты</th>
-                                        <th>Рейтинг</th>
-                                        <th>Статус</th>
-                                        <th>Проекты</th>
-                                        <th>Общая сумма</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="contractors-table-body">
-                                    <tr>
-                                        <td colspan="8" class="text-center">Загрузка...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="pagination-container" id="contractors-pagination">
-                        <!-- Будет заполнено динамически -->
+                    <!-- Table View -->
+                    <div id="contractors-table-container" class="table-container" style="display: ${this.viewMode === 'table' ? 'block' : 'none'};">
+                        <table id="contractors-table" class="table">
+                            <thead>
+                                <tr>
+                                    <th>Подрядчик</th>
+                                    <th>Тип</th>
+                                    <th>Специализация</th>
+                                    <th>Рейтинг</th>
+                                    <th>Контакты</th>
+                                    <th>Статус</th>
+                                    <th>Проекты</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Contractor rows will be rendered here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
 
-            <!-- Contractor Modal -->
-            <div class="modal fade" id="contractorModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="contractorModalTitle">Новый подрядчик</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="contractorForm">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Название компании *</label>
-                                            <input type="text" class="form-control" name="name" required placeholder="Название компании">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Специализация *</label>
-                                            <select class="form-select" name="specialty" required>
-                                                <option value="">Выберите специализацию</option>
-                                                <option value="construction">Строительство</option>
-                                                <option value="electrical">Электромонтаж</option>
-                                                <option value="plumbing">Сантехника</option>
-                                                <option value="hvac">Вентиляция и кондиционирование</option>
-                                                <option value="finishing">Отделочные работы</option>
-                                                <option value="roofing">Кровельные работы</option>
-                                                <option value="flooring">Напольные покрытия</option>
-                                                <option value="painting">Малярные работы</option>
-                                                <option value="landscaping">Благоустройство</option>
-                                                <option value="demolition">Демонтаж</option>
-                                                <option value="materials">Поставка материалов</option>
-                                                <option value="equipment">Аренда техники</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Контактное лицо *</label>
-                                            <input type="text" class="form-control" name="contact_person" required placeholder="ФИО контактного лица">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Должность</label>
-                                            <input type="text" class="form-control" name="contact_position" placeholder="Должность контактного лица">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Телефон *</label>
-                                            <input type="tel" class="form-control" name="phone" required placeholder="+7 (999) 123-45-67">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Email</label>
-                                            <input type="email" class="form-control" name="email" placeholder="contractor@example.com">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">Адрес</label>
-                                            <textarea class="form-control" name="address" rows="2" placeholder="Юридический адрес подрядчика"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">ИНН</label>
-                                            <input type="text" class="form-control" name="inn" placeholder="1234567890">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">КПП</label>
-                                            <input type="text" class="form-control" name="kpp" placeholder="123456789">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Статус</label>
-                                            <select class="form-select" name="status">
-                                                <option value="active">Активный</option>
-                                                <option value="verified">Проверенный</option>
-                                                <option value="preferred">Предпочтительный</option>
-                                                <option value="blocked">Заблокированный</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Рейтинг</label>
-                                            <select class="form-select" name="rating">
-                                                <option value="">Без рейтинга</option>
-                                                <option value="1">1 звезда</option>
-                                                <option value="2">2 звезды</option>
-                                                <option value="3">3 звезды</option>
-                                                <option value="4">4 звезды</option>
-                                                <option value="5">5 звезд</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">Услуги и возможности</label>
-                                            <textarea class="form-control" name="services" rows="3" placeholder="Описание предоставляемых услуг и возможностей"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">Примечания</label>
-                                            <textarea class="form-control" name="notes" rows="2" placeholder="Дополнительная информация о подрядчике"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                            <button type="button" class="btn btn-primary" onclick="this.saveContractor()">Сохранить</button>
-                        </div>
-                    </div>
+                <!-- Pagination -->
+                <div id="contractors-pagination" class="pagination-container">
+                    <!-- Pagination will be rendered here -->
                 </div>
             </div>
         `;
     }
 
-    // Load contractors from API
     async loadContractors() {
         try {
+            this.showLoading();
+            
             const params = {
-                page: this.pagination.page,
-                limit: this.pagination.limit,
-                ...this.filters
+                page: this.currentPage,
+                limit: this.itemsPerPage,
+                search: this.filters.search,
+                type: this.filters.type !== 'all' ? this.filters.type : undefined,
+                specialization: this.filters.specialization !== 'all' ? this.filters.specialization : undefined,
+                status: this.filters.status !== 'all' ? this.filters.status : undefined,
+                rating: this.filters.rating !== 'all' ? this.filters.rating : undefined,
+                sortBy: this.filters.sortBy,
+                sortOrder: this.filters.sortOrder
             };
 
             const response = await ContractorsAPI.getAll(params);
-            this.contractors = response.contractors || [];
-            this.pagination.total = response.total || 0;
-
+            
+            this.contractors = response.data || [];
+            this.totalItems = response.total || 0;
+            this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+            
             this.renderContractors();
             this.updateResultsInfo();
             this.renderPagination();
-
+            
         } catch (error) {
-            console.error('Contractors loading error:', error);
+            console.error('Error loading contractors:', error);
             showNotification('Ошибка загрузки подрядчиков', 'error');
-            this.renderEmptyState();
+        } finally {
+            this.hideLoading();
         }
     }
 
-    // Render contractors in current view
     renderContractors() {
-        const viewMode = document.querySelector('.view-controls .btn.active').dataset.view;
-        
-        if (viewMode === 'grid') {
+        if (this.viewMode === 'grid') {
             this.renderContractorsGrid();
         } else {
             this.renderContractorsTable();
         }
     }
 
-    // Render contractors grid view
     renderContractorsGrid() {
-        const container = document.getElementById('contractors-grid');
+        const gridContainer = document.getElementById('contractors-grid');
         
         if (this.contractors.length === 0) {
-            container.innerHTML = `
+            gridContainer.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-hard-hat"></i>
-                    <h4>Подрядчики не найдены</h4>
-                    <p>Добавьте первого подрядчика или измените параметры поиска</p>
-                    <button class="btn btn-primary" onclick="this.showCreateContractorModal()">
-                        <i class="fas fa-plus"></i>
-                        Добавить подрядчика
+                    <h3>Подрядчики не найдены</h3>
+                    <p>Попробуйте изменить параметры фильтрации или добавьте нового подрядчика</p>
+                    <button class="btn btn-primary" onclick="contractorsModule.showCreateContractorModal()">
+                        <i class="fas fa-plus"></i> Добавить подрядчика
                     </button>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = this.contractors.map(contractor => `
-            <div class="contractor-card card" data-contractor-id="${contractor.id}">
-                <div class="card-header">
-                    <div class="contractor-status">
-                        <span class="status-badge status-${contractor.status}">${this.getStatusText(contractor.status)}</span>
-                        <div class="contractor-rating">
-                            ${this.renderStars(contractor.rating)}
+        const cardsHTML = this.contractors.map(contractor => `
+            <div class="contractor-card" data-id="${contractor.id}">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="contractor-avatar">
+                            <i class="fas ${this.getContractorIcon(contractor.type)}"></i>
+                        </div>
+                        <div class="contractor-info">
+                            <h3 class="contractor-name">${contractor.name}</h3>
+                            <span class="contractor-type">${this.getTypeText(contractor.type)}</span>
+                            <div class="contractor-rating">
+                                ${this.renderStars(contractor.rating || 0)}
+                                <span class="rating-value">(${contractor.rating || 0})</span>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary" data-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="#" onclick="contractorsModule.viewContractor(${contractor.id})">
+                                        <i class="fas fa-eye"></i> Просмотр
+                                    </a>
+                                    <a href="#" onclick="contractorsModule.editContractor(${contractor.id})">
+                                        <i class="fas fa-edit"></i> Редактировать
+                                    </a>
+                                    <a href="#" onclick="contractorsModule.showContractorProjects(${contractor.id})">
+                                        <i class="fas fa-project-diagram"></i> Проекты
+                                    </a>
+                                    <a href="#" onclick="contractorsModule.showContractorDocuments(${contractor.id})">
+                                        <i class="fas fa-file-alt"></i> Документы
+                                    </a>
+                                    <a href="#" onclick="contractorsModule.rateContractor(${contractor.id})">
+                                        <i class="fas fa-star"></i> Оценить
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a href="#" onclick="contractorsModule.deleteContractor(${contractor.id})" class="text-danger">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="contractor-actions">
-                        <button class="btn btn-sm btn-outline" onclick="this.viewContractor(${contractor.id})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="this.editContractor(${contractor.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h3 class="contractor-name">${contractor.name}</h3>
-                    <p class="contractor-specialty">
-                        <i class="fas fa-tools"></i>
-                        ${this.getSpecialtyText(contractor.specialty)}
-                    </p>
-                    <div class="contractor-contact">
-                        <p class="contact-person">
-                            <i class="fas fa-user"></i>
-                            ${contractor.contact_person || 'Контактное лицо не указано'}
-                        </p>
-                        <p class="contact-phone">
-                            <i class="fas fa-phone"></i>
-                            ${contractor.phone || 'Телефон не указан'}
-                        </p>
-                    </div>
-                    <div class="contractor-meta">
-                        <div class="meta-item">
-                            <span class="meta-label">Проекты:</span>
-                            <span class="meta-value">${contractor.projects_count || 0}</span>
+                    <div class="card-body">
+                        <div class="contractor-details">
+                            <div class="detail-row">
+                                <i class="fas fa-tools"></i>
+                                <span>${this.getSpecializationText(contractor.specialization)}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-phone"></i>
+                                <span>${contractor.phone || 'Не указан'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-envelope"></i>
+                                <span>${contractor.email || 'Не указан'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${contractor.address || 'Не указан'}</span>
+                            </div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Общая сумма:</span>
-                            <span class="meta-value">${NumberUtils.formatCurrency(contractor.total_amount || 0)}</span>
+                        <div class="contractor-stats">
+                            <div class="stat">
+                                <span class="stat-value">${contractor.projects_count || 0}</span>
+                                <span class="stat-label">Проектов</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value">${NumberUtils.formatCurrency(contractor.total_amount || 0)}</span>
+                                <span class="stat-label">Сумма работ</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer">
-                    <div class="contractor-dates">
-                        <small class="text-muted">
-                            Добавлен: ${DateUtils.format(contractor.created_at)}
-                        </small>
+                    <div class="card-footer">
+                        <div class="contractor-status">
+                            <span class="status-badge status-${contractor.status}">
+                                ${this.getStatusText(contractor.status)}
+                            </span>
+                            ${contractor.is_verified ? '<span class="verified-badge"><i class="fas fa-check-circle"></i> Проверен</span>' : ''}
+                        </div>
+                        <div class="last-project">
+                            <small class="text-muted">
+                                Последний проект: ${contractor.last_project ? DateUtils.formatDateTime(contractor.last_project) : 'Нет данных'}
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
         `).join('');
+
+        gridContainer.innerHTML = cardsHTML;
     }
 
-    // Render contractors table view
     renderContractorsTable() {
-        const tbody = document.getElementById('contractors-table-body');
+        const tableBody = document.querySelector('#contractors-table tbody');
         
         if (this.contractors.length === 0) {
-            tbody.innerHTML = `
+            tableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center empty-state">
-                        <i class="fas fa-hard-hat"></i>
-                        <div>Подрядчики не найдены</div>
+                    <td colspan="8" class="text-center py-4">
+                        <div class="empty-state">
+                            <i class="fas fa-hard-hat"></i>
+                            <p>Подрядчики не найдены</p>
+                        </div>
                     </td>
                 </tr>
             `;
             return;
         }
 
-        tbody.innerHTML = this.contractors.map(contractor => `
-            <tr data-contractor-id="${contractor.id}">
+        const rowsHTML = this.contractors.map(contractor => `
+            <tr data-id="${contractor.id}">
                 <td>
-                    <div class="table-contractor-info">
-                        <div class="contractor-name">${contractor.name}</div>
-                        <div class="contact-person text-muted">${contractor.contact_person || 'Контактное лицо не указано'}</div>
+                    <div class="contractor-cell">
+                        <div class="contractor-avatar">
+                            <i class="fas ${this.getContractorIcon(contractor.type)}"></i>
+                        </div>
+                        <div class="contractor-info">
+                            <div class="contractor-name">${contractor.name}</div>
+                            <div class="contractor-id">ID: ${contractor.id}</div>
+                            ${contractor.is_verified ? '<span class="verified-badge"><i class="fas fa-check-circle"></i> Проверен</span>' : ''}
+                        </div>
                     </div>
                 </td>
                 <td>
-                    <span class="specialty-badge">${this.getSpecialtyText(contractor.specialty)}</span>
+                    <span class="type-badge type-${contractor.type}">
+                        ${this.getTypeText(contractor.type)}
+                    </span>
                 </td>
                 <td>
-                    <div class="contractor-contacts">
-                        <div>${contractor.phone || '-'}</div>
-                        <div class="text-muted">${contractor.email || '-'}</div>
+                    <span class="specialization-badge">
+                        ${this.getSpecializationText(contractor.specialization)}
+                    </span>
+                </td>
+                <td>
+                    <div class="rating-cell">
+                        ${this.renderStars(contractor.rating || 0)}
+                        <span class="rating-value">(${contractor.rating || 0})</span>
                     </div>
                 </td>
                 <td>
-                    <div class="rating-display">
-                        ${this.renderStars(contractor.rating)}
-                        <span class="rating-text">${contractor.rating || 'Нет'}</span>
+                    <div class="contact-info">
+                        ${contractor.phone ? `<div><i class="fas fa-phone"></i> ${contractor.phone}</div>` : ''}
+                        ${contractor.email ? `<div><i class="fas fa-envelope"></i> ${contractor.email}</div>` : ''}
                     </div>
                 </td>
                 <td>
-                    <span class="status-badge status-${contractor.status}">${this.getStatusText(contractor.status)}</span>
+                    <span class="status-badge status-${contractor.status}">
+                        ${this.getStatusText(contractor.status)}
+                    </span>
                 </td>
-                <td class="text-center">${contractor.projects_count || 0}</td>
-                <td>${NumberUtils.formatCurrency(contractor.total_amount || 0)}</td>
                 <td>
-                    <div class="table-actions">
-                        <button class="btn btn-sm btn-outline" onclick="this.viewContractor(${contractor.id})" title="Просмотр">
+                    <div class="projects-info">
+                        <span class="projects-count">${contractor.projects_count || 0}</span>
+                        <small class="text-muted">проектов</small>
+                    </div>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="contractorsModule.viewContractor(${contractor.id})" title="Просмотр">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="this.editContractor(${contractor.id})" title="Редактировать">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="contractorsModule.editContractor(${contractor.id})" title="Редактировать">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="this.deleteContractor(${contractor.id})" title="Удалить">
+                        <button class="btn btn-sm btn-outline-warning" onclick="contractorsModule.rateContractor(${contractor.id})" title="Оценить">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="contractorsModule.deleteContractor(${contractor.id})" title="Удалить">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
         `).join('');
+
+        tableBody.innerHTML = rowsHTML;
     }
 
-    // Render star rating
-    renderStars(rating) {
-        if (!rating) return '<span class="text-muted">Без рейтинга</span>';
-        
-        let stars = '';
-        for (let i = 1; i <= 5; i++) {
-            if (i <= rating) {
-                stars += '<i class="fas fa-star text-warning"></i>';
-            } else {
-                stars += '<i class="far fa-star text-muted"></i>';
-            }
-        }
-        return stars;
-    }
-
-    // Update results info
     updateResultsInfo() {
-        const container = document.getElementById('contractors-count');
-        const start = (this.pagination.page - 1) * this.pagination.limit + 1;
-        const end = Math.min(start + this.contractors.length - 1, this.pagination.total);
+        const countElement = document.getElementById('contractors-count');
+        const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+        const end = Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
         
-        container.textContent = `Показано ${start}-${end} из ${this.pagination.total} подрядчиков`;
+        if (this.totalItems === 0) {
+            countElement.textContent = 'Подрядчики не найдены';
+        } else {
+            countElement.textContent = `Показано ${start}-${end} из ${this.totalItems} подрядчиков`;
+        }
     }
 
-    // Render pagination
     renderPagination() {
         const container = document.getElementById('contractors-pagination');
-        const totalPages = Math.ceil(this.pagination.total / this.pagination.limit);
         
-        if (totalPages <= 1) {
+        if (this.totalPages <= 1) {
             container.innerHTML = '';
             return;
         }
@@ -527,268 +448,338 @@ class ContractorsModule {
         let paginationHTML = '<div class="pagination">';
         
         // Previous button
-        if (this.pagination.page > 1) {
-            paginationHTML += `<button class="btn btn-outline" onclick="this.changePage(${this.pagination.page - 1})">Назад</button>`;
+        if (this.currentPage > 1) {
+            paginationHTML += `
+                <button class="btn btn-outline-primary" onclick="contractorsModule.changePage(${this.currentPage - 1})">
+                    <i class="fas fa-chevron-left"></i> Предыдущая
+                </button>
+            `;
         }
         
         // Page numbers
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === this.pagination.page) {
-                paginationHTML += `<button class="btn btn-primary">${i}</button>`;
-            } else if (i === 1 || i === totalPages || Math.abs(i - this.pagination.page) <= 2) {
-                paginationHTML += `<button class="btn btn-outline" onclick="this.changePage(${i})">${i}</button>`;
-            } else if (i === this.pagination.page - 3 || i === this.pagination.page + 3) {
+        const startPage = Math.max(1, this.currentPage - 2);
+        const endPage = Math.min(this.totalPages, this.currentPage + 2);
+        
+        if (startPage > 1) {
+            paginationHTML += `<button class="btn btn-outline-primary" onclick="contractorsModule.changePage(1)">1</button>`;
+            if (startPage > 2) {
                 paginationHTML += '<span class="pagination-dots">...</span>';
             }
         }
         
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <button class="btn ${i === this.currentPage ? 'btn-primary' : 'btn-outline-primary'}" 
+                        onclick="contractorsModule.changePage(${i})">${i}</button>
+            `;
+        }
+        
+        if (endPage < this.totalPages) {
+            if (endPage < this.totalPages - 1) {
+                paginationHTML += '<span class="pagination-dots">...</span>';
+            }
+            paginationHTML += `<button class="btn btn-outline-primary" onclick="contractorsModule.changePage(${this.totalPages})">${this.totalPages}</button>`;
+        }
+        
         // Next button
-        if (this.pagination.page < totalPages) {
-            paginationHTML += `<button class="btn btn-outline" onclick="this.changePage(${this.pagination.page + 1})">Далее</button>`;
+        if (this.currentPage < this.totalPages) {
+            paginationHTML += `
+                <button class="btn btn-outline-primary" onclick="contractorsModule.changePage(${this.currentPage + 1})">
+                    Следующая <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
         }
         
         paginationHTML += '</div>';
         container.innerHTML = paginationHTML;
     }
 
-    // Initialize event listeners
     initEventListeners() {
-        // Search input
-        document.getElementById('contractors-search').addEventListener('input', debounce((e) => {
-            this.filters.search = e.target.value;
-            this.applyFilters();
-        }, 300));
+        // Search input with debounce
+        const searchInput = document.getElementById('contractor-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                this.filters.search = e.target.value;
+                this.currentPage = 1;
+                this.loadContractors();
+            }, 300));
+        }
 
-        // View toggle
-        document.querySelectorAll('.view-controls .btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.view-controls .btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                const view = btn.dataset.view;
-                if (view === 'grid') {
-                    document.getElementById('contractors-grid').classList.remove('d-none');
-                    document.getElementById('contractors-table').classList.add('d-none');
-                } else {
-                    document.getElementById('contractors-grid').classList.add('d-none');
-                    document.getElementById('contractors-table').classList.remove('d-none');
-                }
-                
-                this.renderContractors();
+        // Filter change handlers
+        const typeFilter = document.getElementById('contractor-type-filter');
+        if (typeFilter) {
+            typeFilter.addEventListener('change', (e) => {
+                this.filters.type = e.target.value;
+                this.currentPage = 1;
+                this.loadContractors();
             });
-        });
+        }
+
+        const specializationFilter = document.getElementById('contractor-specialization-filter');
+        if (specializationFilter) {
+            specializationFilter.addEventListener('change', (e) => {
+                this.filters.specialization = e.target.value;
+                this.currentPage = 1;
+                this.loadContractors();
+            });
+        }
+
+        const statusFilter = document.getElementById('contractor-status-filter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', (e) => {
+                this.filters.status = e.target.value;
+                this.currentPage = 1;
+                this.loadContractors();
+            });
+        }
+
+        const ratingFilter = document.getElementById('contractor-rating-filter');
+        if (ratingFilter) {
+            ratingFilter.addEventListener('change', (e) => {
+                this.filters.rating = e.target.value;
+                this.currentPage = 1;
+                this.loadContractors();
+            });
+        }
+
+        const sortFilter = document.getElementById('contractor-sort-filter');
+        if (sortFilter) {
+            sortFilter.addEventListener('change', (e) => {
+                this.filters.sortBy = e.target.value;
+                this.currentPage = 1;
+                this.loadContractors();
+            });
+        }
     }
 
-    // Apply filters
+    setViewMode(mode) {
+        this.viewMode = mode;
+        
+        // Update view toggle buttons
+        const gridBtn = document.querySelector('.view-toggle button:first-child');
+        const tableBtn = document.querySelector('.view-toggle button:last-child');
+        
+        if (mode === 'grid') {
+            gridBtn.className = 'btn btn-primary';
+            tableBtn.className = 'btn btn-outline-primary';
+            document.getElementById('contractors-grid').style.display = 'block';
+            document.getElementById('contractors-table-container').style.display = 'none';
+        } else {
+            gridBtn.className = 'btn btn-outline-primary';
+            tableBtn.className = 'btn btn-primary';
+            document.getElementById('contractors-grid').style.display = 'none';
+            document.getElementById('contractors-table-container').style.display = 'block';
+        }
+        
+        this.renderContractors();
+    }
+
     applyFilters() {
-        this.filters.specialty = document.getElementById('contractors-specialty-filter').value;
-        this.filters.status = document.getElementById('contractors-status-filter').value;
-        this.filters.rating = document.getElementById('contractors-rating-filter').value;
-        
-        this.pagination.page = 1;
+        this.currentPage = 1;
         this.loadContractors();
     }
 
-    // Reset filters
     resetFilters() {
-        this.filters = { specialty: '', status: '', rating: '', search: '' };
-        
-        document.getElementById('contractors-search').value = '';
-        document.getElementById('contractors-specialty-filter').value = '';
-        document.getElementById('contractors-status-filter').value = '';
-        document.getElementById('contractors-rating-filter').value = '';
-        
-        this.pagination.page = 1;
-        this.loadContractors();
-    }
-
-    // Change page
-    changePage(page) {
-        this.pagination.page = page;
-        this.loadContractors();
-    }
-
-    // Get status text
-    getStatusText(status) {
-        const statusMap = {
-            active: 'Активный',
-            verified: 'Проверенный',
-            preferred: 'Предпочтительный',
-            blocked: 'Заблокированный'
+        this.filters = {
+            search: '',
+            type: 'all',
+            specialization: 'all',
+            status: 'all',
+            rating: 'all',
+            sortBy: 'created_at',
+            sortOrder: 'desc'
         };
-        return statusMap[status] || status;
+        
+        // Reset form inputs
+        document.getElementById('contractor-search').value = '';
+        document.getElementById('contractor-type-filter').value = 'all';
+        document.getElementById('contractor-specialization-filter').value = 'all';
+        document.getElementById('contractor-status-filter').value = 'all';
+        document.getElementById('contractor-rating-filter').value = 'all';
+        document.getElementById('contractor-sort-filter').value = 'created_at';
+        
+        this.currentPage = 1;
+        this.loadContractors();
     }
 
-    // Get specialty text
-    getSpecialtyText(specialty) {
-        const specialtyMap = {
+    changePage(page) {
+        this.currentPage = page;
+        this.loadContractors();
+    }
+
+    renderStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        
+        let starsHTML = '';
+        
+        // Full stars
+        for (let i = 0; i < fullStars; i++) {
+            starsHTML += '<i class="fas fa-star text-warning"></i>';
+        }
+        
+        // Half star
+        if (hasHalfStar) {
+            starsHTML += '<i class="fas fa-star-half-alt text-warning"></i>';
+        }
+        
+        // Empty stars
+        for (let i = 0; i < emptyStars; i++) {
+            starsHTML += '<i class="far fa-star text-muted"></i>';
+        }
+        
+        return starsHTML;
+    }
+
+    getContractorIcon(type) {
+        const icons = {
+            contractor: 'fa-hard-hat',
+            supplier: 'fa-truck',
+            subcontractor: 'fa-users-cog',
+            service: 'fa-cogs'
+        };
+        return icons[type] || 'fa-hard-hat';
+    }
+
+    getTypeText(type) {
+        const types = {
+            contractor: 'Подрядчик',
+            supplier: 'Поставщик',
+            subcontractor: 'Субподрядчик',
+            service: 'Услуги'
+        };
+        return types[type] || type;
+    }
+
+    getSpecializationText(specialization) {
+        const specializations = {
             construction: 'Строительство',
             electrical: 'Электромонтаж',
             plumbing: 'Сантехника',
-            hvac: 'Вентиляция',
-            finishing: 'Отделка',
-            roofing: 'Кровля',
-            flooring: 'Полы',
-            painting: 'Покраска',
-            landscaping: 'Благоустройство',
-            demolition: 'Демонтаж',
-            materials: 'Материалы',
-            equipment: 'Техника'
+            heating: 'Отопление',
+            roofing: 'Кровельные работы',
+            finishing: 'Отделочные работы',
+            materials: 'Стройматериалы',
+            equipment: 'Оборудование',
+            transport: 'Транспорт',
+            security: 'Охрана'
         };
-        return specialtyMap[specialty] || specialty;
+        return specializations[specialization] || specialization;
     }
 
-    // View contractor details
-    viewContractor(contractorId) {
-        showNotification('Открытие карточки подрядчика...', 'info');
-        // Здесь будет переход к детальной странице подрядчика
+    getStatusText(status) {
+        const statuses = {
+            active: 'Активный',
+            inactive: 'Неактивный',
+            verified: 'Проверенный',
+            blacklisted: 'Черный список'
+        };
+        return statuses[status] || status;
     }
 
-    // Edit contractor
-    editContractor(contractorId) {
-        const contractor = this.contractors.find(c => c.id === contractorId);
-        if (!contractor) return;
-
-        this.currentContractor = contractor;
-        
-        // Fill form with contractor data
-        const form = document.getElementById('contractorForm');
-        Object.keys(contractor).forEach(key => {
-            const input = form.querySelector(`[name="${key}"]`);
-            if (input) {
-                input.value = contractor[key] || '';
-            }
-        });
-
-        document.getElementById('contractorModalTitle').textContent = 'Редактировать подрядчика';
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('contractorModal'));
-        modal.show();
+    showLoading() {
+        const loading = document.getElementById('loading-contractors');
+        if (loading) loading.style.display = 'block';
     }
 
-    // Delete contractor
+    hideLoading() {
+        const loading = document.getElementById('loading-contractors');
+        if (loading) loading.style.display = 'none';
+    }
+
+    // Contractor actions
+    async viewContractor(contractorId) {
+        try {
+            const contractor = await ContractorsAPI.getById(contractorId);
+            this.showContractorDetailsModal(contractor);
+        } catch (error) {
+            console.error('Error loading contractor:', error);
+            showNotification('Ошибка загрузки данных подрядчика', 'error');
+        }
+    }
+
+    showCreateContractorModal() {
+        showNotification('Функция создания подрядчика будет реализована', 'info');
+    }
+
+    async editContractor(contractorId) {
+        try {
+            const contractor = await ContractorsAPI.getById(contractorId);
+            this.showEditContractorModal(contractor);
+        } catch (error) {
+            console.error('Error loading contractor:', error);
+            showNotification('Ошибка загрузки данных подрядчика', 'error');
+        }
+    }
+
     async deleteContractor(contractorId) {
-        if (!confirm('Вы уверены, что хотите удалить этого подрядчика?')) {
+        if (!confirm('Вы действительно хотите удалить этого подрядчика?')) {
             return;
         }
 
         try {
             await ContractorsAPI.delete(contractorId);
-            showNotification('Подрядчик удален', 'success');
+            showNotification('Подрядчик успешно удален', 'success');
             this.loadContractors();
         } catch (error) {
-            console.error('Contractor deletion error:', error);
+            console.error('Error deleting contractor:', error);
             showNotification('Ошибка удаления подрядчика', 'error');
         }
     }
 
-    // Show create contractor modal
-    showCreateContractorModal() {
-        this.currentContractor = null;
-        
-        // Reset form
-        document.getElementById('contractorForm').reset();
-        
-        document.getElementById('contractorModalTitle').textContent = 'Новый подрядчик';
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('contractorModal'));
-        modal.show();
+    rateContractor(contractorId) {
+        showNotification('Функция оценки подрядчика будет реализована', 'info');
     }
 
-    // Save contractor
-    async saveContractor() {
-        const form = document.getElementById('contractorForm');
-        const formData = new FormData(form);
-        const contractorData = Object.fromEntries(formData.entries());
-
-        // Validate required fields
-        if (!contractorData.name || !contractorData.specialty || !contractorData.contact_person || !contractorData.phone) {
-            showNotification('Заполните обязательные поля', 'error');
-            return;
-        }
-
-        try {
-            if (this.currentContractor) {
-                // Update existing contractor
-                await ContractorsAPI.update(this.currentContractor.id, contractorData);
-                showNotification('Подрядчик обновлен', 'success');
-            } else {
-                // Create new contractor
-                await ContractorsAPI.create(contractorData);
-                showNotification('Подрядчик создан', 'success');
-            }
-
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('contractorModal'));
-            modal.hide();
-
-            // Reload contractors
-            this.loadContractors();
-
-        } catch (error) {
-            console.error('Contractor save error:', error);
-            showNotification('Ошибка сохранения подрядчика', 'error');
-        }
+    showContractorProjects(contractorId) {
+        app.navigateTo(`projects?contractor=${contractorId}`);
     }
 
-    // Export contractors
+    showContractorDocuments(contractorId) {
+        app.navigateTo(`documents?contractor=${contractorId}`);
+    }
+
+    showContractorDetailsModal(contractor) {
+        showNotification('Детальная информация о подрядчике будет реализована', 'info');
+    }
+
+    showEditContractorModal(contractor) {
+        showNotification('Редактирование подрядчика будет реализовано', 'info');
+    }
+
     async exportContractors() {
         try {
-            showNotification('Экспорт данных...', 'info');
-            await ExportAPI.exportContractors('excel');
-            showNotification('Данные экспортированы', 'success');
+            const response = await ExportAPI.exportContractors(this.filters);
+            downloadFile(response.url, 'contractors.xlsx');
+            showNotification('Экспорт подрядчиков завершен', 'success');
         } catch (error) {
-            console.error('Export error:', error);
-            showNotification('Ошибка экспорта', 'error');
+            console.error('Error exporting contractors:', error);
+            showNotification('Ошибка экспорта подрядчиков', 'error');
         }
     }
 
-    // Import contractors
-    importContractors() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.xlsx,.xls,.csv';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            try {
-                showNotification('Импорт данных...', 'info');
-                await ContractorsAPI.import(file);
-                showNotification('Данные импортированы', 'success');
-                this.loadContractors();
-            } catch (error) {
-                console.error('Import error:', error);
-                showNotification('Ошибка импорта', 'error');
-            }
-        };
-        input.click();
-    }
-
-    // Show module
     show() {
-        if (this.container) {
-            this.container.style.display = 'block';
-            this.loadContractors();
-        }
+        document.querySelector('.contractors-module').style.display = 'block';
     }
 
-    // Hide module
     hide() {
-        if (this.container) {
-            this.container.style.display = 'none';
-        }
-    }
-
-    // Cleanup
-    destroy() {
-        if (this.container) {
-            this.container.innerHTML = '';
-        }
+        document.querySelector('.contractors-module').style.display = 'none';
     }
 }
 
-// Export for global use
-window.ContractorsModule = ContractorsModule;
+// Initialize module
+const contractorsModule = new ContractorsModule();
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.location.hash === '#contractors') {
+            contractorsModule.init();
+        }
+    });
+} else {
+    if (window.location.hash === '#contractors') {
+        contractorsModule.init();
+    }
+}
