@@ -10,9 +10,9 @@ if ! systemctl is-active --quiet mysql; then
     systemctl enable mysql
 fi
 
-# Запрашиваем пароль для пользователя базы данных
-echo "Введите пароль для пользователя базы данных (crm_user):"
-read -s DB_PASSWORD
+# Устанавливаем пароль для пользователя базы данных
+DB_PASSWORD="CaMBeJI30091994"
+echo "Используется пароль для пользователя базы данных: $DB_PASSWORD"
 
 # Создаем SQL файл для настройки базы данных
 cat > setup_db.sql << EOF
