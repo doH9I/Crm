@@ -68,7 +68,7 @@ async function connectDB() {
   }
 }
 
-// Middleware
+// Middleware - Настройка безопасности для HTTP окружения
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -76,12 +76,33 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"]
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      connectSrc: ["'self'", "http://79.174.85.87:3001", "ws://79.174.85.87:3001"],
+      formAction: ["'self'", "http://79.174.85.87:3001"]
     }
-  }
+  },
+  // Отключаем HSTS для HTTP окружения
+  hsts: false,
+  // Отключаем принудительное HTTPS
+  crossOriginOpenerPolicy: false,
+  // Отключаем Origin-Agent-Cluster для избежания конфликтов
+  crossOriginEmbedderPolicy: false
 }));
 app.use(compression());
+
+// Middleware для исправления смешанного контента HTTP/HTTPS
+app.use((req, res, next) => {
+  // Принудительно устанавливаем HTTP заголовки
+  res.setHeader('Strict-Transport-Security', ''); // Отключаем HSTS
+  res.setHeader('Content-Security-Policy-Report-Only', ''); // Отключаем CSP отчеты
+  
+  // Исправляем заголовки для HTTP окружения
+  if (req.headers['x-forwarded-proto'] === 'https') {
+    req.headers['x-forwarded-proto'] = 'http';
+  }
+  
+  next();
+});
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? 
     process.env.ALLOWED_ORIGINS?.split(',') || [
