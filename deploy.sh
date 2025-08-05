@@ -84,15 +84,35 @@ setup_mysql() {
     systemctl start mysql
     systemctl enable mysql
     
-    # Создание базы данных и пользователя
+    # Настройка безопасности MySQL (автоматически)
+    print_info "Настройка безопасности MySQL..."
     mysql -u root <<EOF
-CREATE DATABASE IF NOT EXISTS construction_crm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'crm_user'@'localhost' IDENTIFIED BY 'strong_password_123!@#';
-GRANT ALL PRIVILEGES ON construction_crm.* TO 'crm_user'@'localhost';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root_password_123!@#';
+DELETE FROM mysql.user WHERE User='';
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+DROP DATABASE IF EXISTS test;
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
 FLUSH PRIVILEGES;
 EOF
 
-    print_success "MySQL настроен"
+    # Создание базы данных и пользователя
+    print_info "Создание базы данных и пользователя..."
+    mysql -u root -p'root_password_123!@#' <<EOF
+CREATE DATABASE IF NOT EXISTS construction_crm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'crm_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'strong_password_123!@#';
+GRANT ALL PRIVILEGES ON construction_crm.* TO 'crm_user'@'localhost';
+GRANT CREATE, DROP, INDEX, ALTER ON construction_crm.* TO 'crm_user'@'localhost';
+FLUSH PRIVILEGES;
+EOF
+
+    # Тестирование подключения
+    print_info "Тестирование подключения к базе данных..."
+    if mysql -u crm_user -p'strong_password_123!@#' -e "USE construction_crm; SELECT 1;" > /dev/null 2>&1; then
+        print_success "MySQL настроен и подключение работает"
+    else
+        print_error "Ошибка подключения к MySQL"
+        return 1
+    fi
 }
 
 # Настройка директорий проекта
@@ -139,7 +159,13 @@ import_database_schema() {
     print_info "Импорт схемы базы данных..."
     
     if [ -f "/var/www/construction-crm/database/schema.sql" ]; then
-        mysql -u crm_user -p'strong_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql
+        # Сначала проверим подключение
+        if ! mysql -u crm_user -p'strong_password_123!@#' -e "USE construction_crm;" > /dev/null 2>&1; then
+            print_error "Не удается подключиться к базе данных. Попробуем через root..."
+            mysql -u root -p'root_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql
+        else
+            mysql -u crm_user -p'strong_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql
+        fi
         print_success "Схема базы данных импортирована"
     else
         print_warning "Файл схемы базы данных не найден"
