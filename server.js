@@ -104,18 +104,35 @@ app.use(limiter);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Настройка статических файлов
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/css', express.static(path.join(__dirname, 'public/css')));
-app.use('/js', express.static(path.join(__dirname, 'public/js')));
-
-// Добавляем логирование запросов для отладки
-app.use((req, res, next) => {
-  if (req.url.includes('/css/') || req.url.includes('/js/')) {
-    logger.info(`Static file request: ${req.method} ${req.url}`);
+// Настройка статических файлов с кешированием для продакшена
+const staticOptions = process.env.NODE_ENV === 'production' ? {
+  maxAge: '1d', // Кеш на 1 день для продакшена
+  etag: true,
+  setHeaders: (res, path) => {
+    // Кеш для CSS и JS файлов на неделю
+    if (path.endsWith('.css') || path.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 дней
+    }
+    // Кеш для изображений на месяц
+    if (path.match(/\.(jpg|jpeg|png|gif|ico|svg)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000'); // 30 дней
+    }
   }
-  next();
-});
+} : {};
+
+app.use(express.static(path.join(__dirname, 'public'), staticOptions));
+app.use('/css', express.static(path.join(__dirname, 'public/css'), staticOptions));
+app.use('/js', express.static(path.join(__dirname, 'public/js'), staticOptions));
+
+// Логирование только в режиме разработки
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.url.includes('/css/') || req.url.includes('/js/')) {
+      logger.info(`Static file request: ${req.method} ${req.url}`);
+    }
+    next();
+  });
+}
 
 // Настройка multer для загрузки файлов
 const storage = multer.diskStorage({
