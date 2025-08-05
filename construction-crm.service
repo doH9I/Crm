@@ -1,0 +1,36 @@
+[Unit]
+Description=Construction CRM Node.js Application
+Documentation=https://github.com/yourusername/construction-crm
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/construction-crm
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=construction-crm
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/www/construction-crm/uploads /var/www/construction-crm/logs
+
+# Process limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment variables (alternatively, use EnvironmentFile)
+Environment=PORT=3000
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

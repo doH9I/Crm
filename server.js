@@ -72,8 +72,11 @@ async function connectDB() {
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 'https://yourdomain.com' : '*',
-  credentials: true
+  origin: process.env.NODE_ENV === 'production' ? 
+    [process.env.CORS_ORIGIN, `http://${process.env.SERVER_IP}`, `https://${process.env.SERVER_IP}`] : '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 const limiter = rateLimit({
@@ -1240,10 +1243,12 @@ async function startServer() {
     await createDirectories();
     await connectDB();
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server is running on port ${PORT}`);
       console.log(`🚀 Construction CRM Server запущен на порту ${PORT}`);
-      console.log(`📊 API доступно по адресу: http://localhost:${PORT}/api`);
+      console.log(`📊 Web интерфейс: http://${process.env.SERVER_IP || 'localhost'}:${PORT}`);
+      console.log(`📊 API доступно по адресу: http://${process.env.SERVER_IP || 'localhost'}:${PORT}/api`);
+      console.log(`📁 Рабочая директория: ${process.cwd()}`);
     });
   } catch (error) {
     logger.error('Server startup error:', error);

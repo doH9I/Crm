@@ -1,0 +1,58 @@
+# КОМАНДЫ ДЛЯ PUTTY - Развертывание Construction CRM
+
+# 1. Подключение к серверу
+ssh root@79.174.85.87
+
+# 2. Переход в директорию проекта (если проект уже загружен)
+cd /root/construction-crm
+
+# 3. ИСПРАВЛЕНИЕ ОШИБКИ MYSQL СОКЕТА (если появилась ошибка)
+sudo bash quick-mysql-fix.sh
+
+# 4. ИСПРАВЛЕНИЕ ДОСТУПА ROOT К MYSQL (если ошибка "Access denied for user 'root'")
+sudo bash fix-mysql-root.sh
+
+# 5. Если нужна полная диагностика MySQL
+sudo bash mysql-diagnose.sh
+
+# 6. Быстрая проверка системы
+bash quick-setup.sh
+
+# 7. ИСПРАВЛЕНИЕ ОШИБКИ NGINX (если появилась ошибка конфигурации)
+sudo bash fix-nginx.sh
+
+# 8. ИСПРАВЛЕНИЕ ОШИБКИ БАЗЫ ДАННЫХ (если таблицы уже существуют)
+sudo bash fix-database-simple.sh
+
+# 9. СОЗДАНИЕ АДМИНИСТРАТОРА (если ошибка с Node.js зависимостями)
+sudo bash create-admin-manual.sh
+
+# 10. Полное развертывание (запустить после успешной проверки)
+sudo bash deploy.sh
+
+# 11. Проверка статуса сервисов после развертывания
+sudo systemctl status construction-crm
+sudo systemctl status nginx
+sudo systemctl status mysql
+
+# 6. Просмотр логов (если что-то не работает)
+sudo journalctl -u construction-crm -f
+
+# 7. Проверка портов
+sudo netstat -tlnp | grep -E ':(80|443|3000|3306)'
+
+# 8. Тест подключения к базе данных
+mysql -u crm_user -p'strong_password_123!@#' construction_crm
+
+# 9. Проверка конфигурации Nginx
+sudo nginx -t
+
+# 10. Перезапуск сервисов (если нужно)
+sudo systemctl restart construction-crm
+sudo systemctl restart nginx
+
+# ДОСТУП К СИСТЕМЕ:
+# Откройте браузер и перейдите по адресу: http://79.174.85.87
+# Логин: admin
+# Пароль: admin123
+# ОБЯЗАТЕЛЬНО СМЕНИТЕ ПАРОЛЬ ПОСЛЕ ВХОДА!
