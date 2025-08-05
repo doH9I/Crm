@@ -1,0 +1,15 @@
+# SPA fallback - redirect all routes to index.html for client-side routing
+/*    /index.html   200
+
+# API routes (if backend is added later)
+/api/*  /api/:splat  200
+
+# Handle common file extensions
+/*.js   /:splat.js   200
+/*.css  /:splat.css  200
+/*.png  /:splat.png  200
+/*.jpg  /:splat.jpg  200
+/*.svg  /:splat.svg  200
+/*.ico  /:splat.ico  200
+/*.woff /:splat.woff 200
+/*.woff2 /:splat.woff2 200
