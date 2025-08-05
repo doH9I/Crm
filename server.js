@@ -95,7 +95,19 @@ app.use(limiter);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static('public'));
+
+// Настройка статических файлов
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/css', express.static(path.join(__dirname, 'public/css')));
+app.use('/js', express.static(path.join(__dirname, 'public/js')));
+
+// Добавляем логирование запросов для отладки
+app.use((req, res, next) => {
+  if (req.url.includes('/css/') || req.url.includes('/js/')) {
+    logger.info(`Static file request: ${req.method} ${req.url}`);
+  }
+  next();
+});
 
 // Настройка multer для загрузки файлов
 const storage = multer.diskStorage({
