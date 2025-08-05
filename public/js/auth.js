@@ -68,16 +68,22 @@ class AuthModule {
             }
 
             // Update UI with user info
-            app.updateUserInfo();
+            if (window.app && window.app.updateUserInfo) {
+                window.app.updateUserInfo();
+            }
 
             // Show success message
             showNotification('Добро пожаловать в систему!', 'success');
 
             // Show main application
-            app.showApp();
+            if (window.app && window.app.showApp) {
+                window.app.showApp();
+            }
 
             // Navigate to dashboard
-            await app.navigateTo('dashboard');
+            if (window.app && window.app.navigateTo) {
+                await window.app.navigateTo('dashboard');
+            }
 
         } catch (error) {
             console.error('Login error:', error);
@@ -194,15 +200,23 @@ class AuthModule {
     // Check for auto-login (if user is already authenticated)
     async checkAutoLogin() {
         try {
-            const isAuthenticated = await app.checkAuth();
+            // Check if app is available
+            if (typeof window.app === 'undefined') {
+                console.log('App not yet initialized, skipping auto-login check');
+                return;
+            }
+            
+            const isAuthenticated = await window.app.checkAuth();
             if (isAuthenticated) {
-                app.showApp();
-                await app.navigateTo('dashboard');
+                window.app.showApp();
+                await window.app.navigateTo('dashboard');
             }
         } catch (error) {
             console.error('Auto-login check error:', error);
             // Show login page if auto-login fails
-            app.showLogin();
+            if (window.app && window.app.showLogin) {
+                window.app.showLogin();
+            }
         }
     }
 
@@ -232,14 +246,18 @@ class AuthModule {
             }
 
             // Show login page
-            app.showLogin();
+            if (window.app && window.app.showLogin) {
+                window.app.showLogin();
+            }
 
             showNotification('Вы успешно вышли из системы', 'info');
 
         } catch (error) {
             console.error('Logout error:', error);
             // Even if logout fails on server, clear local state
-            app.showLogin();
+            if (window.app && window.app.showLogin) {
+                window.app.showLogin();
+            }
         }
     }
 
@@ -414,14 +432,20 @@ class AuthModule {
 // Create global auth module instance
 const authModule = new AuthModule();
 
-// Initialize when DOM is ready
+// Initialize when DOM is ready - but only if app is not available yet
 document.addEventListener('DOMContentLoaded', () => {
-    authModule.init();
-    
-    // Start session monitoring
-    setInterval(() => {
-        authModule.checkSessionExpiry();
-    }, 60000); // Check every minute
+    // Wait a bit for app to initialize
+    setTimeout(() => {
+        if (typeof window.app === 'undefined') {
+            // App not initialized yet, initialize auth module
+            authModule.init();
+        }
+        
+        // Start session monitoring
+        setInterval(() => {
+            authModule.checkSessionExpiry();
+        }, 60000); // Check every minute
+    }, 100);
 });
 
 // Export for global use
