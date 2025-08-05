@@ -83,8 +83,16 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? ['http://79.174.85.87:3000', 'http://79.174.85.87'] : '*',
-  credentials: true
+  origin: process.env.NODE_ENV === 'production' ? 
+    process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://79.174.85.87:3000', 
+      'http://79.174.85.87:3001', 
+      'http://79.174.85.87:8080',
+      'http://79.174.85.87'
+    ] : '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 const limiter = rateLimit({
@@ -1252,9 +1260,15 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'Внутренняя ошибка сервера' });
 });
 
-// 404 обработчик
-app.use((req, res) => {
-  res.status(404).json({ error: 'Маршрут не найден' });
+// SPA обработчик - отдавать index.html для всех неизвестных маршрутов
+app.get('*', (req, res) => {
+  // Проверяем, не является ли запрос API запросом
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Маршрут API не найден' });
+  }
+  
+  // Для всех остальных маршрутов отдаем index.html (SPA)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Запуск сервера
