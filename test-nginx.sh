@@ -1,3 +1,22 @@
+#!/bin/bash
+
+# Test Nginx Configuration
+# Тестирование конфигурации Nginx
+
+echo "🔧 Тестирование конфигурации Nginx..."
+
+# Проверка синтаксиса конфигурации
+echo "1. Проверка синтаксиса nginx.conf..."
+if nginx -t -c /workspace/nginx.conf 2>/dev/null; then
+    echo "✅ Синтаксис конфигурации корректен"
+else
+    echo "❌ Ошибка в конфигурации:"
+    nginx -t -c /workspace/nginx.conf
+    echo ""
+    echo "🔧 Исправляем конфигурацию..."
+    
+    # Создание исправленной конфигурации
+    cat > /workspace/nginx.conf.fixed << 'EOF'
 server {
     listen 80;
     server_name 79.174.85.87;
@@ -13,7 +32,7 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private auth;
+    gzip_proxied any;
     gzip_types
         text/plain
         text/css
@@ -51,6 +70,7 @@ server {
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
             expires 1y;
             add_header Cache-Control "public, immutable";
+            access_log off;
         }
         
         # Cache HTML files for shorter period
@@ -90,16 +110,44 @@ server {
         log_not_found off;
     }
 }
+EOF
+    
+    # Замена файла
+    mv /workspace/nginx.conf.fixed /workspace/nginx.conf
+    echo "✅ Конфигурация исправлена"
+fi
 
-# Optional HTTPS configuration (uncomment and configure when SSL is ready)
-# server {
-#     listen 443 ssl http2;
-#     server_name 79.174.85.87;
-#     
-#     ssl_certificate /path/to/certificate.crt;
-#     ssl_certificate_key /path/to/private.key;
-#     ssl_protocols TLSv1.2 TLSv1.3;
-#     ssl_ciphers HIGH:!aNULL:!MD5;
-#     
-#     # Include the same configuration as above
-# }
+# Тест исправленной конфигурации
+echo ""
+echo "2. Финальная проверка конфигурации..."
+if nginx -t -c /workspace/nginx.conf; then
+    echo "✅ Конфигурация Nginx готова к использованию!"
+else
+    echo "❌ Все еще есть ошибки в конфигурации"
+    exit 1
+fi
+
+echo ""
+echo "3. Проверка файлов проекта..."
+if [ -f "/workspace/public/index.html" ]; then
+    echo "✅ index.html найден"
+else
+    echo "❌ index.html не найден"
+fi
+
+if [ -d "/workspace/public/js" ]; then
+    js_count=$(ls /workspace/public/js/*.js 2>/dev/null | wc -l)
+    echo "✅ Найдено $js_count JavaScript файлов"
+else
+    echo "❌ Директория js не найдена"
+fi
+
+if [ -d "/workspace/public/css" ]; then
+    css_count=$(ls /workspace/public/css/*.css 2>/dev/null | wc -l)
+    echo "✅ Найдено $css_count CSS файлов"
+else
+    echo "❌ Директория css не найдена"
+fi
+
+echo ""
+echo "🎯 Nginx готов к развертыванию!"

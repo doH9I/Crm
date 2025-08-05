@@ -1,3 +1,22 @@
+#!/bin/bash
+
+# Fix Nginx Configuration Script
+# Исправление конфигурации Nginx
+
+echo "🔧 Исправление конфигурации Nginx..."
+
+# Остановка nginx если запущен
+sudo systemctl stop nginx 2>/dev/null || true
+
+# Резервное копирование оригинальной конфигурации
+if [ -f "/etc/nginx/sites-available/construction-crm" ]; then
+    sudo cp /etc/nginx/sites-available/construction-crm /etc/nginx/sites-available/construction-crm.backup
+    echo "✅ Создана резервная копия конфигурации"
+fi
+
+# Создание исправленной конфигурации
+echo "📝 Создание новой конфигурации..."
+sudo tee /etc/nginx/sites-available/construction-crm > /dev/null << 'EOF'
 server {
     listen 80;
     server_name 79.174.85.87;
@@ -13,7 +32,7 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private auth;
+    gzip_proxied any;
     gzip_types
         text/plain
         text/css
@@ -51,6 +70,7 @@ server {
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
             expires 1y;
             add_header Cache-Control "public, immutable";
+            access_log off;
         }
         
         # Cache HTML files for shorter period
@@ -90,16 +110,43 @@ server {
         log_not_found off;
     }
 }
+EOF
 
-# Optional HTTPS configuration (uncomment and configure when SSL is ready)
-# server {
-#     listen 443 ssl http2;
-#     server_name 79.174.85.87;
-#     
-#     ssl_certificate /path/to/certificate.crt;
-#     ssl_certificate_key /path/to/private.key;
-#     ssl_protocols TLSv1.2 TLSv1.3;
-#     ssl_ciphers HIGH:!aNULL:!MD5;
-#     
-#     # Include the same configuration as above
-# }
+# Удаление старых ссылок
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo rm -f /etc/nginx/sites-enabled/construction-crm
+
+# Создание новой ссылки
+sudo ln -sf /etc/nginx/sites-available/construction-crm /etc/nginx/sites-enabled/
+
+# Тестирование конфигурации
+echo "🔍 Тестирование конфигурации..."
+if sudo nginx -t; then
+    echo "✅ Конфигурация Nginx корректна!"
+    
+    # Запуск nginx
+    echo "🚀 Запуск Nginx..."
+    sudo systemctl enable nginx
+    sudo systemctl start nginx
+    
+    if sudo systemctl is-active --quiet nginx; then
+        echo "✅ Nginx успешно запущен!"
+        echo ""
+        echo "🌐 Web интерфейс будет доступен по адресу: http://79.174.85.87"
+    else
+        echo "❌ Ошибка запуска Nginx"
+        sudo systemctl status nginx --no-pager
+    fi
+else
+    echo "❌ Ошибка в конфигурации Nginx"
+    sudo nginx -t
+    exit 1
+fi
+
+echo ""
+echo "📊 Статус сервисов:"
+echo "Nginx: $(sudo systemctl is-active nginx)"
+echo "MySQL: $(sudo systemctl is-active mysql)"
+
+echo ""
+echo "🎯 Nginx исправлен и готов к работе!"

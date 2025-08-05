@@ -15,10 +15,13 @@ sudo bash mysql-diagnose.sh
 # 5. Быстрая проверка системы
 bash quick-setup.sh
 
-# 6. Полное развертывание (запустить после успешной проверки)
+# 6. ИСПРАВЛЕНИЕ ОШИБКИ NGINX (если появилась ошибка конфигурации)
+sudo bash fix-nginx.sh
+
+# 7. Полное развертывание (запустить после успешной проверки)
 sudo bash deploy.sh
 
-# 5. Проверка статуса сервисов после развертывания
+# 8. Проверка статуса сервисов после развертывания
 sudo systemctl status construction-crm
 sudo systemctl status nginx
 sudo systemctl status mysql
