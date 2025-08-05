@@ -14,7 +14,7 @@ const winston = require('winston');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
 // Настройка логгера
 const logger = winston.createLogger({
@@ -72,7 +72,7 @@ app.use(compression());
 
 // CORS настройки
 app.use(cors({
-  origin: ['http://79.174.85.87:3001', 'http://79.174.85.87:3000', 'http://79.174.85.87', 'http://localhost:3001'],
+  origin: ['http://79.174.85.87:8080', 'http://79.174.85.87:3001', 'http://79.174.85.87:3000', 'http://79.174.85.87', 'http://localhost:8080'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']

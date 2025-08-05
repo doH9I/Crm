@@ -20,7 +20,7 @@ pkill -f node 2>/dev/null
 sleep 2
 
 # Освобождение порта
-PORT=3001
+PORT=8080
 if lsof -i :$PORT &>/dev/null; then
     print_status "🔌 Освобождение порта $PORT..." $YELLOW
     kill -9 $(lsof -t -i :$PORT 2>/dev/null) 2>/dev/null
