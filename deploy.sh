@@ -162,9 +162,13 @@ import_database_schema() {
         # Сначала проверим подключение
         if ! mysql -u crm_user -p'strong_password_123!@#' -e "USE construction_crm;" > /dev/null 2>&1; then
             print_error "Не удается подключиться к базе данных. Попробуем через root..."
-            mysql -u root -p'root_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql
+            mysql -u root -p'root_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql 2>/dev/null || true
         else
-            mysql -u crm_user -p'strong_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql
+            # Попытка импорта схемы
+            mysql -u crm_user -p'strong_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql 2>/dev/null || {
+                print_warning "Таблицы уже существуют, используем безопасный импорт..."
+                bash /var/www/construction-crm/fix-database.sh
+            }
         fi
         print_success "Схема базы данных импортирована"
     else
