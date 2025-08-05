@@ -9,25 +9,28 @@ cd /root/construction-crm
 # 3. ИСПРАВЛЕНИЕ ОШИБКИ MYSQL СОКЕТА (если появилась ошибка)
 sudo bash quick-mysql-fix.sh
 
-# 4. Если нужна полная диагностика MySQL
+# 4. ИСПРАВЛЕНИЕ ДОСТУПА ROOT К MYSQL (если ошибка "Access denied for user 'root'")
+sudo bash fix-mysql-root.sh
+
+# 5. Если нужна полная диагностика MySQL
 sudo bash mysql-diagnose.sh
 
-# 5. Быстрая проверка системы
+# 6. Быстрая проверка системы
 bash quick-setup.sh
 
-# 6. ИСПРАВЛЕНИЕ ОШИБКИ NGINX (если появилась ошибка конфигурации)
+# 7. ИСПРАВЛЕНИЕ ОШИБКИ NGINX (если появилась ошибка конфигурации)
 sudo bash fix-nginx.sh
 
-# 7. ИСПРАВЛЕНИЕ ОШИБКИ БАЗЫ ДАННЫХ (если таблицы уже существуют)
+# 8. ИСПРАВЛЕНИЕ ОШИБКИ БАЗЫ ДАННЫХ (если таблицы уже существуют)
 sudo bash fix-database-simple.sh
 
-# 8. СОЗДАНИЕ АДМИНИСТРАТОРА (если ошибка с Node.js зависимостями)
+# 9. СОЗДАНИЕ АДМИНИСТРАТОРА (если ошибка с Node.js зависимостями)
 sudo bash create-admin-manual.sh
 
-# 9. Полное развертывание (запустить после успешной проверки)
+# 10. Полное развертывание (запустить после успешной проверки)
 sudo bash deploy.sh
 
-# 10. Проверка статуса сервисов после развертывания
+# 11. Проверка статуса сервисов после развертывания
 sudo systemctl status construction-crm
 sudo systemctl status nginx
 sudo systemctl status mysql

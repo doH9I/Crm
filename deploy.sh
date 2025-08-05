@@ -86,7 +86,7 @@ setup_mysql() {
     
     # Настройка безопасности MySQL (автоматически)
     print_info "Настройка безопасности MySQL..."
-    mysql -u root <<EOF
+    if mysql -u root <<EOF
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root_password_123!@#';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
@@ -94,6 +94,13 @@ DROP DATABASE IF EXISTS test;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
 FLUSH PRIVILEGES;
 EOF
+    then
+        print_success "Безопасность MySQL настроена"
+    else
+        print_error "Ошибка настройки безопасности MySQL. Используем исправление root доступа..."
+        bash /var/www/construction-crm/fix-mysql-root.sh
+        return $?
+    fi
 
     # Создание базы данных и пользователя
     print_info "Создание базы данных и пользователя..."
