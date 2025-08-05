@@ -19,7 +19,7 @@ bash quick-setup.sh
 sudo bash fix-nginx.sh
 
 # 7. ИСПРАВЛЕНИЕ ОШИБКИ БАЗЫ ДАННЫХ (если таблицы уже существуют)
-sudo bash fix-database.sh
+sudo bash fix-database-simple.sh
 
 # 8. Полное развертывание (запустить после успешной проверки)
 sudo bash deploy.sh

@@ -166,8 +166,8 @@ import_database_schema() {
         else
             # Попытка импорта схемы
             mysql -u crm_user -p'strong_password_123!@#' construction_crm < /var/www/construction-crm/database/schema.sql 2>/dev/null || {
-                print_warning "Таблицы уже существуют, используем безопасный импорт..."
-                bash /var/www/construction-crm/fix-database.sh
+                print_warning "Таблицы уже существуют, используем упрощенный импорт..."
+                bash /var/www/construction-crm/fix-database-simple.sh
             }
         fi
         print_success "Схема базы данных импортирована"

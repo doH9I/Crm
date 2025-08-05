@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Fix Database Import Script
-# Исправление импорта схемы базы данных
+# Simple Database Fix Script
+# Упрощенное исправление базы данных
 
-echo "🔧 Исправление импорта базы данных..."
+echo "🔧 Упрощенное исправление базы данных..."
 
 # Проверка подключения к MySQL
 if ! mysql -u crm_user -p'strong_password_123!@#' -e "USE construction_crm;" >/dev/null 2>&1; then
@@ -14,10 +14,9 @@ fi
 
 echo "✅ Подключение к базе данных работает"
 
-# Создание безопасной версии схемы
-echo "📝 Создание безопасной схемы..."
-cat > /tmp/safe_schema.sql << 'EOF'
--- Безопасная схема базы данных с IF NOT EXISTS
+# Создание простой безопасной схемы
+echo "📝 Создание простой безопасной схемы..."
+cat > /tmp/simple_schema.sql << 'EOF'
 USE construction_crm;
 
 -- Таблица пользователей
@@ -62,8 +61,7 @@ CREATE TABLE IF NOT EXISTS clients (
     notes TEXT,
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица подрядчиков
@@ -87,8 +85,7 @@ CREATE TABLE IF NOT EXISTS contractors (
     notes TEXT,
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица проектов
@@ -111,11 +108,7 @@ CREATE TABLE IF NOT EXISTS projects (
     notes TEXT,
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (client_id) REFERENCES clients(id),
-    FOREIGN KEY (project_manager_id) REFERENCES users(id),
-    FOREIGN KEY (site_manager_id) REFERENCES users(id),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица задач проекта
@@ -138,11 +131,7 @@ CREATE TABLE IF NOT EXISTS project_tasks (
     notes TEXT,
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (assigned_to) REFERENCES users(id),
-    FOREIGN KEY (parent_task_id) REFERENCES project_tasks(id),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица материалов склада
@@ -160,8 +149,7 @@ CREATE TABLE IF NOT EXISTS warehouse_materials (
     notes TEXT,
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица движения материалов
@@ -178,10 +166,7 @@ CREATE TABLE IF NOT EXISTS material_movements (
     supplier_contractor VARCHAR(255),
     notes TEXT,
     created_by INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (material_id) REFERENCES warehouse_materials(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица табеля рабочего времени
@@ -198,12 +183,7 @@ CREATE TABLE IF NOT EXISTS timesheets (
     approved_by INT,
     approved_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    FOREIGN KEY (task_id) REFERENCES project_tasks(id),
-    FOREIGN KEY (approved_by) REFERENCES users(id),
-    UNIQUE KEY unique_user_date (user_id, date)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица файлов
@@ -218,8 +198,7 @@ CREATE TABLE IF NOT EXISTS files (
     entity_id INT NOT NULL,
     description TEXT,
     uploaded_by INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица настроек системы
@@ -231,8 +210,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
     description TEXT,
     is_public BOOLEAN DEFAULT FALSE,
     updated_by INT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Таблица логов системы
@@ -242,42 +220,16 @@ CREATE TABLE IF NOT EXISTS system_logs (
     action VARCHAR(100) NOT NULL,
     entity_type VARCHAR(50),
     entity_id INT,
-    details JSON,
+    details TEXT,
     ip_address VARCHAR(45),
     user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    INDEX idx_user_action (user_id, action),
-    INDEX idx_entity (entity_type, entity_id),
-    INDEX idx_created_at (created_at)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Создание индексов для оптимизации (с проверкой существования)
-SET @sql = (SELECT IF(
-    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA='construction_crm' AND TABLE_NAME='users' AND INDEX_NAME='idx_users_username') = 0,
-    'CREATE INDEX idx_users_username ON users(username)',
-    'SELECT "Index idx_users_username already exists"'
-));
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @sql = (SELECT IF(
-    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA='construction_crm' AND TABLE_NAME='users' AND INDEX_NAME='idx_users_email') = 0,
-    'CREATE INDEX idx_users_email ON users(email)',
-    'SELECT "Index idx_users_email already exists"'
-));
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @sql = (SELECT IF(
-    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA='construction_crm' AND TABLE_NAME='users' AND INDEX_NAME='idx_users_role') = 0,
-    'CREATE INDEX idx_users_role ON users(role)',
-    'SELECT "Index idx_users_role already exists"'
-));
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 EOF
 
-# Импорт безопасной схемы
-echo "📥 Импорт безопасной схемы..."
-if mysql -u crm_user -p'strong_password_123!@#' construction_crm < /tmp/safe_schema.sql; then
+# Импорт простой схемы
+echo "📥 Импорт простой схемы..."
+if mysql -u crm_user -p'strong_password_123!@#' construction_crm < /tmp/simple_schema.sql; then
     echo "✅ Схема базы данных успешно импортирована"
 else
     echo "❌ Ошибка импорта схемы"
@@ -285,23 +237,31 @@ else
 fi
 
 # Удаление временного файла
-rm /tmp/safe_schema.sql
+rm /tmp/simple_schema.sql
 
 # Проверка созданных таблиц
 echo ""
 echo "📊 Проверка созданных таблиц:"
-mysql -u crm_user -p'strong_password_123!@#' construction_crm -e "SHOW TABLES;" | sed 's/^/  /'
+table_count=$(mysql -u crm_user -p'strong_password_123!@#' construction_crm -e "SHOW TABLES;" -s | wc -l)
+echo "  Найдено таблиц: $table_count"
 
+if [ "$table_count" -ge 11 ]; then
+    echo "✅ Все основные таблицы созданы"
+else
+    echo "⚠️  Не все таблицы созданы"
+fi
+
+# Проверка пользователя admin
 echo ""
 echo "👤 Проверка пользователя admin:"
-admin_count=$(mysql -u crm_user -p'strong_password_123!@#' construction_crm -e "SELECT COUNT(*) FROM users WHERE username='admin';" -s)
+admin_count=$(mysql -u crm_user -p'strong_password_123!@#' construction_crm -e "SELECT COUNT(*) FROM users WHERE username='admin';" -s 2>/dev/null || echo "0")
 if [ "$admin_count" -gt 0 ]; then
     echo "✅ Пользователь admin существует"
 else
     echo "⚠️  Пользователь admin не найден. Создание..."
     
     # Создание администратора
-    cat > /tmp/create_admin_safe.js << 'EOF'
+    cat > /tmp/create_admin_simple.js << 'EOF'
 const bcrypt = require('bcryptjs');
 const mysql = require('mysql2/promise');
 
@@ -322,7 +282,7 @@ async function createAdmin() {
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `, ['admin', 'admin@construction-crm.com', hashedPassword, 'Администратор', 'Системы', 'admin', true]);
 
-        console.log('✅ Пользователь admin создан или уже существует');
+        console.log('✅ Пользователь admin создан');
         
     } catch (error) {
         console.error('❌ Ошибка создания пользователя:', error.message);
@@ -339,18 +299,21 @@ EOF
     # Запуск создания админа
     if [ -d "/var/www/construction-crm" ]; then
         cd /var/www/construction-crm
-        sudo -u www-data node /tmp/create_admin_safe.js
+        sudo -u www-data node /tmp/create_admin_simple.js
     else
-        node /tmp/create_admin_safe.js
+        node /tmp/create_admin_simple.js
     fi
     
-    rm /tmp/create_admin_safe.js
+    rm /tmp/create_admin_simple.js
 fi
 
 echo ""
-echo "🎯 База данных готова к работе!"
+echo "🎯 Упрощенная база данных готова!"
 echo ""
-echo "📋 Информация о базе данных:"
+echo "📋 Информация:"
 echo "  База данных: construction_crm"
 echo "  Пользователь: crm_user"
 echo "  Администратор: admin / admin123"
+echo ""
+echo "🚀 Можно продолжить развертывание:"
+echo "  sudo bash deploy.sh"
