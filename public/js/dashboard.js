@@ -1,4 +1,4 @@
-// Dashboard module for Construction CRM
+// Dashboard module for Construction CRM - Enhanced Analytics
 
 class DashboardModule {
     constructor() {
@@ -6,6 +6,9 @@ class DashboardModule {
         this.data = null;
         this.charts = {};
         this.refreshInterval = null;
+        this.selectedPeriod = '30d';
+        this.notifications = [];
+        this.realtimeData = {};
     }
 
     // Initialize dashboard module
@@ -14,172 +17,307 @@ class DashboardModule {
         await this.render();
         await this.loadData();
         this.initEventListeners();
+        this.initCharts();
         this.startAutoRefresh();
+        this.loadNotifications();
     }
 
-    // Render dashboard layout
+    // Render enhanced dashboard layout
     async render() {
         this.container.innerHTML = `
-            <div class="dashboard">
-                <!-- Key metrics cards -->
-                <div class="metrics-grid grid-responsive cols-4">
-                    <div class="metric-card card" id="projects-metric">
-                        <div class="card-body">
-                            <div class="metric-header">
-                                <h3 class="metric-title">Проекты</h3>
-                                <div class="metric-icon bg-primary">
-                                    <i class="fas fa-project-diagram"></i>
-                                </div>
-                            </div>
-                            <div class="metric-value" id="total-projects">0</div>
-                            <div class="metric-details">
-                                <span class="metric-label">Активных: <span id="active-projects">0</span></span>
-                                <span class="metric-change positive" id="projects-change">+0%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card card" id="clients-metric">
-                        <div class="card-body">
-                            <div class="metric-header">
-                                <h3 class="metric-title">Клиенты</h3>
-                                <div class="metric-icon bg-success">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                            </div>
-                            <div class="metric-value" id="total-clients">0</div>
-                            <div class="metric-details">
-                                <span class="metric-label">Активных: <span id="active-clients">0</span></span>
-                                <span class="metric-change positive" id="clients-change">+0%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card card" id="revenue-metric">
-                        <div class="card-body">
-                            <div class="metric-header">
-                                <h3 class="metric-title">Выручка</h3>
-                                <div class="metric-icon bg-warning">
-                                    <i class="fas fa-ruble-sign"></i>
-                                </div>
-                            </div>
-                            <div class="metric-value" id="total-revenue">0 ₽</div>
-                            <div class="metric-details">
-                                <span class="metric-label">За месяц</span>
-                                <span class="metric-change positive" id="revenue-change">+0%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card card" id="employees-metric">
-                        <div class="card-body">
-                            <div class="metric-header">
-                                <h3 class="metric-title">Сотрудники</h3>
-                                <div class="metric-icon bg-info">
-                                    <i class="fas fa-user-hard-hat"></i>
-                                </div>
-                            </div>
-                            <div class="metric-value" id="total-employees">0</div>
-                            <div class="metric-details">
-                                <span class="metric-label">Активных: <span id="active-employees">0</span></span>
-                                <span class="metric-change neutral" id="employees-change">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts and analytics -->
-                <div class="dashboard-content grid-responsive cols-2">
-                    <!-- Projects chart -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Проекты по статусам</h3>
-                            <div class="card-actions">
-                                <select id="projects-period" class="form-select">
-                                    <option value="month">Месяц</option>
-                                    <option value="quarter">Квартал</option>
-                                    <option value="year">Год</option>
+            <div class="dashboard enhanced-dashboard">
+                <!-- Dashboard Header with Controls -->
+                <div class="dashboard-header">
+                    <div class="header-content">
+                        <h1>Аналитическая панель</h1>
+                        <div class="dashboard-controls">
+                            <div class="period-selector">
+                                <select id="periodSelect" onchange="dashboardModule.changePeriod(this.value)">
+                                    <option value="7d">Последние 7 дней</option>
+                                    <option value="30d" selected>Последние 30 дней</option>
+                                    <option value="90d">Последние 3 месяца</option>
+                                    <option value="12m">Последний год</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="projects-chart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Revenue chart -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Финансовые показатели</h3>
-                            <div class="card-actions">
-                                <select id="revenue-period" class="form-select">
-                                    <option value="month">Месяц</option>
-                                    <option value="quarter">Квартал</option>
-                                    <option value="year">Год</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="revenue-chart" width="400" height="200"></canvas>
+                            <button class="btn btn-outline" onclick="dashboardModule.refreshData()">
+                                <i class="fas fa-sync-alt"></i> Обновить
+                            </button>
+                            <button class="btn btn-primary" onclick="dashboardModule.exportReport()">
+                                <i class="fas fa-download"></i> Отчет
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Recent activities and tasks -->
-                <div class="dashboard-widgets grid-responsive cols-3">
-                    <!-- Recent projects -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Последние проекты</h3>
-                            <a href="#projects" class="btn btn-sm btn-outline">Все проекты</a>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="list-group" id="recent-projects">
-                                <div class="list-item loading">
-                                    <div class="spinner"></div>
-                                    <span>Загрузка...</span>
+                <!-- Key Performance Indicators -->
+                <div class="kpi-section">
+                    <h2 class="section-title">Ключевые показатели</h2>
+                    <div class="metrics-grid grid-responsive cols-6">
+                        <div class="metric-card card primary" id="projects-metric">
+                            <div class="card-body">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Проекты</h3>
+                                    <div class="metric-icon">
+                                        <i class="fas fa-project-diagram"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="total-projects">0</div>
+                                <div class="metric-details">
+                                    <span class="metric-label">Активных: <span id="active-projects">0</span></span>
+                                    <span class="metric-change" id="projects-change">+0%</span>
+                                </div>
+                                <div class="metric-progress">
+                                    <div class="progress-bar" id="projects-progress"></div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Urgent tasks -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Срочные задачи</h3>
-                            <span class="badge bg-danger" id="urgent-tasks-count">0</span>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="list-group" id="urgent-tasks">
-                                <div class="list-item loading">
-                                    <div class="spinner"></div>
-                                    <span>Загрузка...</span>
+                        <div class="metric-card card success" id="revenue-metric">
+                            <div class="card-body">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Выручка</h3>
+                                    <div class="metric-icon">
+                                        <i class="fas fa-ruble-sign"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="total-revenue">0 ₽</div>
+                                <div class="metric-details">
+                                    <span class="metric-label">Прибыль: <span id="total-profit">0 ₽</span></span>
+                                    <span class="metric-change" id="revenue-change">+0%</span>
+                                </div>
+                                <div class="metric-progress">
+                                    <div class="progress-bar" id="revenue-progress"></div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Low stock items -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Низкие остатки</h3>
-                            <span class="badge bg-warning" id="low-stock-count">0</span>
+                        <div class="metric-card card info" id="clients-metric">
+                            <div class="card-body">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Клиенты</h3>
+                                    <div class="metric-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="total-clients">0</div>
+                                <div class="metric-details">
+                                    <span class="metric-label">Новых: <span id="new-clients">0</span></span>
+                                    <span class="metric-change" id="clients-change">+0%</span>
+                                </div>
+                                <div class="metric-progress">
+                                    <div class="progress-bar" id="clients-progress"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="list-group" id="low-stock">
-                                <div class="list-item loading">
-                                    <div class="spinner"></div>
-                                    <span>Загрузка...</span>
+
+                        <div class="metric-card card warning" id="estimates-metric">
+                            <div class="card-body">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Сметы</h3>
+                                    <div class="metric-icon">
+                                        <i class="fas fa-calculator"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="total-estimates">0</div>
+                                <div class="metric-details">
+                                    <span class="metric-label">Утверждено: <span id="approved-estimates">0</span></span>
+                                    <span class="metric-change" id="estimates-change">+0%</span>
+                                </div>
+                                <div class="metric-progress">
+                                    <div class="progress-bar" id="estimates-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card card danger" id="warehouse-metric">
+                            <div class="card-body">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Склад</h3>
+                                    <div class="metric-icon">
+                                        <i class="fas fa-warehouse"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="warehouse-value">0 ₽</div>
+                                <div class="metric-details">
+                                    <span class="metric-label">Позиций: <span id="warehouse-items">0</span></span>
+                                    <span class="metric-change warning" id="low-stock-alert">0 критических</span>
+                                </div>
+                                <div class="metric-progress">
+                                    <div class="progress-bar" id="warehouse-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metric-card card secondary" id="employees-metric">
+                            <div class="card-body">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Сотрудники</h3>
+                                    <div class="metric-icon">
+                                        <i class="fas fa-hard-hat"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="total-employees">0</div>
+                                <div class="metric-details">
+                                    <span class="metric-label">На объектах: <span id="active-employees">0</span></span>
+                                    <span class="metric-change" id="employees-change">+0%</span>
+                                </div>
+                                <div class="metric-progress">
+                                    <div class="progress-bar" id="employees-progress"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quick actions -->
-                <div class="quick-actions">
-                    <h3>Быстрые действия</h3>
-                    <div class="actions-grid">
+                <!-- Charts and Analytics Section -->
+                <div class="analytics-section">
+                    <div class="analytics-grid">
+                        <!-- Revenue Trends -->
+                        <div class="chart-card card large">
+                            <div class="card-header">
+                                <h3>Динамика доходов</h3>
+                                <div class="chart-controls">
+                                    <button class="btn btn-sm chart-type-btn active" data-type="line" onclick="dashboardModule.changeChartType('revenue', 'line')">
+                                        <i class="fas fa-chart-line"></i>
+                                    </button>
+                                    <button class="btn btn-sm chart-type-btn" data-type="bar" onclick="dashboardModule.changeChartType('revenue', 'bar')">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="revenueChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Project Status Pie Chart -->
+                        <div class="chart-card card medium">
+                            <div class="card-header">
+                                <h3>Статусы проектов</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="projectStatusChart" width="300" height="300"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Team Performance -->
+                        <div class="chart-card card medium">
+                            <div class="card-header">
+                                <h3>Эффективность команды</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="teamPerformanceChart" width="300" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Warehouse Analytics -->
+                        <div class="chart-card card large">
+                            <div class="card-header">
+                                <h3>Аналитика склада</h3>
+                                <div class="chart-tabs">
+                                    <button class="tab-btn active" data-tab="stock" onclick="dashboardModule.switchWarehouseTab('stock')">Остатки</button>
+                                    <button class="tab-btn" data-tab="movements" onclick="dashboardModule.switchWarehouseTab('movements')">Движения</button>
+                                    <button class="tab-btn" data-tab="costs" onclick="dashboardModule.switchWarehouseTab('costs')">Затраты</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="warehouseTab-stock" class="tab-content active">
+                                    <canvas id="warehouseStockChart" width="400" height="200"></canvas>
+                                </div>
+                                <div id="warehouseTab-movements" class="tab-content">
+                                    <canvas id="warehouseMovementsChart" width="400" height="200"></canvas>
+                                </div>
+                                <div id="warehouseTab-costs" class="tab-content">
+                                    <canvas id="warehouseCostsChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Client Acquisition -->
+                        <div class="chart-card card medium">
+                            <div class="card-header">
+                                <h3>Привлечение клиентов</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="clientAcquisitionChart" width="300" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Financial Flow -->
+                        <div class="chart-card card large">
+                            <div class="card-header">
+                                <h3>Денежные потоки</h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="cashFlowChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity and Notifications -->
+                <div class="activity-section">
+                    <div class="activity-grid">
+                        <!-- Recent Projects -->
+                        <div class="activity-card card">
+                            <div class="card-header">
+                                <h3>Последние проекты</h3>
+                                <a href="#projects" class="btn btn-sm btn-outline">Все проекты</a>
+                            </div>
+                            <div class="card-body">
+                                <div id="recent-projects" class="activity-list">
+                                    <!-- Will be populated by loadRecentProjects() -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Urgent Tasks -->
+                        <div class="activity-card card">
+                            <div class="card-header">
+                                <h3>Срочные задачи</h3>
+                                <span class="badge badge-danger" id="urgent-tasks-count">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="urgent-tasks" class="activity-list">
+                                    <!-- Will be populated by loadUrgentTasks() -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications -->
+                        <div class="activity-card card">
+                            <div class="card-header">
+                                <h3>Уведомления</h3>
+                                <button class="btn btn-sm btn-outline" onclick="dashboardModule.markAllAsRead()">
+                                    Отметить прочитанными
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="notifications-list" class="activity-list">
+                                    <!-- Will be populated by loadNotifications() -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Low Stock Alerts -->
+                        <div class="activity-card card">
+                            <div class="card-header">
+                                <h3>Критические остатки</h3>
+                                <span class="badge badge-warning" id="low-stock-count">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="low-stock-items" class="activity-list">
+                                    <!-- Will be populated by loadLowStockItems() -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions-section">
+                    <h2 class="section-title">Быстрые действия</h2>
+                    <div class="quick-actions-grid">
                         <button class="action-btn btn btn-primary" onclick="app.navigateTo('projects')">
                             <i class="fas fa-plus"></i>
                             <span>Новый проект</span>
@@ -193,15 +331,15 @@ class DashboardModule {
                             <span>Создать смету</span>
                         </button>
                         <button class="action-btn btn btn-info" onclick="app.navigateTo('offers')">
-                            <i class="fas fa-file-contract"></i>
-                            <span>КП</span>
+                            <i class="fas fa-handshake"></i>
+                            <span>Новое КП</span>
                         </button>
-                        <button class="action-btn btn btn-secondary" onclick="app.navigateTo('materials')">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span>Заявка материалов</span>
+                        <button class="action-btn btn btn-secondary" onclick="app.navigateTo('warehouse')">
+                            <i class="fas fa-boxes"></i>
+                            <span>Учет товаров</span>
                         </button>
-                        <button class="action-btn btn btn-outline" onclick="app.navigateTo('reports')">
-                            <i class="fas fa-chart-bar"></i>
+                        <button class="action-btn btn btn-dark" onclick="dashboardModule.showReports()">
+                            <i class="fas fa-chart-line"></i>
                             <span>Отчеты</span>
                         </button>
                     </div>
@@ -210,361 +348,505 @@ class DashboardModule {
         `;
     }
 
-    // Load dashboard data
+    // Load enhanced dashboard data
     async loadData() {
         try {
-            this.data = await DashboardAPI.getData();
-            this.updateMetrics();
-            this.updateWidgets();
-            this.initCharts();
+            // Simulate loading data from multiple sources
+            await Promise.all([
+                this.loadKPIData(),
+                this.loadChartData(),
+                this.loadRecentActivity()
+            ]);
+            
+            this.updateKPIs();
+            this.updateCharts();
+            this.updateActivity();
+            
         } catch (error) {
-            console.error('Dashboard data loading error:', error);
-            showNotification('Ошибка загрузки данных дашборда', 'error');
+            console.error('Error loading dashboard data:', error);
+            NotificationManager.error('Ошибка загрузки данных дашборда');
         }
     }
 
-    // Update metrics cards
-    updateMetrics() {
-        if (!this.data) return;
+    // Load KPI data
+    async loadKPIData() {
+        // Simulate API calls with enhanced data
+        this.data = {
+            projects: {
+                total: 24,
+                active: 18,
+                completed: 15,
+                pending: 6,
+                change: 12.5,
+                progress: 75
+            },
+            revenue: {
+                total: 15750000,
+                profit: 2362500,
+                change: 8.3,
+                target: 20000000,
+                progress: 78.75
+            },
+            clients: {
+                total: 156,
+                new: 12,
+                active: 89,
+                change: 15.2,
+                progress: 82
+            },
+            estimates: {
+                total: 45,
+                approved: 32,
+                pending: 8,
+                rejected: 5,
+                change: 22.1,
+                progress: 71
+            },
+            warehouse: {
+                value: 2850000,
+                items: 1247,
+                categories: 32,
+                lowStock: 15,
+                critical: 3,
+                progress: 65
+            },
+            employees: {
+                total: 67,
+                active: 52,
+                onSite: 38,
+                change: 5.8,
+                progress: 88
+            }
+        };
 
-        // Projects metrics
-        document.getElementById('total-projects').textContent = this.data.projects?.total_projects || 0;
-        document.getElementById('active-projects').textContent = this.data.projects?.active_projects || 0;
-
-        // Clients metrics
-        document.getElementById('total-clients').textContent = this.data.clients?.total_clients || 0;
-        document.getElementById('active-clients').textContent = this.data.clients?.active_clients || 0;
-
-        // Revenue metrics
-        const totalBudget = this.data.projects?.total_budget || 0;
-        document.getElementById('total-revenue').textContent = NumberUtils.formatCurrency(totalBudget);
-
-        // Employees metrics
-        document.getElementById('total-employees').textContent = this.data.employees?.total_employees || 0;
-        document.getElementById('active-employees').textContent = this.data.employees?.active_employees || 0;
-
-        // Update progress indicators
-        this.updateProgressMetrics();
+        // Load chart data
+        this.chartData = {
+            revenue: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                datasets: [{
+                    label: 'Выручка',
+                    data: [1200000, 1350000, 1180000, 1420000, 1650000, 1750000],
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Прибыль',
+                    data: [180000, 202500, 177000, 213000, 247500, 262500],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            projectStatus: {
+                labels: ['В работе', 'Завершены', 'Приостановлены', 'Планируемые'],
+                datasets: [{
+                    data: [18, 15, 3, 6],
+                    backgroundColor: ['#3498db', '#27ae60', '#f39c12', '#e74c3c']
+                }]
+            },
+            teamPerformance: {
+                labels: ['Прорабы', 'Сметчики', 'ПТО', 'Снабженцы'],
+                datasets: [{
+                    label: 'Эффективность (%)',
+                    data: [92, 87, 94, 89],
+                    backgroundColor: ['#3498db', '#27ae60', '#f39c12', '#9b59b6']
+                }]
+            },
+            warehouseStock: {
+                labels: ['Стройматериалы', 'Инструменты', 'Электрика', 'Сантехника', 'Отделка'],
+                datasets: [{
+                    label: 'Остатки (₽)',
+                    data: [850000, 420000, 320000, 180000, 280000],
+                    backgroundColor: '#3498db'
+                }]
+            },
+            clientAcquisition: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                datasets: [{
+                    label: 'Новые клиенты',
+                    data: [8, 12, 7, 15, 11, 12],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            cashFlow: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                datasets: [{
+                    label: 'Поступления',
+                    data: [1200000, 1350000, 1180000, 1420000, 1650000, 1750000],
+                    backgroundColor: '#27ae60'
+                }, {
+                    label: 'Расходы',
+                    data: [980000, 1120000, 950000, 1150000, 1380000, 1450000],
+                    backgroundColor: '#e74c3c'
+                }]
+            }
+        };
     }
 
-    // Update progress and change indicators
-    updateProgressMetrics() {
-        const avgProgress = this.data.projects?.avg_progress || 0;
-        const progressElement = document.querySelector('#projects-metric .metric-progress');
-        if (progressElement) {
-            progressElement.style.width = `${avgProgress}%`;
-        }
+    // Load recent activity data
+    async loadRecentActivity() {
+        this.activityData = {
+            recentProjects: [
+                { id: 1, name: 'Дом на Пушкина, 15', status: 'active', progress: 65, client: 'ООО "Стройинвест"' },
+                { id: 2, name: 'Офис на Ленина, 82', status: 'planning', progress: 25, client: 'ИП Петров А.В.' },
+                { id: 3, name: 'Коттедж в Сосновке', status: 'active', progress: 80, client: 'Иванов И.И.' }
+            ],
+            urgentTasks: [
+                { id: 1, text: 'Согласовать смету для проекта #1024', deadline: '2024-01-20', priority: 'high' },
+                { id: 2, text: 'Заказать арматуру для объекта "Дом на Пушкина"', deadline: '2024-01-18', priority: 'critical' },
+                { id: 3, text: 'Подготовить отчет по проекту #1018', deadline: '2024-01-22', priority: 'medium' }
+            ],
+            notifications: [
+                { id: 1, text: 'Новый клиент зарегистрирован', time: '5 мин назад', type: 'info', read: false },
+                { id: 2, text: 'Смета #SM-0045 утверждена', time: '15 мин назад', type: 'success', read: false },
+                { id: 3, text: 'Критически низкий остаток: Арматура d12', time: '1 час назад', type: 'warning', read: true }
+            ],
+            lowStockItems: [
+                { id: 1, name: 'Арматура d12', current: 25, minimum: 50, unit: 'м', critical: true },
+                { id: 2, name: 'Цемент М400', current: 3, minimum: 5, unit: 'т', critical: true },
+                { id: 3, name: 'Кирпич красный', current: 150, minimum: 200, unit: 'шт', critical: false }
+            ]
+        };
     }
 
-    // Update widgets (recent projects, tasks, etc.)
-    updateWidgets() {
-        this.updateRecentProjects();
-        this.updateUrgentTasks();
-        this.updateLowStock();
-    }
+    // Update KPI metrics
+    updateKPIs() {
+        // Projects
+        document.getElementById('total-projects').textContent = this.data.projects.total;
+        document.getElementById('active-projects').textContent = this.data.projects.active;
+        document.getElementById('projects-change').textContent = `+${this.data.projects.change}%`;
+        document.getElementById('projects-progress').style.width = `${this.data.projects.progress}%`;
 
-    // Update recent projects widget
-    updateRecentProjects() {
-        const container = document.getElementById('recent-projects');
-        const projects = this.data.recentProjects || [];
+        // Revenue
+        document.getElementById('total-revenue').textContent = NumberUtils.formatCurrency(this.data.revenue.total);
+        document.getElementById('total-profit').textContent = NumberUtils.formatCurrency(this.data.revenue.profit);
+        document.getElementById('revenue-change').textContent = `+${this.data.revenue.change}%`;
+        document.getElementById('revenue-progress').style.width = `${this.data.revenue.progress}%`;
 
-        if (projects.length === 0) {
-            container.innerHTML = '<div class="list-item text-muted">Нет недавних проектов</div>';
-            return;
-        }
+        // Clients
+        document.getElementById('total-clients').textContent = this.data.clients.total;
+        document.getElementById('new-clients').textContent = this.data.clients.new;
+        document.getElementById('clients-change').textContent = `+${this.data.clients.change}%`;
+        document.getElementById('clients-progress').style.width = `${this.data.clients.progress}%`;
 
-        container.innerHTML = projects.map(project => `
-            <div class="list-item" onclick="app.navigateTo('projects')">
-                <div class="list-content">
-                    <div class="list-title">${project.name}</div>
-                    <div class="list-subtitle">${project.client_name || 'Без клиента'}</div>
-                </div>
-                <div class="list-meta">
-                    <span class="status-badge status-${project.status}">${this.getStatusText(project.status)}</span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${project.progress || 0}%"></div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
+        // Estimates
+        document.getElementById('total-estimates').textContent = this.data.estimates.total;
+        document.getElementById('approved-estimates').textContent = this.data.estimates.approved;
+        document.getElementById('estimates-change').textContent = `+${this.data.estimates.change}%`;
+        document.getElementById('estimates-progress').style.width = `${this.data.estimates.progress}%`;
 
-    // Update urgent tasks widget
-    updateUrgentTasks() {
-        const container = document.getElementById('urgent-tasks');
-        const counter = document.getElementById('urgent-tasks-count');
-        const tasks = this.data.urgentTasks || [];
+        // Warehouse
+        document.getElementById('warehouse-value').textContent = NumberUtils.formatCurrency(this.data.warehouse.value);
+        document.getElementById('warehouse-items').textContent = this.data.warehouse.items;
+        document.getElementById('low-stock-alert').textContent = `${this.data.warehouse.critical} критических`;
+        document.getElementById('warehouse-progress').style.width = `${this.data.warehouse.progress}%`;
 
-        counter.textContent = tasks.length;
-
-        if (tasks.length === 0) {
-            container.innerHTML = '<div class="list-item text-muted">Нет срочных задач</div>';
-            return;
-        }
-
-        container.innerHTML = tasks.map(task => `
-            <div class="list-item" onclick="app.navigateTo('projects')">
-                <div class="list-content">
-                    <div class="list-title">${task.name}</div>
-                    <div class="list-subtitle">${task.project_name}</div>
-                </div>
-                <div class="list-meta">
-                    <span class="due-date ${DateUtils.isToday(task.end_date) ? 'today' : ''}">${DateUtils.format(task.end_date)}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // Update low stock widget
-    updateLowStock() {
-        const container = document.getElementById('low-stock');
-        const counter = document.getElementById('low-stock-count');
-        const items = this.data.lowStock || [];
-
-        counter.textContent = items.length;
-
-        if (items.length === 0) {
-            container.innerHTML = '<div class="list-item text-muted">Остатки в норме</div>';
-            return;
-        }
-
-        container.innerHTML = items.map(item => `
-            <div class="list-item" onclick="app.navigateTo('warehouse')">
-                <div class="list-content">
-                    <div class="list-title">${item.name}</div>
-                    <div class="list-subtitle">Мин: ${item.min_quantity} ${item.unit}</div>
-                </div>
-                <div class="list-meta">
-                    <span class="stock-level low">${item.current_quantity} ${item.unit}</span>
-                </div>
-            </div>
-        `).join('');
+        // Employees
+        document.getElementById('total-employees').textContent = this.data.employees.total;
+        document.getElementById('active-employees').textContent = this.data.employees.onSite;
+        document.getElementById('employees-change').textContent = `+${this.data.employees.change}%`;
+        document.getElementById('employees-progress').style.width = `${this.data.employees.progress}%`;
     }
 
     // Initialize charts
     initCharts() {
-        this.initProjectsChart();
-        this.initRevenueChart();
-    }
-
-    // Initialize projects status chart
-    initProjectsChart() {
-        const canvas = document.getElementById('projects-chart');
-        const ctx = canvas.getContext('2d');
-
-        // Simple pie chart implementation
-        const data = [
-            { label: 'Планирование', value: this.data.projects?.planning_projects || 0, color: '#6b7280' },
-            { label: 'В работе', value: this.data.projects?.active_projects || 0, color: '#10b981' },
-            { label: 'Завершено', value: this.data.projects?.completed_projects || 0, color: '#3b82f6' }
-        ];
-
-        this.drawPieChart(ctx, data, canvas.width, canvas.height);
-    }
-
-    // Initialize revenue chart
-    initRevenueChart() {
-        const canvas = document.getElementById('revenue-chart');
-        const ctx = canvas.getContext('2d');
-
-        // Simple bar chart implementation
-        const data = [
-            { label: 'Бюджет', value: this.data.projects?.total_budget || 0, color: '#3b82f6' },
-            { label: 'Потрачено', value: this.data.projects?.total_spent || 0, color: '#ef4444' },
-            { label: 'Остаток', value: (this.data.projects?.total_budget || 0) - (this.data.projects?.total_spent || 0), color: '#10b981' }
-        ];
-
-        this.drawBarChart(ctx, data, canvas.width, canvas.height);
-    }
-
-    // Simple pie chart drawing
-    drawPieChart(ctx, data, width, height) {
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = Math.min(width, height) / 2 - 20;
-
-        const total = data.reduce((sum, item) => sum + item.value, 0);
-        if (total === 0) {
-            ctx.fillStyle = '#e5e7eb';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Нет данных', centerX, centerY);
-            return;
-        }
-
-        let currentAngle = -Math.PI / 2;
-
-        data.forEach(item => {
-            const sliceAngle = (item.value / total) * 2 * Math.PI;
-
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-            ctx.closePath();
-            ctx.fillStyle = item.color;
-            ctx.fill();
-
-            // Draw label
-            const labelAngle = currentAngle + sliceAngle / 2;
-            const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
-            const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(item.value.toString(), labelX, labelY);
-
-            currentAngle += sliceAngle;
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        this.charts.revenue = new Chart(revenueCtx, {
+            type: 'line',
+            data: this.chartData.revenue,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return NumberUtils.formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
         });
 
-        // Draw legend
-        this.drawLegend(ctx, data, width, height);
-    }
+        // Project Status Chart
+        const projectStatusCtx = document.getElementById('projectStatusChart').getContext('2d');
+        this.charts.projectStatus = new Chart(projectStatusCtx, {
+            type: 'doughnut',
+            data: this.chartData.projectStatus,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
 
-    // Simple bar chart drawing
-    drawBarChart(ctx, data, width, height) {
-        const padding = 40;
-        const chartWidth = width - padding * 2;
-        const chartHeight = height - padding * 2;
+        // Team Performance Chart
+        const teamCtx = document.getElementById('teamPerformanceChart').getContext('2d');
+        this.charts.teamPerformance = new Chart(teamCtx, {
+            type: 'bar',
+            data: this.chartData.teamPerformance,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
-        const maxValue = Math.max(...data.map(item => item.value));
-        if (maxValue === 0) {
-            ctx.fillStyle = '#e5e7eb';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Нет данных', width / 2, height / 2);
-            return;
-        }
+        // Warehouse Stock Chart
+        const warehouseCtx = document.getElementById('warehouseStockChart').getContext('2d');
+        this.charts.warehouseStock = new Chart(warehouseCtx, {
+            type: 'bar',
+            data: this.chartData.warehouseStock,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return NumberUtils.formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
-        const barWidth = chartWidth / data.length - 10;
-        const barSpacing = 10;
+        // Client Acquisition Chart
+        const clientCtx = document.getElementById('clientAcquisitionChart').getContext('2d');
+        this.charts.clientAcquisition = new Chart(clientCtx, {
+            type: 'line',
+            data: this.chartData.clientAcquisition,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
 
-        data.forEach((item, index) => {
-            const barHeight = (item.value / maxValue) * chartHeight;
-            const x = padding + index * (barWidth + barSpacing);
-            const y = height - padding - barHeight;
-
-            ctx.fillStyle = item.color;
-            ctx.fillRect(x, y, barWidth, barHeight);
-
-            // Draw value label
-            ctx.fillStyle = '#374151';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(NumberUtils.formatCurrency(item.value, 'RUB'), x + barWidth / 2, y - 5);
-
-            // Draw category label
-            ctx.fillText(item.label, x + barWidth / 2, height - padding + 15);
+        // Cash Flow Chart
+        const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+        this.charts.cashFlow = new Chart(cashFlowCtx, {
+            type: 'bar',
+            data: this.chartData.cashFlow,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return NumberUtils.formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
-    // Draw chart legend
-    drawLegend(ctx, data, width, height) {
-        const legendY = height - 30;
-        let legendX = 20;
+    // Update activity sections
+    updateActivity() {
+        this.updateRecentProjects();
+        this.updateUrgentTasks();
+        this.updateNotifications();
+        this.updateLowStockItems();
+    }
 
-        data.forEach(item => {
-            // Draw color box
-            ctx.fillStyle = item.color;
-            ctx.fillRect(legendX, legendY, 12, 12);
+    // Update recent projects
+    updateRecentProjects() {
+        const container = document.getElementById('recent-projects');
+        const projectsHtml = this.activityData.recentProjects.map(project => `
+            <div class="activity-item">
+                <div class="activity-content">
+                    <h4>${project.name}</h4>
+                    <p>Клиент: ${project.client}</p>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${project.progress}%"></div>
+                        <span class="progress-text">${project.progress}%</span>
+                    </div>
+                </div>
+                <span class="status-badge status-${project.status}">
+                    ${project.status === 'active' ? 'Активный' : 'Планирование'}
+                </span>
+            </div>
+        `).join('');
+        container.innerHTML = projectsHtml;
+    }
 
-            // Draw label
-            ctx.fillStyle = '#374151';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(item.label, legendX + 16, legendY + 10);
+    // Update urgent tasks
+    updateUrgentTasks() {
+        const container = document.getElementById('urgent-tasks');
+        const tasksHtml = this.activityData.urgentTasks.map(task => `
+            <div class="activity-item">
+                <div class="activity-content">
+                    <p>${task.text}</p>
+                    <small>Срок: ${DateUtils.formatDate(task.deadline)}</small>
+                </div>
+                <span class="priority-badge priority-${task.priority}">
+                    ${task.priority === 'critical' ? 'Критично' : task.priority === 'high' ? 'Важно' : 'Средне'}
+                </span>
+            </div>
+        `).join('');
+        container.innerHTML = tasksHtml;
+        document.getElementById('urgent-tasks-count').textContent = this.activityData.urgentTasks.length;
+    }
 
-            legendX += ctx.measureText(item.label).width + 40;
+    // Update notifications
+    updateNotifications() {
+        const container = document.getElementById('notifications-list');
+        const notificationsHtml = this.activityData.notifications.map(notification => `
+            <div class="activity-item ${notification.read ? 'read' : 'unread'}">
+                <div class="activity-content">
+                    <p>${notification.text}</p>
+                    <small>${notification.time}</small>
+                </div>
+                <span class="notification-type type-${notification.type}">
+                    <i class="fas fa-${notification.type === 'info' ? 'info-circle' : notification.type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                </span>
+            </div>
+        `).join('');
+        container.innerHTML = notificationsHtml;
+    }
+
+    // Update low stock items
+    updateLowStockItems() {
+        const container = document.getElementById('low-stock-items');
+        const itemsHtml = this.activityData.lowStockItems.map(item => `
+            <div class="activity-item">
+                <div class="activity-content">
+                    <h4>${item.name}</h4>
+                    <p>Остаток: ${item.current} ${item.unit} (мин: ${item.minimum} ${item.unit})</p>
+                </div>
+                <span class="stock-status ${item.critical ? 'critical' : 'warning'}">
+                    ${item.critical ? 'Критично' : 'Мало'}
+                </span>
+            </div>
+        `).join('');
+        container.innerHTML = itemsHtml;
+        document.getElementById('low-stock-count').textContent = this.activityData.lowStockItems.filter(item => item.critical).length;
+    }
+
+    // Change time period
+    changePeriod(period) {
+        this.selectedPeriod = period;
+        this.loadData();
+    }
+
+    // Change chart type
+    changeChartType(chartName, type) {
+        if (this.charts[chartName]) {
+            this.charts[chartName].config.type = type;
+            this.charts[chartName].update();
+        }
+        
+        // Update active button
+        const buttons = document.querySelectorAll('.chart-type-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-type="${type}"]`).classList.add('active');
+    }
+
+    // Switch warehouse tab
+    switchWarehouseTab(tab) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(`warehouseTab-${tab}`).classList.add('active');
+        
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    }
+
+    // Export report
+    exportReport() {
+        NotificationManager.info('Экспорт отчета в разработке');
+    }
+
+    // Show reports
+    showReports() {
+        app.navigateTo('reports');
+    }
+
+    // Mark all notifications as read
+    markAllAsRead() {
+        this.activityData.notifications.forEach(notification => {
+            notification.read = true;
+        });
+        this.updateNotifications();
+        NotificationManager.success('Все уведомления отмечены как прочитанные');
+    }
+
+    // Refresh data
+    async refreshData() {
+        await this.loadData();
+        NotificationManager.success('Данные обновлены');
+    }
+
+    // Update charts
+    updateCharts() {
+        Object.keys(this.charts).forEach(chartName => {
+            if (this.charts[chartName]) {
+                this.charts[chartName].update();
+            }
         });
     }
 
     // Initialize event listeners
     initEventListeners() {
-        // Chart period selectors
-        document.getElementById('projects-period')?.addEventListener('change', (e) => {
-            this.updateProjectsChart(e.target.value);
-        });
-
-        document.getElementById('revenue-period')?.addEventListener('change', (e) => {
-            this.updateRevenueChart(e.target.value);
-        });
-
         // Refresh button
-        const refreshBtn = document.createElement('button');
-        refreshBtn.className = 'btn btn-sm btn-outline';
-        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Обновить';
-        refreshBtn.onclick = () => this.refresh();
-
-        const header = document.querySelector('.dashboard');
-        if (header) {
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'dashboard-actions';
-            actionsDiv.appendChild(refreshBtn);
-            header.insertBefore(actionsDiv, header.firstChild);
-        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                this.refreshData();
+            }
+        });
     }
 
-    // Update charts based on period
-    async updateProjectsChart(period) {
-        try {
-            const chartData = await DashboardAPI.getChartData('projects', period);
-            // Redraw chart with new data
-            this.initProjectsChart();
-        } catch (error) {
-            console.error('Chart update error:', error);
-        }
-    }
-
-    async updateRevenueChart(period) {
-        try {
-            const chartData = await DashboardAPI.getChartData('revenue', period);
-            // Redraw chart with new data
-            this.initRevenueChart();
-        } catch (error) {
-            console.error('Chart update error:', error);
-        }
-    }
-
-    // Get status text in Russian
-    getStatusText(status) {
-        const statusMap = {
-            planning: 'Планирование',
-            design: 'Проектирование',
-            approval: 'Согласование',
-            construction: 'Строительство',
-            completion: 'Завершение',
-            warranty: 'Гарантия',
-            closed: 'Закрыт',
-            pending: 'Ожидает',
-            in_progress: 'В работе',
-            completed: 'Завершено',
-            on_hold: 'Приостановлено',
-            cancelled: 'Отменено'
-        };
-        return statusMap[status] || status;
-    }
-
-    // Refresh dashboard data
-    async refresh() {
-        try {
-            showNotification('Обновление данных...', 'info', 1000);
-            await this.loadData();
-            showNotification('Данные обновлены', 'success');
-        } catch (error) {
-            console.error('Dashboard refresh error:', error);
-            showNotification('Ошибка обновления данных', 'error');
-        }
-    }
-
-    // Start auto-refresh
+    // Start auto refresh
     startAutoRefresh() {
         // Refresh every 5 minutes
         this.refreshInterval = setInterval(() => {
-            this.refresh();
+            this.refreshData();
         }, 5 * 60 * 1000);
     }
 
-    // Stop auto-refresh
+    // Stop auto refresh
     stopAutoRefresh() {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
@@ -572,29 +854,23 @@ class DashboardModule {
         }
     }
 
-    // Show module
-    show() {
-        if (this.container) {
-            this.container.style.display = 'block';
-            this.refresh();
-        }
-    }
-
-    // Hide module
-    hide() {
-        if (this.container) {
-            this.container.style.display = 'none';
-        }
-    }
-
-    // Cleanup
+    // Cleanup when leaving dashboard
     destroy() {
         this.stopAutoRefresh();
-        if (this.container) {
-            this.container.innerHTML = '';
-        }
+        Object.values(this.charts).forEach(chart => {
+            if (chart) chart.destroy();
+        });
+        this.charts = {};
     }
 }
 
-// Export for global use
+// Create global instance
+const dashboardModule = new DashboardModule();
+
+// Chart.js configuration
+Chart.defaults.font.family = 'Inter, sans-serif';
+Chart.defaults.color = '#495057';
+
+// Export for global access
 window.DashboardModule = DashboardModule;
+window.dashboardModule = dashboardModule;

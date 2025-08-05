@@ -214,6 +214,8 @@ class ConstructionCRM {
         this.router.addRoute('warehouse', () => this.loadModule('warehouse'));
         this.router.addRoute('estimates', () => this.loadModule('estimates'));
         this.router.addRoute('offers', () => this.loadModule('offers'));
+        this.router.addRoute('export-import', () => this.loadModule('export-import'));
+        this.router.addRoute('testing', () => this.loadModule('testing'));
         this.router.addRoute('materials', () => this.loadModule('materials'));
         this.router.addRoute('documents', () => this.loadModule('documents'));
         this.router.addRoute('reports', () => this.loadModule('reports'));
@@ -300,6 +302,12 @@ class ConstructionCRM {
                     break;
                 case 'offers':
                     module = new OffersModule();
+                    break;
+                case 'export-import':
+                    module = new ExportImportModule();
+                    break;
+                case 'testing':
+                    module = new SystemTestingModule();
                     break;
                 case 'materials':
                     module = new MaterialsModule();
