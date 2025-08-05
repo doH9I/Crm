@@ -305,8 +305,14 @@ createAdmin();
 EOF
 
     cd /var/www/construction-crm
-    sudo -u www-data node /tmp/create_admin.js
-    rm /tmp/create_admin.js
+    # Попытка создания админа через Node.js
+    if sudo -u www-data node /tmp/create_admin.js 2>/dev/null; then
+        print_success "Пользователь admin создан через Node.js"
+    else
+        print_warning "Ошибка с Node.js зависимостями, используем SQL метод..."
+        bash /var/www/construction-crm/create-admin-manual.sh
+    fi
+    rm /tmp/create_admin.js 2>/dev/null || true
     
     print_success "Пользователь по умолчанию создан"
 }

@@ -299,12 +299,22 @@ EOF
     # Запуск создания админа
     if [ -d "/var/www/construction-crm" ]; then
         cd /var/www/construction-crm
-        sudo -u www-data node /tmp/create_admin_simple.js
+        if sudo -u www-data node /tmp/create_admin_simple.js 2>/dev/null; then
+            echo "✅ Админ создан через Node.js"
+        else
+            echo "⚠️  Используем SQL метод..."
+            bash /var/www/construction-crm/create-admin-manual.sh 2>/dev/null || bash create-admin-manual.sh
+        fi
     else
-        node /tmp/create_admin_simple.js
+        if node /tmp/create_admin_simple.js 2>/dev/null; then
+            echo "✅ Админ создан через Node.js"
+        else
+            echo "⚠️  Используем SQL метод..."
+            bash create-admin-manual.sh
+        fi
     fi
     
-    rm /tmp/create_admin_simple.js
+    rm /tmp/create_admin_simple.js 2>/dev/null || true
 fi
 
 echo ""

@@ -21,10 +21,13 @@ sudo bash fix-nginx.sh
 # 7. ИСПРАВЛЕНИЕ ОШИБКИ БАЗЫ ДАННЫХ (если таблицы уже существуют)
 sudo bash fix-database-simple.sh
 
-# 8. Полное развертывание (запустить после успешной проверки)
+# 8. СОЗДАНИЕ АДМИНИСТРАТОРА (если ошибка с Node.js зависимостями)
+sudo bash create-admin-manual.sh
+
+# 9. Полное развертывание (запустить после успешной проверки)
 sudo bash deploy.sh
 
-# 8. Проверка статуса сервисов после развертывания
+# 10. Проверка статуса сервисов после развертывания
 sudo systemctl status construction-crm
 sudo systemctl status nginx
 sudo systemctl status mysql
