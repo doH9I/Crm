@@ -16,17 +16,30 @@ class ConstructionCRM {
             // Show loading screen
             this.showLoading();
 
+            // Initialize auth module first
+            if (window.authModule) {
+                window.authModule.init();
+            }
+
             // Check for existing authentication
-            await this.checkAuth();
+            const isAuthenticated = await this.checkAuth();
+            
+            if (isAuthenticated) {
+                // Initialize UI components
+                this.initUI();
 
-            // Initialize UI components
-            this.initUI();
+                // Initialize router
+                this.initRouter();
 
-            // Initialize router
-            this.initRouter();
-
-            // Load initial content
-            await this.loadInitialContent();
+                // Load initial content
+                await this.loadInitialContent();
+                
+                // Show main app
+                this.showApp();
+            } else {
+                // Show login page
+                this.showLogin();
+            }
 
             this.initialized = true;
             
