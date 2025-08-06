@@ -171,6 +171,24 @@ const logAction = async (userId, action, tableName, recordId, oldValues, newValu
   }
 };
 
+// Базовый маршрут API
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'Construction CRM API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      clients: '/api/clients',
+      projects: '/api/projects',
+      contractors: '/api/contractors',
+      employees: '/api/employees',
+      warehouse: '/api/warehouse',
+      dashboard: '/api/dashboard'
+    }
+  });
+});
+
 // АУТЕНТИФИКАЦИЯ И АВТОРИЗАЦИЯ
 
 // Вход в систему
