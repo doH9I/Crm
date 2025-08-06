@@ -11,3 +11,5 @@
 {"level":"info","message":"Server is running on port 3000","service":"construction-crm","timestamp":"2025-08-06T21:18:20.779Z"}
 {"level":"info","message":"Connected to MySQL database","service":"construction-crm","timestamp":"2025-08-06T21:33:23.568Z"}
 {"level":"info","message":"Server is running on port 3000","service":"construction-crm","timestamp":"2025-08-06T21:33:23.575Z"}
+{"level":"info","message":"Connected to MySQL database","service":"construction-crm","timestamp":"2025-08-06T21:48:57.414Z"}
+{"level":"info","message":"Server is running on port 3000","service":"construction-crm","timestamp":"2025-08-06T21:48:57.424Z"}
