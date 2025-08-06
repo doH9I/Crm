@@ -7,3 +7,7 @@
 {"code":"ER_ACCESS_DENIED_NO_PASSWORD_ERROR","errno":1698,"level":"error","message":"Database connection failed, using mock database: Access denied for user 'root'@'localhost'","service":"construction-crm","sqlState":"28000","stack":"Error: Access denied for user 'root'@'localhost'\n    at Object.createConnectionPromise [as createConnection] (/workspace/node_modules/mysql2/promise.js:19:31)\n    at connectDB (/workspace/server.js:69:22)\n    at startServer (/workspace/server.js:1435:11)","timestamp":"2025-08-06T21:14:04.957Z"}
 {"level":"info","message":"Using mock database for development","service":"construction-crm","timestamp":"2025-08-06T21:14:05.030Z"}
 {"level":"info","message":"Server is running on port 3000","service":"construction-crm","timestamp":"2025-08-06T21:14:05.032Z"}
+{"level":"info","message":"Connected to MySQL database","service":"construction-crm","timestamp":"2025-08-06T21:18:20.771Z"}
+{"level":"info","message":"Server is running on port 3000","service":"construction-crm","timestamp":"2025-08-06T21:18:20.779Z"}
+{"level":"info","message":"Connected to MySQL database","service":"construction-crm","timestamp":"2025-08-06T21:33:23.568Z"}
+{"level":"info","message":"Server is running on port 3000","service":"construction-crm","timestamp":"2025-08-06T21:33:23.575Z"}
